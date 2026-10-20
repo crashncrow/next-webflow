@@ -8,4 +8,6 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
+  // Peer dependencies: resolved from the user's app.
+  external: [/^next(\/|$)/, /^react(\/|$)/, /^react-dom(\/|$)/],
 });

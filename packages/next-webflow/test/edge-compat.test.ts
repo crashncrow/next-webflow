@@ -1,5 +1,5 @@
 import { EdgeVM } from "@edge-runtime/vm";
-import { build } from "esbuild";
+import { build, type Plugin } from "esbuild";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -8,9 +8,25 @@ const RUNTIME_ENTRIES = ["src/index.ts"];
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 
+/**
+ * `next` is a peer dependency (Next itself is edge-compatible), so its modules are replaced
+ * with minimal stubs instead of being bundled.
+ */
+const stubNext: Plugin = {
+  name: "stub-next",
+  setup(build) {
+    build.onResolve({ filter: /^next\/headers$/ }, () => ({ path: "next/headers", namespace: "stub" }));
+    build.onLoad({ filter: /.*/, namespace: "stub" }, () => ({
+      contents: "export const draftMode = async () => ({ isEnabled: false });",
+      loader: "js",
+    }));
+  },
+};
+
 /** Bundles like an edge runtime would. esbuild fails to resolve Node built-ins on this platform. */
 function bundleForEdge(entry: { file: string } | { contents: string }) {
   return build({
+    plugins: [stubNext],
     absWorkingDir: packageRoot,
     ...("file" in entry
       ? { entryPoints: [entry.file] }

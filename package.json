@@ -1,0 +1,22 @@
+{
+  "name": "next-webflow-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter next-webflow build",
+    "test": "pnpm --filter next-webflow test",
+    "test:edge": "pnpm --filter next-webflow test:edge",
+    "typecheck": "pnpm --filter next-webflow typecheck",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "~8.71.2"
+  }
+}

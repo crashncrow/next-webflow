@@ -1,0 +1,45 @@
+{
+  "name": "next-webflow",
+  "version": "0.0.0",
+  "description": "Use the Webflow CMS as a headless content source in Next.js: types, caching, revalidation, previews, and rendering.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:edge": "vitest run --project edge",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "webflow",
+    "nextjs",
+    "cms",
+    "headless",
+    "revalidation"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "msw": "^3.0.3",
+    "tsdown": "^0.23.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

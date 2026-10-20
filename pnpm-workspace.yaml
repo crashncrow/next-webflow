@@ -1,0 +1,6 @@
+# spikes/ is intentionally excluded: the Webflow Cloud spike uses npm.
+packages:
+  - packages/*
+  - examples/*
+allowBuilds:
+  esbuild: true

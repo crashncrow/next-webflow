@@ -271,25 +271,44 @@ Next.js collects a fetch's tags onto the prerender **before** the request and re
 | | Before (5b, `?slug=` per page) | After (2b) |
 | --- | --- | --- |
 | `load-test` requests in a cold local build (35 pages) | 36 (1 list + 35 slug lookups) | **1** network request + 35 data-cache hits (0–14 ms) |
-| `authors` (include) | – | ~7 network requests (concurrent first renders in 10 workers miss together) + hits |
+| `authors` (include) | – | ~7 network requests (concurrent first renders in 10 workers miss together) + hits; **expected behavior**, not optimized: it's bounded by the number of build workers, not by pages |
 | Tags on a prerendered page | `webflow`, collection, slug | `webflow`, `load-test` collection, `authors` collection |
 
 `NEXT_PHASE` is set in Next 16 build workers (the list path was taken). After the deploy: staged edit + `POST /items/publish` of `load-test-item-7` (18:56:38) → `collection_item_published` → the prerendered page showed the new name on the first check, on Cloud and locally (after `revalidateTag` of the collection tag).
 
-Found while deploying: **the CLI's build reuses `.next/cache/fetch-cache` from earlier local builds** (`generateStaticParams` took 19 ms: all hits), so prerendered pages can carry data from an old build. `npm run deploy` now deletes `.next/cache/fetch-cache` first; the README tells users to.
+Found while deploying (upstream finding 13): **the CLI's build reuses `.next/cache/fetch-cache` from earlier local builds** (`generateStaticParams` took 19 ms: all hits), so prerendered pages can carry data from an old build. `npm run deploy` now deletes `.next/cache/fetch-cache` first; the README tells users to.
 
 Build-time cost of list lookups (each page parses every cached list page), estimated with synthetic 100-item pages built from real `load-test` items (232 KB per page): ~6.5 ms per page lookup at 5,000 items (~33 s CPU, ~3 s over 10 workers), ~26 ms at 20,000 (~52 s over 10 workers). Hence a **warning** at 5,000 (`maxBuildListItems`), not a fallback to per-slug requests.
 
+### 8. Draft mode on Cloud (stage 6, 2026-10-21)
+
+Route `/api/webflow/draft` = `createDraftHandler({ schema, resolvePath })`; `WEBFLOW_PREVIEW_SECRET` uploaded as a Cloud secret. `load-test-item-8` edited in staging only (name "Item 8 DRAFT", slug `load-test-item-8-draft`), link made with `npx next-webflow preview-url` (by item ID):
+
+| Step | Result |
+| --- | --- |
+| Public page | live name |
+| Signed link | 307 → `/spike/load/load-test-item-8-draft`; `__prerender_bypass` cookie set |
+| Follow with the cookie | staged name, new slug, author included |
+| Same draft slug without the cookie | 404 |
+| Tampered link (`collection` changed) | 401 "Invalid preview link signature" |
+| `?disable=1&path=/load/load-test-item-8` | 307 → `/spike/load/load-test-item-8`, live name again; draft slug 404 |
+| `?disable=1&path=//evil.com` | 307 → `/spike/` |
+| Link with `--expires 1`, used 2 s later | 401 "expired" |
+
+**Base path in route handlers:** the first deploy redirected to `/load/…` (no `/spike`). A debug route showed `request.url` = `https://…webflow.io/api/debug-url`, `nextUrl.basePath` = `""`, but `process.env.__NEXT_ROUTER_BASEPATH` = `/spike` (inlined by Next at build). The handler now resolves `basePath` option → `NEXT_PUBLIC_BASE_PATH` (Webflow's documented variable; set to `/spike` in the spike's Cloud env) → the inlined internal (upstream finding 14). The staged edit was reverted afterwards.
+
+**Protected drafts page (README example copied verbatim into `src/proxy.ts` and `src/app/drafts/page.tsx`):** Next 16 `proxy.ts` builds with "Node.js middleware support is experimental in cloudflare" and works: `/spike/drafts` → 401 with `WWW-Authenticate: Basic realm="Drafts"` without or with a wrong password, 200 with `DRAFTS_PASSWORD`; the listed links carry `/spike` (via `next/link`) and redirect to the staged item.
+
 ### What a paid plan (Premium, 20K items) would let us measure for real
 
-Everything above for 100-item pages and > 50 items is **extrapolated** from `load-test` (35 items, ~2.4 KB each). Measurements that need the upgrade:
+Everything above for 100-item pages and > 50 items is **extrapolated** from `load-test` (35 items, ~2.4 KB each). Plan (decided 2026-10-21): upgrade the test site for one month right before releasing v0.1 and measure the final library once. **Release blockers** (can force code changes): 2, 4, 5. **Documentation numbers**: 1, 3, 6. Measurements that need the upgrade:
 
-1. **Size and latency of a real 100-item page** (`/items/live?limit=100`), Data API and CDN: decides the 2 MB data cache warning and the per-page time used everywhere below.
-2. **Cold `getItems` over > 6 pages of 100** (≥ 700 items) on Cloud: time against the 20 s limit, requests, and rate limit used with concurrency 4.
-3. **`include` at the threshold:** a referenced collection of ~1,000 items (10 pages) fetched whole, cold and warm; and above it (e.g. 1,500), the by-ID path with many references per page.
-4. **`generateStaticParams` builds with hundreds of pages:** 1 + N vs build-time list lookups (2b), Data API vs CDN, and how the build stalls on `Retry-After` when the budget runs out.
-5. **A real `collection_item_published` with `items[100]`** (API publish of 100 IDs): handler round trip and whether all ~200 deferred tag writes land in D1.
-6. **Rate limit on a paid plan:** whether `X-RateLimit-Limit` matches the plan (120) or the 150 seen on Starter (upstream finding 11).
+1. *(docs)* **Size and latency of a real 100-item page** (`/items/live?limit=100`), Data API and CDN: decides the 2 MB data cache warning and the per-page time used everywhere below.
+2. *(release blocker)* **Cold `getItems` over > 6 pages of 100** (≥ 700 items) on Cloud: time against the 20 s limit, requests, and rate limit used with concurrency 4.
+3. *(docs)* **`include` at the threshold:** a referenced collection of ~1,000 items (10 pages) fetched whole, cold and warm; and above it (e.g. 1,500), the by-ID path with many references per page.
+4. *(release blocker)* **`generateStaticParams` builds with hundreds of pages:** 1 + N vs build-time list lookups (2b), Data API vs CDN, and how the build stalls on `Retry-After` when the budget runs out.
+5. *(release blocker)* **A real `collection_item_published` with `items[100]`** (API publish of 100 IDs): handler round trip and whether all ~200 deferred tag writes land in D1.
+6. *(docs)* **Rate limit on a paid plan:** whether `X-RateLimit-Limit` matches the plan (120) or the 150 seen on Starter (upstream finding 11).
 
 ## Contract test (real API vs fixtures)
 

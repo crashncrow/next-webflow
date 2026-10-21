@@ -16,12 +16,17 @@ const Callout = ({ props, slots, slotIds }: WebflowComponentProps) => (
 
 export default async function ComponentsPage() {
   const post = await cms.getItemBySlug("posts", "cms-future-10");
+  // Written in Webflow's editor: images (with and without alt), YouTube video, tweet, code block.
+  const sample = await cms.getItemBySlug("posts", "cms-trends-2023-5");
   const extra =
     '<p><a id="internal" href="/load/load-test-item-1">internal</a> <a id="external" href="https://example.com">external</a></p>' +
     '<wf-component name="Callout" prop-title="Heads up"><wf-prop name="b1" label="Body"><p>Bring your towel.</p></wf-prop></wf-component>';
   return (
-    <main>
+    <main style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px" }}>
       <h1>Components</h1>
+      <section id="sample">
+        <WebflowRichText html={sample?.fieldData.body} />
+      </section>
       <section id="body">
         <WebflowRichText html={post?.fieldData.body} />
       </section>

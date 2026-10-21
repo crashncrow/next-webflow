@@ -169,9 +169,20 @@ Six signed webhooks registered with `npm run webhooks -- register` (every CMS ev
 | 6 | Publish site | `site_publish` | `siteId, publishedOn, domains, publishedBy, publishSource` | `webflow` | ✔ |
 | 7 | `PATCH /items/live` (API) | **only `changed`** | flat, `isDraft: false`, `lastPublished` = `lastUpdated` | nothing → **stale list** | stale until the next invalidation |
 
+**Re-run with the new mapping** (deploy `f0f22fc9`, 2026-10-21, created/changed invalidate unless `isDraft === true`):
+
+| # | Action | Webhooks (in order) | Payload | Invalidated | Visible in `/library` |
+| --- | --- | --- | --- | --- | --- |
+| 7b | `PATCH /items/live` (API), same as 7 | only `changed` | flat, `isDraft: false` | collection + item | new name 3 s after the PATCH, on its own ✔ |
+| 8 | `POST /items/live` (API create, `npm run api-create-live`) | `created`, `published` (`items[]`) | `created`: `isDraft: false`, `lastPublished` = `lastUpdated` | collection + item (both events) | listed ~1.8 s after the POST ✔ |
+| 9 | New item in the CMS, saved, not published | `created`, then `changed` ×2 (later saves) | `isDraft: true`, `lastPublished: null` | nothing | unchanged ✔ |
+
+Deploying non-interactively needs the mount: `npx webflow apps deploy -a <appId> -e main -m /spike -s <siteId>`; the builder still deletes `open-next.config.ts` (restore it from git after each deploy).
+
 Conclusions:
 - Flags are `isArchived`/`isDraft`; `collection_item_published` uses `items[]`, every other item event a flat item (upstream finding 5).
 - `isDraft` is `true` only while an item has staged changes. Mapping changed (2026-10-21): `created`/`changed` invalidate unless `isDraft === true` (fail-safe; timestamps are logged, never used), and `webhooks register` subscribes to every CMS event by default. Fixes case 7.
+- Unlike edits, API creates also fire `published`; the new mapping is needed for API edits only, and harmless (double invalidation) for creates.
 - Case 4 is a Webflow API inconsistency (upstream finding 8). README documents publishing the site after deletes.
 - The Cloud app kept serving after site publishes. Raw payloads → `test/fixtures/api/webhooks/` (`publishedBy` anonymized).
 

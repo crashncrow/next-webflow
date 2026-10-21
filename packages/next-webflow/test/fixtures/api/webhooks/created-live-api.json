@@ -1,0 +1,36 @@
+{
+  "triggerType": "collection_item_created",
+  "payload": {
+    "id": "6ad8e2341ed5ba0861f789a0",
+    "siteId": "6ad820fdc7a6d0801b96394e",
+    "workspaceId": "6ad7740577ac4a39b66b0410",
+    "collectionId": "6ad82366355bfa1700d50617",
+    "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+    "lastPublished": "2026-10-21T16:03:00.503Z",
+    "lastUpdated": "2026-10-21T16:03:00.503Z",
+    "createdOn": "2026-10-21T16:03:00.503Z",
+    "isArchived": false,
+    "isDraft": false,
+    "fieldData": {
+      "_locale": "6ad821e739d35cd41a8c5fce",
+      "body": "<p>E2E API created</p>",
+      "main-image": null,
+      "gallery": null,
+      "video": null,
+      "website": null,
+      "contact-email": null,
+      "phone": null,
+      "reading-time": null,
+      "publish-date": null,
+      "featured": false,
+      "accent-color": null,
+      "attachment": null,
+      "category": null,
+      "author": null,
+      "co-authors": null,
+      "name": "E2E API created",
+      "slug": "e2e-api-created",
+      "_noSearch": false
+    }
+  }
+}

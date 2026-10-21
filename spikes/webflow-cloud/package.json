@@ -15,7 +15,8 @@
     "measure": "node --env-file=local.env scripts/measure-cache.mjs",
     "watch": "node --env-file=local.env scripts/watch-e2e.mjs",
     "api-edit-live": "node --env-file=local.env --env-file=seed.env scripts/api-edit-live.mjs",
-    "webhooks": "node --env-file=seed.env node_modules/next-webflow/dist/cli.mjs webhooks --env-file local.env --token-env WEBFLOW_ADMIN_TOKEN"
+    "webhooks": "node --env-file=seed.env node_modules/next-webflow/dist/cli.mjs webhooks --env-file local.env --token-env WEBFLOW_ADMIN_TOKEN",
+    "api-create-live": "node --env-file=local.env --env-file=seed.env scripts/api-create-live.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.12",

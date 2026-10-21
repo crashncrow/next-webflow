@@ -23,7 +23,8 @@ export interface CliIO {
   log: (message: string) => void;
   warn: (message: string) => void;
   readFile: (path: string) => string | undefined;
-  writeFile: (path: string, content: string) => void;
+  /** Creates missing folders. `secret` files are written with mode 0600. */
+  writeFile: (path: string, content: string, options?: { secret?: boolean }) => void;
   /** Resolves true when the user confirms. */
   confirm: (question: string) => Promise<boolean>;
 }
@@ -173,7 +174,7 @@ export async function registerWebhooks(context: CommandContext, options: Registe
       io.warn(`Add these to ${ENV.webhookSecret} (append to existing values, comma-separated).`);
     } else {
       const current = io.readFile(options.envFile) ?? "";
-      io.writeFile(options.envFile, mergeEnvList(current, ENV.webhookSecret, secrets));
+      io.writeFile(options.envFile, mergeEnvList(current, ENV.webhookSecret, secrets), { secret: true });
       io.log(`Saved ${secrets.length} secret(s) to ${ENV.webhookSecret} in ${options.envFile}.`);
     }
     io.warn("Webflow shows webhook secrets only once: keep them safe; they can't be retrieved later.");

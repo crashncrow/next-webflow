@@ -221,8 +221,12 @@ describe("tagsForEvent (default mapping)", () => {
   });
 
   it("collection_item_created follows the same rule", () => {
-    expect(tagsForEvent(webhookBodies.collection_item_created)).toEqual([]);
-    expect(tagsForEvent({ ...real.changedLiveApi, triggerType: "collection_item_created" })).toEqual([posts, post]);
+    expect(tagsForEvent(real.createdDesigner)).toEqual([]);
+    expect(tagsForEvent(real.createdDesigner, { invalidateOnStagedChanges: true })).toEqual([
+      posts,
+      `webflow:item:${real.createdDesigner.payload.id}`,
+    ]);
+    expect(tagsForEvent(real.createdLiveApi)).toEqual([posts, `webflow:item:${real.createdLiveApi.payload.id}`]);
   });
 
   it("accepts an already parsed event", () => {

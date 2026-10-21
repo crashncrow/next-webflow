@@ -1,0 +1,65 @@
+{
+  "triggerType": "collection_item_created",
+  "payload": {
+    "id": "6ad8e2c12051371d5209c7a5",
+    "siteId": "6ad820fdc7a6d0801b96394e",
+    "workspaceId": "6ad7740577ac4a39b66b0410",
+    "collectionId": "6ad82366355bfa1700d50617",
+    "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+    "lastPublished": null,
+    "lastUpdated": "2026-10-21T16:05:21.754Z",
+    "createdOn": "2026-10-21T16:05:21.754Z",
+    "isArchived": false,
+    "isDraft": true,
+    "fieldData": {
+      "_locale": "6ad821e739d35cd41a8c5fce",
+      "body": [
+        {
+          "_id": "7a59585f-fb77-08d1-4be5-c104fc0d7e43",
+          "tag": "p",
+          "type": "Paragraph",
+          "classes": [],
+          "children": [
+            "7a59585f-fb77-08d1-4be5-c104fc0d7e44"
+          ]
+        },
+        {
+          "v": "E2E Designer created body",
+          "_id": "7a59585f-fb77-08d1-4be5-c104fc0d7e44",
+          "text": true
+        },
+        {
+          "_id": "7a59585f-fb77-08d1-4be5-c104fc0d7e47",
+          "tag": "p",
+          "type": "Paragraph",
+          "classes": [],
+          "children": [
+            "7a59585f-fb77-08d1-4be5-c104fc0d7e45"
+          ]
+        },
+        {
+          "v": "‍",
+          "_id": "7a59585f-fb77-08d1-4be5-c104fc0d7e45",
+          "text": true
+        }
+      ],
+      "main-image": null,
+      "gallery": null,
+      "video": null,
+      "website": null,
+      "contact-email": null,
+      "phone": null,
+      "reading-time": null,
+      "publish-date": null,
+      "featured": false,
+      "accent-color": null,
+      "attachment": null,
+      "category": null,
+      "author": null,
+      "co-authors": null,
+      "name": "E2E Designer created",
+      "slug": "e2e-designer-created",
+      "_noSearch": false
+    }
+  }
+}

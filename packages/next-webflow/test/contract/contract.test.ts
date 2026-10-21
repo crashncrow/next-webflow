@@ -72,6 +72,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     save("collection", collection);
     // Every collection with its fields: typegen's input.
     save("collections", await Promise.all(sites.collections.map((candidate) => client.request(`/collections/${candidate.id}`))));
+    // Referenced items (posts.author / co-authors): include's input.
+    const authors = sites.collections.find((candidate) => candidate.slug === "authors");
+    if (authors) save("authors-items-live", await client.request(`/collections/${authors.id}/items/live`, { query: { limit: 100 } }));
     diffs.collection = diffShapes(realPostsCollection, collection);
 
     live = await client.request(`/collections/${match.id}/items/live`, { query: { limit: 100 } });

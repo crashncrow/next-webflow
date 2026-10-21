@@ -10,14 +10,18 @@ interface Entry {
  * Minimal stand-in for the Next.js data cache: `force-cache` responses are stored per URL with
  * their `next.tags`, and `revalidateTag` evicts every entry carrying one of the given tags.
  */
-export function createFakeNextCache(options: { draft?: boolean } = {}) {
+export function createFakeNextCache(options: { draft?: boolean; build?: boolean } = {}) {
   const entries = new Map<string, Entry>();
+  /** Requests that reached the network (cache misses). */
   const requests: Array<{ url: string; init: RequestInit & { next?: { tags?: string[] } } }> = [];
+  /** Every fetch call, hits included: Next.js attaches a call's tags to the page either way. */
+  const calls: Array<{ url: string; tags: string[] }> = [];
   let draft = options.draft ?? false;
 
   const fetch: typeof globalThis.fetch = async (input, init = {}) => {
     const url = String(input);
     const nextInit = init as RequestInit & { next?: { tags?: string[] } };
+    calls.push({ url, tags: nextInit.next?.tags ?? [] });
     const cacheable = !draft && nextInit.cache === "force-cache";
     const hit = cacheable ? entries.get(url) : undefined;
     if (hit) return new Response(hit.body, { status: hit.status });
@@ -32,12 +36,14 @@ export function createFakeNextCache(options: { draft?: boolean } = {}) {
   const adapter: CacheAdapter = {
     init: (tags) => ({ cache: "force-cache", next: { tags } }),
     isDraft: async () => draft,
+    isBuild: () => options.build ?? false,
   };
 
   return {
     fetch,
     adapter,
     requests,
+    calls,
     revalidateTag(...tags: string[]) {
       for (const [url, entry] of entries) {
         if (entry.tags.some((tag) => tags.includes(tag))) entries.delete(url);

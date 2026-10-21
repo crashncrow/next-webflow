@@ -1,6 +1,8 @@
 import {
   createWebflowClient,
+  MAX_PAGE_SIZE,
   type FetchInit,
+  type ResponseInfo,
   type WebflowClient,
   type WebflowClientConfig,
   type WebflowHost,
@@ -12,7 +14,10 @@ import { normalizeItem, schemaFromApi, type ApiCollection, type SchemaMismatch }
 import type { QueryParams, QueryValue } from "./query";
 import type {
   CollectionSchema,
+  FieldSchema,
   ItemOf,
+  ItemWithIncludes,
+  ReferenceKeys,
   UnknownFields,
   WebflowItem,
   WebflowRawItem,
@@ -26,6 +31,8 @@ export interface CacheAdapter {
   init(tags: string[]): FetchInit;
   /** Whether to read staged (draft) content instead of published content. */
   isDraft(): Promise<boolean>;
+  /** Whether this is a production build (prerendering). Enables build-time slug lookups from the list. */
+  isBuild?(): boolean;
 }
 
 /** No caching, never draft. Used outside a framework (scripts, tests). */
@@ -50,6 +57,19 @@ export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefine
   cache?: CacheAdapter | undefined;
   /** `warn` for problems (stale schema…); optional `debug` for one-time notes (never-published collections). */
   logger?: (Pick<Console, "warn"> & Partial<Pick<Console, "debug">>) | undefined;
+  /**
+   * `include` reads the whole referenced collection (cached under its collection tag) when it has
+   * at most this many items; above it, only the referenced items, by ID. Default `1000`.
+   */
+  maxIncludeItems?: number | undefined;
+  /**
+   * During `next build`, `getItemBySlug` finds the slug in the cached collection list instead of
+   * one request per page (`buildSlugLookups: "list"`). Above this many items it warns (each page
+   * reads the whole cached list) but keeps using the list. Default `5000`.
+   */
+  maxBuildListItems?: number | undefined;
+  /** `list` (default): build-time slug lookups read the cached list. `request`: one `?slug=` request per page. */
+  buildSlugLookups?: "list" | "request" | undefined;
 }
 
 export type SortBy = "createdOn" | "lastPublished" | "lastUpdated" | "name" | "slug";
@@ -72,6 +92,12 @@ export interface ReadOptions {
   /** Locale to read; defaults to the primary locale. */
   cmsLocaleId?: string | undefined;
   signal?: AbortSignal | undefined;
+  /**
+   * Reference / MultiReference fields (camelCase) to replace with the referenced items, one level
+   * deep. Missing or unpublished items become `null` (Reference) or are left out (MultiReference);
+   * `{ raw: true }` keeps the original IDs.
+   */
+  include?: readonly string[] | undefined;
 }
 
 export interface GetItemsOptions extends ReadOptions {
@@ -84,19 +110,35 @@ export interface GetItemsOptions extends ReadOptions {
   filter?: { [field: string]: FilterOperators | undefined } | undefined;
 }
 
-type Raw = { raw: true };
+type Raw = { raw: true; include?: undefined };
 type NotRaw = { raw?: false | undefined };
+type WithInclude<I> = NotRaw & { include: I };
+type NoInclude = NotRaw & { include?: undefined };
 
 type CollectionSlug<S extends WebflowSchema> = Extract<keyof S, string>;
 
 /** Functions typed from a generated schema: collection slugs and item fields are inferred. */
 export interface TypedWebflowCms<S extends WebflowSchema> {
   getItems<K extends CollectionSlug<S>>(collection: K, options: GetItemsOptions & Raw): Promise<WebflowRawItem[]>;
-  getItems<K extends CollectionSlug<S>>(collection: K, options?: GetItemsOptions & NotRaw): Promise<ItemOf<S, K>[]>;
+  getItems<K extends CollectionSlug<S>, const I extends readonly ReferenceKeys<S, K>[]>(
+    collection: K,
+    options: GetItemsOptions & WithInclude<I>,
+  ): Promise<ItemWithIncludes<S, K, I[number]>[]>;
+  getItems<K extends CollectionSlug<S>>(collection: K, options?: GetItemsOptions & NoInclude): Promise<ItemOf<S, K>[]>;
   getItemBySlug<K extends CollectionSlug<S>>(collection: K, slug: string, options: ReadOptions & Raw): Promise<WebflowRawItem | null>;
-  getItemBySlug<K extends CollectionSlug<S>>(collection: K, slug: string, options?: ReadOptions & NotRaw): Promise<ItemOf<S, K> | null>;
+  getItemBySlug<K extends CollectionSlug<S>, const I extends readonly ReferenceKeys<S, K>[]>(
+    collection: K,
+    slug: string,
+    options: ReadOptions & WithInclude<I>,
+  ): Promise<ItemWithIncludes<S, K, I[number]> | null>;
+  getItemBySlug<K extends CollectionSlug<S>>(collection: K, slug: string, options?: ReadOptions & NoInclude): Promise<ItemOf<S, K> | null>;
   getItem<K extends CollectionSlug<S>>(collection: K, itemId: string, options: ReadOptions & Raw): Promise<WebflowRawItem | null>;
-  getItem<K extends CollectionSlug<S>>(collection: K, itemId: string, options?: ReadOptions & NotRaw): Promise<ItemOf<S, K> | null>;
+  getItem<K extends CollectionSlug<S>, const I extends readonly ReferenceKeys<S, K>[]>(
+    collection: K,
+    itemId: string,
+    options: ReadOptions & WithInclude<I>,
+  ): Promise<ItemWithIncludes<S, K, I[number]> | null>;
+  getItem<K extends CollectionSlug<S>>(collection: K, itemId: string, options?: ReadOptions & NoInclude): Promise<ItemOf<S, K> | null>;
 }
 
 /** Functions without a generated schema: any collection slug, fields typed via the generic. */
@@ -115,11 +157,11 @@ export type WebflowCms<S extends WebflowSchema | undefined> = [S] extends [Webfl
 
 /** How long a schema fetched from the API is reused in memory (on top of the framework cache). */
 const REMOTE_SCHEMA_TTL_MS = 60_000;
-/**
- * How long a "never published" answer is remembered per instance. Next.js only caches 200
- * responses, so the live list's 404 can't sit in the data cache under the collection tags.
- */
-const NEVER_PUBLISHED_TTL_MS = 60_000;
+const DEFAULT_MAX_INCLUDE_ITEMS = 1000;
+const DEFAULT_MAX_BUILD_LIST_ITEMS = 5000;
+/** Next.js doesn't put fetch responses over 2 MB in its data cache. */
+const NEXT_CACHE_MAX_BYTES = 2 * 1024 * 1024;
+
 
 interface ReadContext {
   host: WebflowHost;
@@ -129,9 +171,20 @@ interface ReadContext {
 
 export function createWebflowCms<S extends WebflowSchema | undefined = undefined>(
   config: WebflowCmsConfig<S> = {},
-  client: WebflowClient = createWebflowClient(config),
+  providedClient?: WebflowClient,
 ): WebflowCms<S> {
+  const client =
+    providedClient ??
+    createWebflowClient({
+      ...config,
+      onResponse: (info) => {
+        config.onResponse?.(info);
+        watchResponseSize(info);
+      },
+    });
   const generated: WebflowSchema | undefined = config.schema;
+  const maxIncludeItems = config.maxIncludeItems ?? DEFAULT_MAX_INCLUDE_ITEMS;
+  const maxBuildListItems = config.maxBuildListItems ?? DEFAULT_MAX_BUILD_LIST_ITEMS;
   const source = config.source ?? "data";
   const cache = config.cache ?? noCache;
   const logger = config.logger ?? console;
@@ -140,34 +193,47 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
   /** Collections whose generated schema turned out to be stale: use the API schema instead. */
   const stale = new Set<string>();
   const warned = new Set<string>();
-  /** Collection ID → until when its live list is known to be empty (never published). */
-  const neverPublished = new Map<string, number>();
 
   const warnOnce = (key: string, message: string) => {
     if (warned.has(key)) return;
     warned.add(key);
     logger.warn(`[next-webflow] ${message}`);
   };
+  const debugOnce = (key: string, message: string) => {
+    if (warned.has(key)) return;
+    warned.add(key);
+    logger.debug?.(`[next-webflow] ${message}`);
+  };
+
+  function watchResponseSize(info: ResponseInfo): void {
+    if (info.init?.cache !== "force-cache" || info.bytes <= NEXT_CACHE_MAX_BYTES) return;
+    const path = new URL(info.url).pathname;
+    warnOnce(
+      `large:${path}`,
+      `A ${(info.bytes / 1024 / 1024).toFixed(1)} MB response (${path}) is over the 2 MB limit of the Next.js data ` +
+        "cache, so it isn't cached and is fetched again on every render. Pages of 100 items hit this when " +
+        "items average over ~20 KB (long rich text).",
+    );
+  }
 
   /**
    * Webflow answers 404 (not an empty list) on `/items/live` of a collection that was never
-   * published. If the collection exists, treat it as empty; otherwise rethrow.
+   * published. If the collection exists, treat it as empty; otherwise rethrow. Not memoized:
+   * Next.js doesn't cache the 404, and an in-memory memo would outlive the `site_publish`
+   * invalidation and freeze `[]` into the regenerated page. The page itself stays cached with
+   * the collection tags, so the extra request only happens when it regenerates.
    */
   async function readLive<T>(collection: CollectionSchema, ctx: ReadContext, read: () => Promise<T>, empty: T): Promise<T> {
     if (ctx.draft) return read();
-    if ((neverPublished.get(collection.id) ?? 0) > Date.now()) return empty;
     try {
       return await read();
     } catch (error) {
       if (!(error instanceof WebflowNotFoundError)) throw error;
       await fetchSchemaById(collection.id); // throws if the collection itself doesn't exist
-      neverPublished.set(collection.id, Date.now() + NEVER_PUBLISHED_TTL_MS);
-      if (!warned.has(`unpublished:${collection.id}`)) {
-        warned.add(`unpublished:${collection.id}`);
-        logger.debug?.(
-          `[next-webflow] Collection "${collection.slug}" has never been published; treating it as empty until it is.`,
-        );
-      }
+      debugOnce(
+        `unpublished:${collection.id}`,
+        `Collection "${collection.slug}" has never been published; treating it as empty until it is.`,
+      );
       return empty;
     }
   }
@@ -289,15 +355,21 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
   const itemsPath = (collectionId: string, draft: boolean) =>
     `/collections/${encodeURIComponent(collectionId)}/items${draft ? "" : "/live"}`;
 
-  async function getItems(slug: string, options: GetItemsOptions & { raw?: boolean } = {}) {
-    const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const { items } = await readLive(
+  const emptyList = (): WebflowListResponse<WebflowRawItem> => ({ items: [], pagination: { limit: 0, offset: 0, total: 0 } });
+
+  /** Every live (or staged) item of a collection, through the same cached pages as `getItems`. */
+  function listAll(
+    collection: CollectionSchema,
+    ctx: ReadContext,
+    options: { query: QueryParams; limit?: number | undefined; offset?: number | undefined; signal?: AbortSignal | undefined },
+  ) {
+    return readLive(
       collection,
       ctx,
       () =>
         client.paginate<WebflowRawItem>(itemsPath(collection.id, ctx.draft), {
           host: ctx.host,
-          query: buildQuery(collection, options),
+          query: options.query,
           limit: options.limit,
           offset: options.offset,
           signal: options.signal,
@@ -305,37 +377,83 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
         }),
       { items: [] as WebflowRawItem[], total: 0 },
     );
-    return options.raw ? items : normalizeAll(slug, collection, items);
+  }
+
+  function assertIncludeAllowed(options: { raw?: boolean | undefined; include?: readonly string[] | undefined }) {
+    if (options.raw && options.include?.length) {
+      throw new WebflowConfigError("`include` can't be combined with `raw: true` (raw items keep the referenced IDs).");
+    }
+  }
+
+  async function getItems(slug: string, options: GetItemsOptions & { raw?: boolean } = {}) {
+    assertIncludeAllowed(options);
+    const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
+    const { items } = await listAll(collection, ctx, {
+      query: buildQuery(collection, options),
+      limit: options.limit,
+      offset: options.offset,
+      signal: options.signal,
+    });
+    if (options.raw) return items;
+    return withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, items), options);
   }
 
   async function getItemBySlug(slug: string, itemSlug: string, options: ReadOptions & { raw?: boolean } = {}) {
+    assertIncludeAllowed(options);
     const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const { items } = await readLive(
-      collection,
-      ctx,
-      () =>
-        client.request<WebflowListResponse<WebflowRawItem>>(itemsPath(collection.id, ctx.draft), {
-          host: ctx.host,
-          query: { slug: itemSlug, cmsLocaleId: options.cmsLocaleId },
-          signal: options.signal,
-          init: ctx.init(slugLookupTags(collection.id, itemSlug)),
-        }),
-      { items: [] as WebflowRawItem[], pagination: { limit: 0, offset: 0, total: 0 } },
-    );
-    const raw = items.find((item) => item.fieldData.slug === itemSlug);
+    let raw: WebflowRawItem | undefined;
+    if (!ctx.draft && cache.isBuild?.() && (config.buildSlugLookups ?? "list") === "list") {
+      // Build: every prerendered page reads the same cached list (a data cache hit, no API
+      // request) instead of one `?slug=` request each. The list fetch also tags the page.
+      const { items } = await listAll(collection, ctx, {
+        query: buildQuery(collection, { cmsLocaleId: options.cmsLocaleId }),
+        signal: options.signal,
+      });
+      if (items.length > maxBuildListItems) {
+        warnOnce(
+          `build-list:${slug}`,
+          `"${slug}" has ${items.length} items (over maxBuildListItems, ${maxBuildListItems}): every prerendered page ` +
+            "reads the whole cached list to find its slug. Prerender a subset in generateStaticParams and render the " +
+            'rest on demand (dynamicParams), or set buildSlugLookups: "request" (one API request per page).',
+        );
+      }
+      raw = items.find((item) => item.fieldData.slug === itemSlug);
+    } else {
+      const { items } = await readLive(
+        collection,
+        ctx,
+        () =>
+          client.request<WebflowListResponse<WebflowRawItem>>(itemsPath(collection.id, ctx.draft), {
+            host: ctx.host,
+            query: { slug: itemSlug, cmsLocaleId: options.cmsLocaleId },
+            signal: options.signal,
+            init: ctx.init(slugLookupTags(collection.id, itemSlug)),
+          }),
+        emptyList(),
+      );
+      raw = items.find((item) => item.fieldData.slug === itemSlug);
+    }
     if (!raw) return null;
     if (options.raw) return raw;
-    const [item] = await normalizeAll(slug, collection, [raw]);
+    const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw]), options);
     return item ?? null;
   }
 
   async function getItem(slug: string, itemId: string, options: ReadOptions & { raw?: boolean } = {}) {
+    assertIncludeAllowed(options);
     const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const base = `/collections/${encodeURIComponent(collection.id)}/items/${encodeURIComponent(itemId)}`;
-    const path = ctx.draft ? base : `${base}/live`;
-    let raw: WebflowRawItem;
+    const raw = await fetchItemById(collection.id, itemId, ctx, options);
+    if (!raw) return null;
+    if (options.raw) return raw;
+    const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw]), options);
+    return item ?? null;
+  }
+
+  /** One item by ID, tagged with its item tag (also when it 404s, so republishing it invalidates). */
+  async function fetchItemById(collectionId: string, itemId: string, ctx: ReadContext, options: ReadOptions) {
+    const base = `/collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}`;
     try {
-      raw = await client.request<WebflowRawItem>(path, {
+      return await client.request<WebflowRawItem>(ctx.draft ? base : `${base}/live`, {
         host: ctx.host,
         query: { cmsLocaleId: options.cmsLocaleId },
         signal: options.signal,
@@ -345,12 +463,129 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
       if (error instanceof WebflowNotFoundError) return null;
       throw error;
     }
-    if (options.raw) return raw;
-    const [item] = await normalizeAll(slug, collection, [raw]);
-    return item ?? null;
+  }
+
+  /** The referenced collection's schema (generated if present) and slug. */
+  async function resolveTarget(collectionId: string): Promise<{ slug: string; schema: CollectionSchema }> {
+    const generatedSlug = Object.entries(generated ?? {}).find(([, collection]) => collection.id === collectionId)?.[0];
+    if (generatedSlug) return { slug: generatedSlug, schema: await resolveCollection(generatedSlug) };
+    const schema = await fetchSchemaById(collectionId);
+    return { slug: schema.slug, schema };
+  }
+
+  /**
+   * Referenced items by ID. Up to `maxIncludeItems` in the collection: the whole collection (same
+   * cached pages as `getItems`, tagged with the collection tag). Above: only `ids`, by ID, each
+   * under its item tag. Drafts always go by ID (nothing is cached).
+   */
+  async function loadReferenced(collectionId: string, ids: string[], ctx: ReadContext, options: ReadOptions) {
+    const { slug, schema } = await resolveTarget(collectionId);
+    let raws: WebflowRawItem[];
+    const byId = async () =>
+      (await Promise.all(ids.map((id) => fetchItemById(collectionId, id, ctx, options)))).filter(
+        (raw): raw is WebflowRawItem => raw !== null,
+      );
+    if (ctx.draft) {
+      raws = await byId();
+    } else {
+      const query = { cmsLocaleId: options.cmsLocaleId };
+      const first = await readLive(
+        schema,
+        ctx,
+        () =>
+          client.request<WebflowListResponse<WebflowRawItem>>(itemsPath(collectionId, false), {
+            host: ctx.host,
+            query: { ...query, offset: 0, limit: MAX_PAGE_SIZE },
+            signal: options.signal,
+            init: ctx.init(listTags(collectionId)),
+          }),
+        emptyList(),
+      );
+      const total = first.pagination.total;
+      if (total <= maxIncludeItems) {
+        const rest =
+          total > first.items.length
+            ? (
+                await client.paginate<WebflowRawItem>(itemsPath(collectionId, false), {
+                  host: ctx.host,
+                  query,
+                  offset: MAX_PAGE_SIZE,
+                  signal: options.signal,
+                  init: ctx.init(listTags(collectionId)),
+                })
+              ).items
+            : [];
+        raws = [...first.items, ...rest];
+      } else {
+        debugOnce(
+          `by-id:${collectionId}`,
+          `"${slug}" has ${total} items (over maxIncludeItems, ${maxIncludeItems}): include reads only the referenced items, by ID.`,
+        );
+        raws = await byId();
+      }
+    }
+    const items = await normalizeAll(slug, schema, raws);
+    return new Map(items.map((item) => [item.id, item]));
+  }
+
+  /** Replaces the `include`d reference fields with the referenced items. */
+  async function withIncludes(
+    slug: string,
+    collection: CollectionSchema,
+    ctx: ReadContext,
+    items: WebflowItem[],
+    options: ReadOptions,
+  ): Promise<WebflowItem[]> {
+    const include = options.include ?? [];
+    if (include.length === 0 || items.length === 0) return items;
+
+    const fields = include.map((key) => {
+      const field = collection.fields[key];
+      if (!field || (field.type !== "Reference" && field.type !== "MultiReference")) {
+        throw new WebflowConfigError(`include: "${key}" is not a Reference or MultiReference field of "${slug}".`);
+      }
+      if (!field.collectionId) {
+        throw new WebflowConfigError(`include: the schema doesn't say which collection "${slug}.${key}" references.`);
+      }
+      return [key, field as FieldSchema & { collectionId: string }] as const;
+    });
+
+    const idsByTarget = new Map<string, Set<string>>();
+    for (const [key, field] of fields) {
+      const ids = idsByTarget.get(field.collectionId) ?? new Set<string>();
+      for (const item of items) for (const id of referenceIds(item.fieldData[key])) ids.add(id);
+      idsByTarget.set(field.collectionId, ids);
+    }
+    const loaded = new Map(
+      await Promise.all(
+        [...idsByTarget].map(
+          async ([collectionId, ids]) =>
+            [collectionId, ids.size ? await loadReferenced(collectionId, [...ids], ctx, options) : new Map()] as const,
+        ),
+      ),
+    );
+
+    return items.map((item) => {
+      const fieldData: Record<string, unknown> = { ...item.fieldData };
+      for (const [key, field] of fields) {
+        const found = loaded.get(field.collectionId) ?? new Map<string, WebflowItem>();
+        const ids = referenceIds(item.fieldData[key]);
+        const resolved = ids.flatMap((id) => found.get(id) ?? []);
+        if (resolved.length < ids.length) {
+          debugOnce(`missing:${slug}.${key}`, `Some items referenced by "${slug}.${key}" are missing or unpublished; left out.`);
+        }
+        fieldData[key] = field.type === "MultiReference" ? resolved : (resolved[0] ?? null);
+      }
+      return { ...item, fieldData } as WebflowItem;
+    });
   }
 
   return { getItems, getItemBySlug, getItem } as unknown as WebflowCms<S>;
+}
+
+function referenceIds(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
 }
 
 function mergeMismatches(mismatches: Array<SchemaMismatch | undefined>): SchemaMismatch | undefined {

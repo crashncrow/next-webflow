@@ -1,0 +1,48 @@
+{
+  "items": [
+    {
+      "id": "6ad824043c4cdef8ff529d98",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": "2026-10-21T02:38:41.410Z",
+      "lastUpdated": "2026-10-21T02:31:32.602Z",
+      "createdOn": "2026-10-21T02:31:32.602Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "name": "Alan Turing",
+        "slug": "alan-turing"
+      }
+    },
+    {
+      "id": "6ad823ff2def343f12b77354",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": "2026-10-21T02:38:41.410Z",
+      "lastUpdated": "2026-10-21T02:31:27.112Z",
+      "createdOn": "2026-10-21T02:31:27.112Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "name": "Grace Hopper",
+        "slug": "grace-hopper"
+      }
+    },
+    {
+      "id": "6ad823ee45bfdd80dc4a732a",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": "2026-10-21T02:38:41.410Z",
+      "lastUpdated": "2026-10-21T02:31:10.182Z",
+      "createdOn": "2026-10-21T02:31:10.182Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "name": "Ada Lovelace",
+        "slug": "ada-lovelace"
+      }
+    }
+  ],
+  "pagination": {
+    "limit": 100,
+    "offset": 0,
+    "total": 3
+  }
+}

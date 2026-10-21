@@ -347,20 +347,33 @@ describe("never-published collection (live list answers 404)", () => {
     expect(cache.requests[0]?.init.next?.tags).toEqual(["webflow", `webflow:collection:${POSTS_ID}`]);
   });
 
-  it("remembers the 404 for 60 s per instance, then sees the published items", async () => {
+  it("sees the published items as soon as site_publish invalidates (no memo outliving the webhook)", async () => {
     vi.useFakeTimers({ now: Date.UTC(2026, 9, 21), toFake: ["Date"] });
     const { calls, publish } = site();
-    const { cms } = setup();
+    const { cms, cache } = setup();
 
-    await cms.getItems("posts");
-    await cms.getItems("posts");
-    expect(calls.live).toBe(1);
+    // Before the first publish: rendered empty (the 404 isn't cached, the page would be).
+    await expect(cms.getItems("posts")).resolves.toEqual([]);
 
+    // First site publish → webhook → revalidateTag("webflow") → the page regenerates 5 s later.
     publish();
-    vi.setSystemTime(Date.now() + 61_000);
+    cache.revalidateTag("webflow");
+    vi.setSystemTime(Date.now() + 5_000);
     await expect(cms.getItems("posts")).resolves.toHaveLength(1);
     expect(calls.live).toBe(2);
+
+    // And the regenerated result is cached normally afterwards.
+    await cms.getItems("posts");
+    expect(calls.live).toBe(2);
     vi.useRealTimers();
+  });
+
+  it("asks Webflow again on every uncached read while the collection is unpublished", async () => {
+    const { calls } = site();
+    const { cms } = setup();
+    await cms.getItems("posts");
+    await cms.getItems("posts");
+    expect(calls.live).toBe(2);
   });
 
   it("rethrows when the collection itself doesn't exist", async () => {

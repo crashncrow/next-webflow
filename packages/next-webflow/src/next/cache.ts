@@ -2,6 +2,7 @@
 // (CLI, scripts). Bundlers resolve both forms.
 import { draftMode } from "next/headers.js";
 import type { CacheAdapter } from "../core/cms";
+import { readEnv } from "../core/env";
 
 /**
  * Next.js data cache via `fetch` (`force-cache` + `next.tags`), not `use cache`
@@ -18,4 +19,6 @@ export const nextCache: CacheAdapter = {
       return false;
     }
   },
+  // Next.js sets NEXT_PHASE in every build worker (next/constants PHASE_PRODUCTION_BUILD).
+  isBuild: () => readEnv("NEXT_PHASE") === "phase-production-build",
 };

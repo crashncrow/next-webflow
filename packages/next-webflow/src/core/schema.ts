@@ -191,3 +191,34 @@ export interface WebflowRawItem {
 
 /** Normalized item type for a collection of a schema. */
 export type ItemOf<S extends WebflowSchema, K extends keyof S> = WebflowItem<FieldsOf<S[K]>>;
+
+/** Field keys of collection `K` that hold references (`Reference` or `MultiReference`). */
+export type ReferenceKeys<S extends WebflowSchema, K extends keyof S> = Extract<
+  {
+    [F in keyof S[K]["fields"]]: S[K]["fields"][F]["type"] extends "Reference" | "MultiReference" ? F : never;
+  }[keyof S[K]["fields"]],
+  string
+>;
+
+/** Slug of the schema collection whose ID is `Id` (`never` if it isn't in the schema). */
+type SlugById<S extends WebflowSchema, Id> = {
+  [K in keyof S]: S[K]["id"] extends Id ? (Id extends S[K]["id"] ? K : never) : never;
+}[keyof S];
+
+/** The referenced item type: from the schema when the target collection is in it. */
+type ReferencedItem<S extends WebflowSchema, F extends FieldSchema> = [SlugById<S, F["collectionId"]>] extends [never]
+  ? WebflowItem
+  : ItemOf<S, SlugById<S, F["collectionId"]>>;
+
+/**
+ * An included reference: `Reference` → the item, or `null` when it's empty, missing or
+ * unpublished; `MultiReference` → the items found, in order (missing ones are left out).
+ */
+export type IncludedValue<S extends WebflowSchema, F extends FieldSchema> = F["type"] extends "MultiReference"
+  ? ReferencedItem<S, F>[]
+  : ReferencedItem<S, F> | null;
+
+/** Item type of collection `K` with the reference fields `I` replaced by the referenced items. */
+export type ItemWithIncludes<S extends WebflowSchema, K extends keyof S, I extends ReferenceKeys<S, K>> = WebflowItem<
+  Simplify<Omit<FieldsOf<S[K]>, I> & { [P in I]: IncludedValue<S, S[K]["fields"][P]> }>
+>;

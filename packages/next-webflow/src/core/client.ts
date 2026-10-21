@@ -46,6 +46,17 @@ export interface WebflowClientConfig {
   retry?: RetryOptions | false | undefined;
   /** Max concurrent requests issued by this client. Default `4`. */
   concurrency?: number | undefined;
+  /** Called after every response (including retried ones), e.g. to watch response sizes. */
+  onResponse?: ((info: ResponseInfo) => void) | undefined;
+}
+
+export interface ResponseInfo {
+  method: string;
+  url: string;
+  status: number;
+  /** Body length in characters (≈ bytes for the API's JSON). */
+  bytes: number;
+  init: FetchInit | undefined;
 }
 
 /** Extra `fetch` options passed through untouched, e.g. Next.js `{ cache, next: { tags } }`. */
@@ -172,6 +183,7 @@ export function createWebflowClient(
         throw new WebflowNetworkError(`Request failed: ${method} ${url}`, { cause });
       }
 
+      config.onResponse?.({ method, url, status: response.status, bytes: bodyText.length, init: options.init });
       if (response.ok) return parseBody<T>(bodyText, method, url);
 
       const retryAfterMs =

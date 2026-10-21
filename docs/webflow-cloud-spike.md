@@ -13,48 +13,85 @@ App: `spikes/webflow-cloud/` (outside the pnpm workspace, npm, library installed
 - Limits: 6 simultaneous outgoing requests, 1,000 subrequests per request, 20 s request timeout, 30 s CPU, 128 MB memory, 10 MB worker bundle.
 - Next 16 logs "The Edge Runtime is deprecated" at build, while Webflow Cloud docs say API routes need `runtime = 'edge'`. The spike tests both runtimes.
 
+## Deploying the spike (secrets!)
+
+`webflow apps deploy` builds locally and OpenNext bakes every `.env*` file into the worker bundle in plain text (`.open-next/cloudflare/next-env.mjs`). So the spike keeps its values in **`local.env`** (deploy vars) and **`seed.env`** (write token, local only), both git-ignored and never named `.env*`.
+
+```bash
+cp local.env.example local.env          # fill in: read-only token, site ID, SPIKE_SECRET
+npm run deploy                          # refuses if any .env* file exists, then `webflow apps deploy`
+webflow apps env-vars import local.env --secret --dry-run
+webflow apps env-vars import local.env --secret
+npm run deploy                          # redeploy so the app picks up the variables
+```
+
+First deploy (2026-10-21): app `next-webflow-spike`, environment `main`, mount `/spike` on `next-webflow-d8ce88.webflow.io`. A first attempt was stopped before upload when the bundled secrets were found.
+
 ## Questions and how they're measured
 
 ### 1. Does the Next data cache persist across requests?
 
 Page `/probe` and routes `api/probe` (edge) / `api/probe-node` (node) do a `fetch(..., { cache: "force-cache", next: { tags: ["spike-probe"] } })` to `GET /v2/sites/{id}`. On a HIT the stored response comes back: its `date` and `x-ratelimit-remaining` headers stay frozen and `durationMs` is small. `isolate` identifies the Worker isolate: a HIT across different isolates means a shared cache; only within one isolate means in-memory only.
 
+Measured 2026-10-21 (deploy `c3bf1486`), 12 requests from curl, 1 s apart:
+
 | Runtime | HIT within an isolate? | HIT across isolates? | Survives a redeploy? | Notes |
 | --- | --- | --- | --- | --- |
-| page (node) | | | | |
-| route (edge) | | | | |
-| route (node) | | | | |
+| page (node) | — | — | — | Not measured separately; same mechanism as the node route. |
+| route (edge) | — | — | — | **Every request is a 500** (`x-opennext: 1`, plain "Internal Server Error"), even `api/revalidate` before checking the secret. |
+| route (node) | **No** | **No** | — | Every request re-fetches: new `date`, `x-ratelimit-remaining` 149 → 144, also twice on the same isolate (`60646244`). 5 isolates in 6 requests. |
+
+**Why:** the builder generates `open-next.config.ts` as `defineCloudflareConfig()` with no arguments, so OpenNext's `incrementalCache`, `tagCache` and `queue` are all `"dummy"`. There is no data cache, `force-cache` is a no-op, and `revalidateTag` has nothing to invalidate. The builder only generates that file when the app has none ("open-next.config not found, creating…"), and it keeps a user `wrangler.json` (`clouduser.wrangler.json`), so a KV-backed cache configured by the app may be possible (untested).
+
+#### With a KV incremental cache + D1 tag cache (deploy `a779ed30`)
+
+The app ships its own `open-next.config.ts` (`kvIncrementalCache` + `d1NextTagCache`, no queue), `wrangler.json` bindings (`NEXT_INC_CACHE_KV`, `NEXT_TAG_CACHE_D1`, placeholder IDs) and `migrations/0001_revalidations.sql` (the tag table; Webflow applies `migrations_dir` on deploy). Webflow Cloud documents D1, KV and R2, **not Durable Objects**, so the DO-based queue/tag cache are out. `npm run measure` (fresh tag per run):
+
+| Measurement | Dummy caches (`c3bf1486`) | KV + D1 (`a779ed30`) |
+| --- | --- | --- |
+| Later requests returning the first response | 0/11 (9 isolates) | **11/11 (9 isolates)** |
+| Probe duration on a HIT | — (every call 60–860 ms) | **16–40 ms** |
+| Fresh data after `revalidateTag` (node route) | n/a | **~1 s** (first poll) |
+| Stale data after the first fresh response | n/a | **None** (20/20 fresh, 10 isolates) |
+
+Caveats: one run, from one client location (Worker placement `local-IAD`); KV is eventually consistent across locations, which this can't show, but invalidation is decided by the D1 tag table, so a stale KV entry is treated as a miss. Cache entries are keyed by build ID, so a redeploy starts cold. The builder **deletes `open-next.config.ts` after each deploy** ("cleaning up additional config file"); `npm run deploy` refuses to run without it.
 
 ### 2. Does `revalidateTag` invalidate, and how fast?
 
-On `/probe`: start polling, then click "revalidateTag (edge route)" / "(node route)". The `since revalidate` column shows when `fetchedAt` changes.
-
-| Revalidated from | Works? | Time until fresh (edge route) | Time until fresh (node route/page) | Errors |
-| --- | --- | --- | --- | --- |
-| edge route | | | | |
-| node route | | | | |
+| Revalidated from | Works? | Time until fresh | Errors |
+| --- | --- | --- | --- |
+| node route, dummy caches | No-op | — | — |
+| node route, KV + D1 | **Yes** | ~1 s | — |
+| edge route | — | — | 500 on every request |
 
 ### 3. Pagination vs the 6 concurrent requests limit
 
 `/pagination?c=N` reads the collection with no cache. `?pageSize=1` uses small pages so a few items already give > 6 parallel pages (any site plan); `pageSize=100` is the real `getItems` (needs > 600 items, see `npm run seed`).
 
+`?pageSize=1`, 9 live items → 9 pages, 8 in parallel after the first:
+
 | Concurrency | Result | Duration | Notes |
 | --- | --- | --- | --- |
-| 2 | | | |
-| 4 (default) | | | |
-| 6 | | | |
-| 8 | | | |
-| 12 | | | |
+| 2 | OK | 1406 ms | |
+| 4 (default) | OK | 471 ms | |
+| 6 | OK | 1221 ms | |
+| 8 | OK | 360 ms | 8 parallel requests > 6: queued by Workers, no error |
+| 12 | OK | 413 ms | |
+| real `getItems` (100/page), c=4 | OK | 225 ms | 1 page |
+
+Durations are noisy (single runs, cold isolates). Exceeding 6 concurrent requests didn't fail with 9 pages; a larger collection is needed to see whether queueing hits the 20 s limit.
 
 ### 4. Library on real data (`/library`)
 
 | Check | Result |
 | --- | --- |
-| `getItems("posts")` without generated schema (API fallback + warning) | |
-| With `src/webflow-schema.ts` snapshot: no warnings | |
-| After adding a new Option + item using it: warning, correct name via fallback | |
-| `getItemBySlug` | |
-| Base path: links and client fetches work under the mount path | |
+| `getItems("posts")` without generated schema (API fallback + warning) | Not tested (deployed with a snapshot). |
+| With `src/webflow-schema.ts` snapshot: no warnings | OK, no warnings. |
+| After adding a new Option + item using it: warning, correct name via fallback | Pending. |
+| `getItemBySlug` | OK (`?slug=cms-future-10`). |
+| Base path: links and client fetches work under the mount path | OK (`/spike`, assets from `*.wf-app-prod.cosmic.webflow.services/spike`). |
+| VideoLink normalization | **Old library deployed**: `package-lock.json` pinned the previous tarball's integrity and the builder's `npm ci` installed it from cache. `pack-lib` now refreshes the lock entry; redeploy pending. |
+| `lastPublished` on live items | **Non-null here** (`2026-10-21T02:38:41.410Z`), although the contract test saw `null` on every live item ~30 min earlier, before the CLI republished the site. To re-verify. |
 
 ## Contract test (real API vs fixtures)
 
@@ -74,4 +111,8 @@ Run on 2026-10-20 against the test site (`next-webflow-d8ce88.webflow.io`): 10/1
 
 ## Conclusion
 
-_Pending._ If the data cache doesn't persist or `revalidateTag` isn't reliable, propose an alternative Cloud mode (e.g. own KV cache invalidated by the webhook, or `source: "cdn"` by default on Cloud) **before** implementing it.
+**The default mode works on Webflow Cloud, but only with app-provided cache config.** Out of the box (builder-generated `open-next.config.ts`) there is no data cache and `revalidateTag` is a no-op. With a KV incremental cache + D1 tag cache, `force-cache` is shared across isolates and `revalidateTag` shows fresh data in ~1 s.
+
+For v0.2 (decided 2026-10-21): document the KV + D1 setup (`open-next.config.ts`, `wrangler.json` bindings, D1 migration) and the builder pitfalls (deletes `open-next.config.ts`, bakes `.env*` into the bundle, `npm ci` uses the lockfile). No library changes needed. Fallback if it regresses: `source: "cdn"` as the Cloud default (up to 5 min stale after publish). A library-owned KV cache only if there's demand. Route handlers must not export `runtime = "edge"` (500 on Cloud).
+
+Still to measure: cross-region staleness, a redeploy, the stale-schema fallback with a new Option, and pagination with > 6 pages of 100.

@@ -4,12 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --env-file=local.env node_modules/next/dist/bin/next dev",
     "build": "next build",
     "start": "next start",
     "pack-lib": "node scripts/pack-lib.mjs",
-    "seed": "node --env-file=.env.local scripts/seed.mjs",
-    "snapshot-schema": "node --env-file=.env.local scripts/snapshot-schema.mjs"
+    "seed": "node --env-file=local.env --env-file=seed.env scripts/seed.mjs",
+    "snapshot-schema": "node --env-file=local.env scripts/snapshot-schema.mjs",
+    "check-env": "node scripts/check-no-env.mjs",
+    "deploy": "node scripts/check-no-env.mjs && webflow apps deploy",
+    "measure": "node --env-file=local.env scripts/measure-cache.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.12",

@@ -16,4 +16,9 @@ const output = execFileSync("npm", ["pack", "--json", "--pack-destination", vend
 });
 const [{ filename }] = JSON.parse(output);
 renameSync(`${vendorDir}${filename}`, `${vendorDir}next-webflow.tgz`);
-console.log(`Packed ${filename} → vendor/next-webflow.tgz. Run \`npm install\` to update the spike.`);
+
+// package-lock.json pins the tarball's integrity hash, and `webflow apps deploy` runs `npm ci`,
+// which would silently install the previous build from npm's cache. Refresh the lock entry.
+const spikeDir = fileURLToPath(new URL("../", import.meta.url));
+execFileSync("npm", ["install", "next-webflow@file:vendor/next-webflow.tgz"], { cwd: spikeDir, stdio: "inherit" });
+console.log(`Packed ${filename} → vendor/next-webflow.tgz and updated package-lock.json.`);

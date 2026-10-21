@@ -5,7 +5,7 @@ const { WEBFLOW_WRITE_TOKEN: token, WEBFLOW_SITE_ID: siteId, SEED_CONFIRM_SITE_I
 const COLLECTION_SLUG = "bulk-items";
 const count = Number(process.argv[2] ?? 650);
 
-if (!token || !siteId) throw new Error("Set WEBFLOW_WRITE_TOKEN and WEBFLOW_SITE_ID in .env.local");
+if (!token || !siteId) throw new Error("Set WEBFLOW_WRITE_TOKEN (seed.env) and WEBFLOW_SITE_ID (local.env)");
 if (confirm !== siteId) {
   throw new Error("Refusing to write: SEED_CONFIRM_SITE_ID must equal WEBFLOW_SITE_ID (test site only).");
 }

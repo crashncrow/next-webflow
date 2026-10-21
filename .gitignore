@@ -11,6 +11,15 @@ coverage/
 # Secrets: never commit env files (only the example template).
 .env*
 !.env.example
+# Spike secrets live outside .env* (OpenNext bakes .env* into the Cloud worker bundle).
+spikes/webflow-cloud/local.env
+spikes/webflow-cloud/seed.env
+# Files the Webflow Cloud builder generates in the app directory.
+spikes/webflow-cloud/.tmp/
+spikes/webflow-cloud/clouduser.next.config.ts
+spikes/webflow-cloud/next.config.webflow.ts
+spikes/webflow-cloud/webflow-loader.ts
+spikes/webflow-cloud/clouduser.wrangler.json
 
 # Contract test output (real API responses from the test site).
 packages/next-webflow/test/contract/output/

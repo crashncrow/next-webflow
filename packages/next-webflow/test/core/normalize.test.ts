@@ -89,7 +89,7 @@ describe("normalizeItem (real items)", () => {
     expect(liveItems.map((item) => normalizeItem(item, realSchema).mismatch).filter(Boolean)).toEqual([]);
   });
 
-  it("keeps lastPublished null on live items (the API never sets it there)", () => {
+  it("keeps a null lastPublished (seen on live items in the fixtures)", () => {
     expect(normalizeItem(fullRawPost, posts).item.lastPublished).toBeNull();
   });
 

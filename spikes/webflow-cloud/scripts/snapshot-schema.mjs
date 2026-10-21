@@ -5,7 +5,7 @@ import { writeFileSync } from "node:fs";
 import { createWebflowClient, schemaFromApi } from "next-webflow";
 
 const { WEBFLOW_API_TOKEN: token, WEBFLOW_SITE_ID: siteId } = process.env;
-if (!token || !siteId) throw new Error("Set WEBFLOW_API_TOKEN and WEBFLOW_SITE_ID in .env.local");
+if (!token || !siteId) throw new Error("Set WEBFLOW_API_TOKEN and WEBFLOW_SITE_ID in local.env");
 
 const client = createWebflowClient({ token });
 const { collections } = await client.request(`/sites/${siteId}/collections`);

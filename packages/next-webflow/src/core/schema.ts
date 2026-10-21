@@ -168,7 +168,7 @@ export type UnknownFields = BaseFields & { [key: string]: unknown };
 export interface WebflowItem<Fields = UnknownFields> {
   id: string;
   cmsLocaleId: string | null;
-  /** Always `null` on live items (`/items/live`); only staged items (draft mode) carry it. */
+  /** Can be `null` on live items (`/items/live`) even when published; staged items carry the date. */
   lastPublished: string | null;
   lastUpdated: string;
   createdOn: string;

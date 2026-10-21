@@ -70,6 +70,8 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
 
     collection = await client.request(`/collections/${match.id}`);
     save("collection", collection);
+    // Every collection with its fields: typegen's input.
+    save("collections", await Promise.all(sites.collections.map((candidate) => client.request(`/collections/${candidate.id}`))));
     diffs.collection = diffShapes(realPostsCollection, collection);
 
     live = await client.request(`/collections/${match.id}/items/live`, { query: { limit: 100 } });

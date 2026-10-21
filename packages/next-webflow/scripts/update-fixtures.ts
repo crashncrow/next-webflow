@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const OUTPUT_DIR = fileURLToPath(new URL("../test/contract/output/", import.meta.url));
 const FIXTURES_DIR = fileURLToPath(new URL("../test/fixtures/api/", import.meta.url));
-const FILES = ["site-collections.json", "collection.json", "items-live.json", "items-staged.json"];
+const FILES = ["site-collections.json", "collection.json", "collections.json", "items-live.json", "items-staged.json"];
 
 const missing = FILES.filter((file) => !existsSync(`${OUTPUT_DIR}${file}`));
 if (missing.length > 0) {

@@ -1,32 +1,42 @@
 #!/usr/bin/env node
-// CLI (Node only): `next-webflow webhooks register|list|unregister`. Typegen arrives in stage 5.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+// CLI (Node only): `next-webflow typegen` and `next-webflow webhooks register|list|unregister`.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { createWebflowClient } from "../core/client";
 import { ENV } from "../core/env";
 import { WebflowError } from "../core/errors";
 import { parseEnvFile } from "./env-file";
+import { DEFAULT_OUT_DIR, runTypegen } from "./typegen";
 import { listWebhooks, registerWebhooks, unregisterWebhooks, type CliIO, type CommandContext } from "./webhooks";
 
-const HELP = `Usage: next-webflow webhooks <command> [options]
+const HELP = `Usage:
+  next-webflow typegen [options]            Generate ${DEFAULT_OUT_DIR}/schema.ts (+ index.ts the first time)
+  next-webflow webhooks <command> [options]
 
-Commands:
-  register    Create signed webhooks for the events that change live content
+Webhook commands:
+  register    Create signed webhooks (every CMS event + site_publish by default)
   list        Show the site's webhooks (API-created ones)
   unregister  Delete the webhooks pointing at --url (asks for confirmation)
 
-Options:
+typegen options:
+  --out <dir>           Output folder (default: ${DEFAULT_OUT_DIR})
+  --check               Don't write; exit 1 if schema.ts is missing or out of date (CI)
+  --force               Recreate index.ts even if it exists (it's yours otherwise)
+
+webhooks options:
   --url <https url>     Your webhook route, e.g. https://example.com/api/webflow
-  --events <list>       Comma-separated (default: collection_item_published,
-                        collection_item_unpublished,collection_item_deleted,site_publish)
-  --env-file <path>     Read config from it and append secrets to it (default: .env.local).
-                        On Webflow Cloud use a file NOT named .env* (it would be bundled).
+  --events <list>       Comma-separated (default: every CMS event and site_publish)
   --print               Print the secrets instead of writing them to the env file
-  --token-env <name>    Env var holding the API token (default: ${ENV.apiToken}).
-                        Needs Sites: Read and write + CMS: Read.
-  --site-id <id>        Default: ${ENV.siteId}
   --yes                 unregister: don't ask for confirmation
+
+Common options:
+  --env-file <path>     Read config from it (default: .env.local); webhooks register appends
+                        secrets to it. On Webflow Cloud use a file NOT named .env* (it would be bundled).
+  --token-env <name>    Env var holding the API token (default: ${ENV.apiToken}).
+                        typegen: CMS: Read. webhooks: Sites: Read and write + CMS: Read.
+  --site-id <id>        Default: ${ENV.siteId}
   -h, --help
 `;
 
@@ -34,7 +44,10 @@ const io: CliIO = {
   log: (message) => console.log(message),
   warn: (message) => console.warn(`⚠ ${message}`),
   readFile: (path) => (existsSync(path) ? readFileSync(path, "utf8") : undefined),
-  writeFile: (path, content) => writeFileSync(path, content, { mode: 0o600 }),
+  writeFile(path, content, options) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content, { mode: options?.secret ? 0o600 : 0o644 });
+  },
   async confirm(question) {
     if (!process.stdin.isTTY) return false;
     const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -58,12 +71,15 @@ async function main(argv: string[]): Promise<number> {
       "token-env": { type: "string", default: ENV.apiToken },
       "site-id": { type: "string" },
       yes: { type: "boolean", default: false },
+      out: { type: "string", default: DEFAULT_OUT_DIR },
+      check: { type: "boolean", default: false },
+      force: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
 
   const [group, command] = positionals;
-  if (values.help || group !== "webhooks" || !command) {
+  if (values.help || !(group === "typegen" || (group === "webhooks" && command))) {
     console.log(HELP);
     return values.help ? 0 : 1;
   }
@@ -80,6 +96,7 @@ async function main(argv: string[]): Promise<number> {
   if (!siteId) throw new WebflowError(`No site ID: set ${ENV.siteId} or pass --site-id.`);
 
   const context: CommandContext = { client: createWebflowClient({ token }), siteId, io, tokenEnv };
+  if (group === "typegen") return runTypegen(context, { out: values.out, check: values.check, force: values.force });
   switch (command) {
     case "register":
       await registerWebhooks(context, { url: values.url, events: values.events, print: values.print, envFile });

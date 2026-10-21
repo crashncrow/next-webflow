@@ -4,6 +4,30 @@ Use the Webflow CMS as a headless content source in Next.js (App Router): genera
 
 > **Work in progress.** Not published yet. The full README (setup, API, deployment) comes with v0.1.
 
+## Types (`typegen`)
+
+```bash
+npx next-webflow typegen          # reads WEBFLOW_API_TOKEN + WEBFLOW_SITE_ID (env or .env.local); CMS: Read is enough
+npx next-webflow typegen --check  # CI: exit 1 if webflow/schema.ts no longer matches the site
+```
+
+It writes two files in `webflow/` (`--out` to change it):
+
+- **`schema.ts`** is regenerated on every run. Don't edit it. It holds the runtime schema (field slugs, Option names, reference targets) and one item type per collection: `posts` → `PostsItem`, `blog-posts` → `BlogPostsItem`, `2024-events` → `Collection2024EventsItem`. Names are never singularized, so they are predictable in any language. If two collections map to the same name (`blog-posts` and `blog_posts`), typegen stops with an error.
+- **`index.ts`** is created once and then belongs to you. typegen never overwrites it unless you pass `--force`. Put client options and friendlier type names here:
+
+```ts
+// webflow/index.ts
+import { createWebflow } from "next-webflow";
+import { schema, type PostsItem } from "./schema";
+
+export const { getItems, getItemBySlug, getItem } = createWebflow({ schema, source: "cdn" });
+export type * from "./schema";
+export type Post = PostsItem; // friendlier alias
+```
+
+Then import from your folder: `import { getItems, type Post } from "@/webflow"`. Types follow `schema.ts` as long as `index.ts` imports it; typegen warns if it doesn't. `--check` ignores formatting (Prettier is fine): it compares a hash stored in the file header.
+
 ## Field values
 
 Items are normalized: `fieldData` keys are camelCase, empty fields are absent, and Option fields are `{ id, name }`.

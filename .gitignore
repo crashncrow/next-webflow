@@ -2,8 +2,19 @@ node_modules/
 dist/
 coverage/
 .next/
+.open-next/
+.wrangler/
 *.tsbuildinfo
 *.tgz
-.env
-.env*.local
 .DS_Store
+
+# Secrets: never commit env files (only the example template).
+.env*
+!.env.example
+
+# Contract test output (real API responses from the test site).
+packages/next-webflow/test/contract/output/
+
+# The spike installs the library from a committed tarball (Webflow Cloud: npm only).
+!spikes/webflow-cloud/vendor/next-webflow.tgz
+next-env.d.ts

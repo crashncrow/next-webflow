@@ -205,23 +205,37 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     collection: CollectionSchema,
     raws: WebflowRawItem[],
   ): Promise<WebflowItem[]> {
-    const first = raws.map((raw) => normalizeItem(raw, collection));
-    const mismatch = mergeMismatches(first.map((result) => result.mismatch));
-    const isGenerated = generated?.[slug] === collection;
-    if (!mismatch || !isGenerated) return first.map((result) => result.item);
+    let results = raws.map((raw) => normalizeItem(raw, collection));
+    let mismatch = mergeMismatches(results.map((result) => result.mismatch));
 
-    warnOnce(
-      `stale:${slug}`,
-      `The generated schema for "${slug}" is out of date (${describe(mismatch)}). ` +
-        "Using the live schema from the API; run `npx next-webflow typegen` to update your types.",
-    );
-    stale.add(slug);
-    try {
-      const fresh = await fetchSchemaById(collection.id);
-      return raws.map((raw) => normalizeItem(raw, fresh).item);
-    } catch {
-      return first.map((result) => result.item);
+    if (mismatch && generated?.[slug] === collection) {
+      warnOnce(
+        `stale:${slug}`,
+        `The generated schema for "${slug}" is out of date (${describe(mismatch)}). ` +
+          "Using the live schema from the API; run `npx next-webflow typegen` to update your types.",
+      );
+      stale.add(slug);
+      try {
+        const fresh = await fetchSchemaById(collection.id);
+        results = raws.map((raw) => normalizeItem(raw, fresh));
+        mismatch = mergeMismatches(results.map((result) => result.mismatch));
+      } catch (error) {
+        warnOnce(
+          `refresh:${slug}`,
+          `Could not fetch the live schema for "${slug}" (${error instanceof Error ? error.message : String(error)}). ` +
+            "Serving items with the generated schema.",
+        );
+      }
     }
+
+    if (mismatch && mismatch.unknownOptions.length > 0) {
+      warnOnce(
+        `options:${slug}`,
+        `Unknown Option IDs in "${slug}" (${describe({ unknownFields: [], unknownOptions: mismatch.unknownOptions })}); ` +
+          "returning them as { id, name: undefined }.",
+      );
+    }
+    return results.map((result) => result.item);
   }
 
   function buildQuery(collection: CollectionSchema, options: GetItemsOptions): QueryParams {

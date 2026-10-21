@@ -15,7 +15,7 @@ const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const stubNext: Plugin = {
   name: "stub-next",
   setup(build) {
-    build.onResolve({ filter: /^next\/headers$/ }, () => ({ path: "next/headers", namespace: "stub" }));
+    build.onResolve({ filter: /^next\/headers(\.js)?$/ }, () => ({ path: "next/headers", namespace: "stub" }));
     build.onLoad({ filter: /.*/, namespace: "stub" }, () => ({
       contents: "export const draftMode = async () => ({ isEnabled: false });",
       loader: "js",

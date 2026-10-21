@@ -1,4 +1,12 @@
-import type { CollectionSchema, FieldSchema, UnknownFields, WebflowItem, WebflowRawItem } from "./schema";
+import type {
+  CollectionSchema,
+  FieldSchema,
+  UnknownFields,
+  WebflowItem,
+  WebflowRawItem,
+  WebflowVideo,
+  WebflowVideoMetadata,
+} from "./schema";
 
 /** `post-body` → `postBody`, `image-2` → `image2`. Field slugs are lowercase with hyphens. */
 export function camelCase(slug: string): string {
@@ -47,8 +55,10 @@ export function normalizeItem<Fields = UnknownFields>(
         fieldData[key] = { id: option.id, name: option.name };
       } else {
         mismatch.unknownOptions.push({ field: slug, id: value });
-        fieldData[key] = { id: value, name: value };
+        fieldData[key] = { id: value, name: undefined };
       }
+    } else if (field.type === "VideoLink") {
+      fieldData[key] = normalizeVideo(value);
     } else {
       fieldData[key] = value;
     }
@@ -67,6 +77,31 @@ export function normalizeItem<Fields = UnknownFields>(
 
   const hasMismatch = mismatch.unknownFields.length > 0 || mismatch.unknownOptions.length > 0;
   return { item, mismatch: hasMismatch ? mismatch : undefined };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * `{ url, metadata }` (what the API returns) → `WebflowVideo` with camelCase metadata keys. A plain
+ * URL string (the write format) becomes `{ url }`. Anything else is returned untouched.
+ */
+function normalizeVideo(value: unknown): WebflowVideo | unknown {
+  if (typeof value === "string") return { url: value };
+  if (!isRecord(value) || typeof value.url !== "string") return value;
+  if (!isRecord(value.metadata)) return { url: value.url };
+
+  const metadata: WebflowVideoMetadata = {};
+  for (const [key, entry] of Object.entries(value.metadata)) {
+    if (entry !== null && entry !== undefined) metadata[camelCase(key)] = entry;
+  }
+  // The API's aspectRatio isn't reliable (0 for a 1920×1080 video): derive it from the size.
+  delete metadata.aspectRatio;
+  const { width, height } = metadata;
+  if (typeof width === "number" && typeof height === "number" && width > 0 && height > 0) {
+    metadata.aspectRatio = width / height;
+  }
+  return { url: value.url, metadata };
 }
 
 interface ApiField {
@@ -89,7 +124,8 @@ export function schemaFromApi(collection: ApiCollection): CollectionSchema {
   const fields: Record<string, FieldSchema> = {};
   for (const field of collection.fields ?? []) {
     if (!field.slug || !field.type) continue;
-    // Docs show the referenced collection both under `validations` and `metadata`.
+    // The real API puts the referenced collection in `validations` (contract test, 2026-10-20);
+    // some docs examples show `metadata`, kept as a fallback.
     const collectionId = field.validations?.collectionId ?? field.metadata?.collectionId;
     fields[camelCase(field.slug)] = {
       slug: field.slug,

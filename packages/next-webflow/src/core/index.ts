@@ -39,6 +39,7 @@ export type {
   FieldsOf,
   ItemOf,
   UnknownFields,
+  UnknownOption,
   WebflowFieldType,
   WebflowFile,
   WebflowImage,
@@ -46,6 +47,8 @@ export type {
   WebflowOption,
   WebflowRawItem,
   WebflowSchema,
+  WebflowVideo,
+  WebflowVideoMetadata,
 } from "./schema";
 export {
   SITE_TAG,

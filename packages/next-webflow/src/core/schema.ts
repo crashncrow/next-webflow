@@ -23,6 +23,15 @@ export interface WebflowOption {
   readonly name: string;
 }
 
+/**
+ * An Option value whose ID isn't in the schema and couldn't be resolved from the API either
+ * (e.g. an option added after typegen while the API is unreachable). Its name is unknown.
+ */
+export interface UnknownOption {
+  id: string;
+  name: undefined;
+}
+
 /** Runtime description of one collection field. Keyed by its camelCase name in `CollectionSchema.fields`. */
 export interface FieldSchema {
   /** Field slug as used in the API's `fieldData` (e.g. `post-body`). */
@@ -56,6 +65,40 @@ export interface WebflowFile {
   alt?: string | null | undefined;
 }
 
+/**
+ * oEmbed data Webflow fetches (through Embedly) for a video link, with camelCase keys. Every key is
+ * optional: what's present depends on the provider.
+ */
+export interface WebflowVideoMetadata {
+  title?: string;
+  description?: string;
+  /** `"video"` for video providers (oEmbed type). */
+  type?: string;
+  /**
+   * Third-party iframe embed HTML (Embedly). Exposed as data only: this library never renders it,
+   * and rendering it means trusting the provider's markup.
+   */
+  html?: string;
+  width?: number;
+  height?: number;
+  /** `width / height`, computed here when both are known (the API's own `aspectRatio` is unreliable). */
+  aspectRatio?: number;
+  authorName?: string;
+  authorUrl?: string;
+  providerName?: string;
+  providerUrl?: string;
+  thumbnailUrl?: string;
+  thumbnailWidth?: number;
+  thumbnailHeight?: number;
+  [key: string]: unknown;
+}
+
+/** A `VideoLink` value. The API returns `{ url, metadata }` when reading (writes take a plain URL). */
+export interface WebflowVideo {
+  url: string;
+  metadata?: WebflowVideoMetadata;
+}
+
 /** Normalized value for each field type (Options are translated per decision 4.2). */
 export interface FieldValueMap {
   PlainText: string;
@@ -63,7 +106,7 @@ export interface FieldValueMap {
   RichText: string;
   Image: WebflowImage;
   MultiImage: WebflowImage[];
-  VideoLink: string;
+  VideoLink: WebflowVideo;
   Link: string;
   Email: string;
   Phone: string;
@@ -72,7 +115,8 @@ export interface FieldValueMap {
   DateTime: string;
   Switch: boolean;
   Color: string;
-  Option: WebflowOption;
+  /** `name` is `undefined` only for an unresolvable option (see `UnknownOption`). */
+  Option: WebflowOption | UnknownOption;
   File: WebflowFile;
   /** Referenced item ID. */
   Reference: string;
@@ -82,12 +126,17 @@ export interface FieldValueMap {
   ExtFileRef: unknown;
 }
 
-/** `{ id, name }` narrowed to the exact pairs declared in the schema. */
-type OptionValue<F extends FieldSchema> = F["options"] extends readonly (infer O)[]
-  ? O extends WebflowOption
-    ? { id: O["id"]; name: O["name"] }
-    : never
-  : WebflowOption;
+/**
+ * `{ id, name }` narrowed to the exact pairs declared in the schema, plus `UnknownOption` so
+ * code has to handle a missing name instead of crashing on it.
+ */
+type OptionValue<F extends FieldSchema> =
+  | (F["options"] extends readonly (infer O)[]
+      ? O extends WebflowOption
+        ? { id: O["id"]; name: O["name"] }
+        : never
+      : WebflowOption)
+  | UnknownOption;
 
 export type FieldValue<F extends FieldSchema> = F["type"] extends "Option"
   ? OptionValue<F>
@@ -119,6 +168,7 @@ export type UnknownFields = BaseFields & { [key: string]: unknown };
 export interface WebflowItem<Fields = UnknownFields> {
   id: string;
   cmsLocaleId: string | null;
+  /** Always `null` on live items (`/items/live`); only staged items (draft mode) carry it. */
   lastPublished: string | null;
   lastUpdated: string;
   createdOn: string;

@@ -1,0 +1,209 @@
+{
+  "id": "6ad82366355bfa1700d50617",
+  "displayName": "Posts",
+  "singularName": "Post",
+  "slug": "posts",
+  "createdOn": "2026-10-21T02:28:54.839Z",
+  "lastUpdated": "2026-10-21T02:28:55.158Z",
+  "fields": [
+    {
+      "id": "558afda403bfc43ec1d95453ad36ec0d",
+      "isEditable": true,
+      "isRequired": true,
+      "type": "RichText",
+      "slug": "body",
+      "displayName": "Body",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "94ff0a960bc5ca097e7658e04f03912a",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Image",
+      "slug": "main-image",
+      "displayName": "Main image",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "4de63fd7629dceac981c1dd524d9933c",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "MultiImage",
+      "slug": "gallery",
+      "displayName": "Gallery",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "f6f905703e1f87a9513c9286ba776690",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "VideoLink",
+      "slug": "video",
+      "displayName": "Video",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "fc46343fef85160e8039d1c9d2f3e279",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Link",
+      "slug": "website",
+      "displayName": "Website",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "7f1a141fb828a999715282d6c334586f",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Email",
+      "slug": "contact-email",
+      "displayName": "Contact email",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "6995216fe199a6f7b3a7fc1707931920",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Phone",
+      "slug": "phone",
+      "displayName": "Phone",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "ac93c28e5a14117d95f474f594252f7b",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Number",
+      "slug": "reading-time",
+      "displayName": "Reading time",
+      "helpText": null,
+      "validations": {
+        "format": "integer",
+        "precision": 1,
+        "allowNegative": false
+      }
+    },
+    {
+      "id": "1448d41074fd679f93b502c025feec1a",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "DateTime",
+      "slug": "publish-date",
+      "displayName": "Publish date",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "dd0dbcfa308e8070d1a0e7ddf7062ca8",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Switch",
+      "slug": "featured",
+      "displayName": "Featured",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "6a0e9ce256aeb10d31ad0f8a713ca631",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Color",
+      "slug": "accent-color",
+      "displayName": "Accent color",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "c0356d3adec63f0477546423bd51547c",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "File",
+      "slug": "attachment",
+      "displayName": "Attachment",
+      "helpText": null,
+      "validations": null
+    },
+    {
+      "id": "5bf0fb6e48787deab0a36547686c16be",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Option",
+      "slug": "category",
+      "displayName": "Category",
+      "helpText": null,
+      "validations": {
+        "options": [
+          {
+            "name": "News",
+            "id": "c162b2e715b9ea8c4070488a09ab060f"
+          },
+          {
+            "name": "Guides",
+            "id": "9aacbc91fb9dacc1485dd580bef5ad0c"
+          }
+        ]
+      }
+    },
+    {
+      "id": "8c721fccd6d254f47c60be09e0c3e021",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "Reference",
+      "slug": "author",
+      "displayName": "Author",
+      "helpText": null,
+      "validations": {
+        "collectionId": "6ad821e72fa557039fdc30e2"
+      }
+    },
+    {
+      "id": "bba0aaf873c677983d6c7ee913fddfed",
+      "isEditable": true,
+      "isRequired": false,
+      "type": "MultiReference",
+      "slug": "co-authors",
+      "displayName": "Co-authors",
+      "helpText": null,
+      "validations": {
+        "collectionId": "6ad821e72fa557039fdc30e2"
+      }
+    },
+    {
+      "id": "6af2f7155467be5d3edbb6bcfdfe7524",
+      "isEditable": true,
+      "isRequired": true,
+      "type": "PlainText",
+      "slug": "name",
+      "displayName": "Name",
+      "helpText": null,
+      "validations": {
+        "maxLength": 256
+      }
+    },
+    {
+      "id": "d40a0f8741167979555afa5e2fb9116e",
+      "isEditable": true,
+      "isRequired": true,
+      "type": "PlainText",
+      "slug": "slug",
+      "displayName": "Slug",
+      "helpText": null,
+      "validations": {
+        "maxLength": 256,
+        "pattern": {},
+        "messages": {
+          "pattern": "Must be alphanumerical and not contain any spaces or special characters",
+          "maxLength": "Must be less than 256 characters"
+        }
+      }
+    }
+  ],
+  "fieldGroups": []
+}

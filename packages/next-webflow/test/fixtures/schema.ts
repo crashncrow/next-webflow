@@ -1,23 +1,32 @@
+/**
+ * Fixtures built from REAL responses of the test site (`test/fixtures/api/*.json`, copied from the
+ * contract test output with `pnpm fixtures:update`). Only `schema` is hand-written, because types
+ * need its literals; a test checks it matches `schemaFromApi(realPostsCollection)`.
+ */
 import type { WebflowRawItem, WebflowSchema } from "../../src/core";
+import type { ApiCollection } from "../../src/core/normalize";
+import collectionJson from "./api/collection.json";
+import itemsLiveJson from "./api/items-live.json";
+import itemsStagedJson from "./api/items-staged.json";
+import siteCollectionsJson from "./api/site-collections.json";
 
+/** Only a URL parameter in tests; the real site ID never matters to them. */
 export const SITE_ID = "site-1";
-export const POSTS_ID = "col-posts";
-export const AUTHORS_ID = "col-authors";
 
-const CATEGORY_OPTIONS = [
-  { id: "opt-news", name: "News" },
-  { id: "opt-guides", name: "Guides" },
-] as const;
+export const POSTS_ID = "6ad82366355bfa1700d50617";
+export const AUTHORS_ID = "6ad821e72fa557039fdc30e2";
 
-/** Same shape `next-webflow typegen` will emit: every field type is covered. */
+const NEWS = { id: "c162b2e715b9ea8c4070488a09ab060f", name: "News" } as const;
+const GUIDES = { id: "9aacbc91fb9dacc1485dd580bef5ad0c", name: "Guides" } as const;
+export const OPTIONS = { news: NEWS, guides: GUIDES };
+
+/** What `next-webflow typegen` emits for the test site. Covers every field type but ExtFileRef. */
 export const schema = {
-  "blog-posts": {
+  posts: {
     id: POSTS_ID,
-    slug: "blog-posts",
+    slug: "posts",
     fields: {
-      name: { slug: "name", type: "PlainText", required: true },
-      slug: { slug: "slug", type: "PlainText", required: true },
-      postBody: { slug: "post-body", type: "RichText", required: true },
+      body: { slug: "body", type: "RichText", required: true },
       mainImage: { slug: "main-image", type: "Image", required: false },
       gallery: { slug: "gallery", type: "MultiImage", required: false },
       video: { slug: "video", type: "VideoLink", required: false },
@@ -25,14 +34,15 @@ export const schema = {
       contactEmail: { slug: "contact-email", type: "Email", required: false },
       phone: { slug: "phone", type: "Phone", required: false },
       readingTime: { slug: "reading-time", type: "Number", required: false },
-      publishedOn: { slug: "published-on", type: "DateTime", required: false },
+      publishDate: { slug: "publish-date", type: "DateTime", required: false },
       featured: { slug: "featured", type: "Switch", required: false },
       accentColor: { slug: "accent-color", type: "Color", required: false },
-      category: { slug: "category", type: "Option", required: true, options: CATEGORY_OPTIONS },
       attachment: { slug: "attachment", type: "File", required: false },
+      category: { slug: "category", type: "Option", required: false, options: [NEWS, GUIDES] },
       author: { slug: "author", type: "Reference", required: false, collectionId: AUTHORS_ID },
       coAuthors: { slug: "co-authors", type: "MultiReference", required: false, collectionId: AUTHORS_ID },
-      externalAsset: { slug: "external-asset", type: "ExtFileRef", required: false },
+      name: { slug: "name", type: "PlainText", required: true },
+      slug: { slug: "slug", type: "PlainText", required: true },
     },
   },
   authors: {
@@ -45,80 +55,77 @@ export const schema = {
   },
 } as const satisfies WebflowSchema;
 
-/** `GET /collections/{id}` for the posts collection, as the API returns it. */
+/** `GET /sites/{siteId}/collections`, real. */
+export const sitesCollectionsResponse = siteCollectionsJson;
+
+interface ApiFieldJson {
+  id: string;
+  slug: string;
+  displayName: string;
+  type: string;
+  isRequired: boolean;
+  validations?: { options?: Array<{ id: string; name: string }>; [key: string]: unknown } | null;
+  [key: string]: unknown;
+}
+
+/** `GET /collections/{postsId}`, real. */
+export const realPostsCollection = collectionJson as unknown as ApiCollection & {
+  id: string;
+  slug: string;
+  fields: ApiFieldJson[];
+  [key: string]: unknown;
+};
+
+/** A Webflow-like Option ID for an option that doesn't exist on the test site (yet). */
+export const TUTORIALS_ID = "5f0d3c8e2b7a4e61a9c4d1b0e7f2a3c4";
+
+/**
+ * The real posts collection after an editor changed it post-typegen: a new `Tutorials` option and
+ * a new `subtitle` field. Used to test the stale-schema fallback.
+ */
 export const postsCollectionResponse = {
-  id: POSTS_ID,
-  displayName: "Blog Posts",
-  singularName: "Blog Post",
-  slug: "blog-posts",
+  ...realPostsCollection,
   fields: [
-    { id: "f1", slug: "name", displayName: "Name", type: "PlainText", isRequired: true, isEditable: true, validations: null },
-    { id: "f2", slug: "slug", displayName: "Slug", type: "PlainText", isRequired: true, isEditable: true, validations: null },
-    { id: "f3", slug: "post-body", displayName: "Post Body", type: "RichText", isRequired: true, isEditable: true },
+    ...realPostsCollection.fields.map((field) =>
+      field.slug === "category"
+        ? { ...field, validations: { options: [...(field.validations?.options ?? []), { id: TUTORIALS_ID, name: "Tutorials" }] } }
+        : field,
+    ),
     {
-      id: "f4",
-      slug: "category",
-      displayName: "Category",
-      type: "Option",
-      isRequired: true,
-      validations: { options: [...CATEGORY_OPTIONS, { id: "opt-tutorials", name: "Tutorials" }] },
+      id: "0e5b7f3c9a2d4c1e8b6f0a7d3e9c2b51",
+      slug: "subtitle",
+      displayName: "Subtitle",
+      type: "PlainText",
+      isRequired: false,
+      isEditable: true,
+      helpText: null,
+      validations: null,
     },
-    { id: "f5", slug: "author", displayName: "Author", type: "Reference", isRequired: false, metadata: { collectionId: AUTHORS_ID } },
-    { id: "f6", slug: "co-authors", displayName: "Co-authors", type: "MultiReference", isRequired: false, validations: { collectionId: AUTHORS_ID } },
-    { id: "f7", slug: "subtitle", displayName: "Subtitle", type: "PlainText", isRequired: false },
   ],
 };
 
-export const sitesCollectionsResponse = {
-  collections: [
-    { id: POSTS_ID, displayName: "Blog Posts", singularName: "Blog Post", slug: "blog-posts" },
-    { id: AUTHORS_ID, displayName: "Authors", singularName: "Author", slug: "authors" },
-  ],
-};
+/** `GET /collections/{postsId}/items/live` and `/items`, real (9 live, 10 staged incl. a draft). */
+export const liveItems = itemsLiveJson.items as unknown as WebflowRawItem[];
+export const stagedItems = itemsStagedJson.items as unknown as WebflowRawItem[];
 
+function liveItem(slug: string): WebflowRawItem {
+  const item = liveItems.find((candidate) => candidate.fieldData.slug === slug);
+  if (!item) throw new Error(`No live fixture item with slug "${slug}"`);
+  return item;
+}
+
+/** A live post with a value in every field. */
+export const fullRawPost = liveItem("cms-future-10");
+/** A live post whose empty fields (image, video, date, option, references…) come back as `null`. */
+export const sparseRawPost = liveItem("cms-user-training-8");
+/** Staged only: never published, so the live endpoints 404. */
+export const draftRawPost = stagedItems.find((item) => item.isDraft) as WebflowRawItem;
+
+/** A real live post with overrides (merged into `fieldData`). Defaults to `fullRawPost`. */
 export function rawPost(
   overrides: Omit<Partial<WebflowRawItem>, "fieldData"> & { fieldData?: Record<string, unknown> } = {},
 ): WebflowRawItem {
   const { fieldData, ...rest } = overrides;
-  return {
-    id: "item-1",
-    cmsLocaleId: "locale-1",
-    lastPublished: "2026-10-01T10:00:00.000Z",
-    lastUpdated: "2026-10-01T09:00:00.000Z",
-    createdOn: "2026-09-01T09:00:00.000Z",
-    isArchived: false,
-    isDraft: false,
-    ...rest,
-    fieldData: {
-      name: "Hello world",
-      slug: "hello-world",
-      "post-body": "<p>Hi</p>",
-      category: "opt-news",
-      ...fieldData,
-    },
-  };
+  const base = structuredClone(fullRawPost);
+  return { ...base, ...rest, fieldData: { ...base.fieldData, ...fieldData } };
 }
-
-/** A post with a value for every field type. */
-export const fullRawPost = rawPost({
-  fieldData: {
-    "main-image": { fileId: "file-1", url: "https://cdn.example/a.jpg", alt: "A" },
-    gallery: [
-      { fileId: "file-2", url: "https://cdn.example/b.jpg", alt: null },
-      { fileId: "file-3", url: "https://cdn.example/c.jpg" },
-    ],
-    video: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
-    website: "https://webflow.com",
-    "contact-email": "hi@example.com",
-    phone: "+15550000000",
-    "reading-time": 7,
-    "published-on": "2026-10-01T00:00:00.000Z",
-    featured: true,
-    "accent-color": "#FFFF00",
-    category: "opt-guides",
-    attachment: { fileId: "file-4", url: "https://cdn.example/d.pdf" },
-    author: "author-1",
-    "co-authors": ["author-2", "author-3"],
-    "external-asset": { anything: true },
-  },
-});

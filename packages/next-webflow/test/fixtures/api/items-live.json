@@ -1,0 +1,596 @@
+{
+  "items": [
+    {
+      "id": "6ad82459d716cd2a5aa2196f",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:33:57.965Z",
+      "createdOn": "2026-10-21T02:32:57.694Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Looking Ahead</h1><p>The future of content management systems is bright, with advancements in AI, automation, and user experience design shaping the landscape.</p><h2>Future Trends</h2><ul><li><strong>AI-Powered Content:</strong> Automating content creation and curation.</li><li><strong>Enhanced User Experience:</strong> Focus on intuitive interfaces.</li><li><strong>Integration:</strong> Seamless integration with other tools and platforms.</li></ul>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa21098",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21098_image3.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21089",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21089_image11.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21092",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21092_image14.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/114900089",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F114900089%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F114900089&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F556340000_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1920\" height=\"1080\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "A Brief Lesson on Color Theory",
+            "width": 1920,
+            "height": 1080,
+            "aspectRatio": 0,
+            "author_name": "Rhea Lelina Manglapus",
+            "description": "School of Visual Arts motion graphics semester project on COLOR THEORY. View project: https://www.behance.net/gallery/22359445/Color-Theory-Motion Instructor: Ori Kleiner Music: Curious Notion Awards: New Talent Annual Graphis Inc. Gold / 2016 Design Achievement Awards Adobe Semifinalist / 2015",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/556340000_1280.jpg"
+          }
+        },
+        "website": "https://example.com/future",
+        "contact-email": "future@example.com",
+        "phone": "+1-555-678-9012",
+        "reading-time": 5,
+        "publish-date": "2023-10-10T00:00:00.000Z",
+        "featured": true,
+        "accent-color": "#FF5733",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa2108c",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2108c_image9.jpeg",
+          "alt": null
+        },
+        "category": "9aacbc91fb9dacc1485dd580bef5ad0c",
+        "author": "6ad823ee45bfdd80dc4a732a",
+        "co-authors": [
+          "6ad823ff2def343f12b77354",
+          "6ad824043c4cdef8ff529d98"
+        ],
+        "name": "The Future of CMS",
+        "slug": "cms-future-10"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa2196d",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:34:20.982Z",
+      "createdOn": "2026-10-21T02:32:57.641Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Enhancing Performance</h1><p>Optimizing the performance of your CMS is crucial for user satisfaction and SEO. Focus on speed and efficiency.</p><h2>Optimization Techniques</h2><ol><li><strong>Image Compression:</strong> Reduce image sizes without losing quality.</li><li><strong>Minification:</strong> Minimize CSS and JavaScript files.</li><li><strong>Caching:</strong> Implement caching strategies to speed up load times.</li></ol>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa2102e",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2102e_image19.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa2103a",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2103a_image7.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/153138303",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F153138303%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F153138303&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F553337456_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1920\" height=\"1080\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "FITC // Toronto 2016 Teaser",
+            "width": 1920,
+            "height": 1080,
+            "aspectRatio": 0,
+            "author_name": "Giant Ant",
+            "description": "FITC invited us to team up with Antfood to produce the titles for their 2016 Toronto conference. Here's a little teaser. Stay tuned for the main titles in April! Our man Jay will be speaking at the conference this year, so come throw rotten fruit at him if you're in town.",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/553337456_1280.jpg"
+          }
+        },
+        "website": null,
+        "contact-email": "performance@example.com",
+        "phone": null,
+        "reading-time": null,
+        "publish-date": "2023-10-09T00:00:00.000Z",
+        "featured": true,
+        "accent-color": null,
+        "attachment": null,
+        "category": "9aacbc91fb9dacc1485dd580bef5ad0c",
+        "author": "6ad824043c4cdef8ff529d98",
+        "co-authors": [
+          "6ad823ff2def343f12b77354",
+          "6ad823ee45bfdd80dc4a732a"
+        ],
+        "name": "Performance Optimization for CMS",
+        "slug": "cms-performance-optimization-9"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa2196b",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:35:21.501Z",
+      "createdOn": "2026-10-21T02:32:57.603Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Importance of Training</h1><p>Training users on how to effectively use a CMS can significantly improve content quality and site management.</p><h2>Training Strategies</h2><ul><li><strong>Workshops:</strong> Conduct hands-on sessions.</li><li><strong>Documentation:</strong> Provide clear guides and manuals.</li><li><strong>Support:</strong> Offer ongoing assistance and resources.</li></ul>",
+        "main-image": null,
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa2107c",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2107c_image9.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2107f",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2107f_image5.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2102b",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2102b_image19.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21079",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21079_image10.jpeg",
+            "alt": null
+          }
+        ],
+        "video": null,
+        "website": "https://example.com/training",
+        "contact-email": "training@example.com",
+        "phone": "+1-555-345-6789",
+        "reading-time": 5,
+        "publish-date": null,
+        "featured": false,
+        "accent-color": "#FF33A1",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21082",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21082_image1.jpeg",
+          "alt": null
+        },
+        "category": null,
+        "author": null,
+        "co-authors": null,
+        "name": "User Training for CMS",
+        "slug": "cms-user-training-8"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa21969",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:35:40.851Z",
+      "createdOn": "2026-10-21T02:32:57.565Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Customization Options</h1><p>Customizing your CMS can enhance its functionality and improve user experience. Explore themes, plugins, and custom code.</p><h2>Ways to Customize</h2><ol><li><strong>Themes:</strong> Change the look and feel of your site.</li><li><strong>Plugins:</strong> Add new features easily.</li><li><strong>Custom Code:</strong> Tailor functionalities to your needs.</li></ol>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa2106d",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2106d_image13.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21076",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21076_image1.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21070",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21070_image17.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2101e",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2101e_image19.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2100c",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2100c_image4.jpeg",
+            "alt": null
+          }
+        ],
+        "video": null,
+        "website": null,
+        "contact-email": null,
+        "phone": null,
+        "reading-time": 6,
+        "publish-date": "2023-10-07T00:00:00.000Z",
+        "featured": true,
+        "accent-color": "#A133FF",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21073",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21073_image12.jpeg",
+          "alt": null
+        },
+        "category": "c162b2e715b9ea8c4070488a09ab060f",
+        "author": "6ad823ff2def343f12b77354",
+        "co-authors": [
+          "6ad823ee45bfdd80dc4a732a",
+          "6ad824043c4cdef8ff529d98",
+          "6ad823ff2def343f12b77354"
+        ],
+        "name": "Customizing Your CMS",
+        "slug": "cms-customization-7"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa21967",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:32:57.532Z",
+      "createdOn": "2026-10-21T02:32:57.532Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Choosing a CMS for Blogging</h1><p>When selecting a CMS for blogging, consider ease of use, customization options, and community support.</p><h2>Top Blogging CMS</h2><ul><li><strong>WordPress:</strong> Highly customizable and user-friendly.</li><li><strong>Ghost:</strong> Focused on professional publishing.</li><li><strong>Medium:</strong> Great for reaching a wider audience.</li></ul>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa2105b",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2105b_image15.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21021",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21021_image8.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21064",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21064_image3.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21061",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21061_image2.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21067",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21067_image11.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2106a",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2106a_image6.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/114900089",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F114900089%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F114900089&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F556340000_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1920\" height=\"1080\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "A Brief Lesson on Color Theory",
+            "width": 1920,
+            "height": 1080,
+            "aspectRatio": 0,
+            "author_name": "Rhea Lelina Manglapus",
+            "description": "School of Visual Arts motion graphics semester project on COLOR THEORY. View project: https://www.behance.net/gallery/22359445/Color-Theory-Motion Instructor: Ori Kleiner Music: Curious Notion Awards: New Talent Annual Graphis Inc. Gold / 2016 Design Achievement Awards Adobe Semifinalist / 2015",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/556340000_1280.jpg"
+          }
+        },
+        "website": "https://example.com/blogging",
+        "contact-email": "blog@example.com",
+        "phone": "+1-555-789-0123",
+        "reading-time": 4,
+        "publish-date": "2023-10-06T00:00:00.000Z",
+        "featured": false,
+        "accent-color": "#33A1FF",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21027",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21027_image8.jpeg",
+          "alt": null
+        },
+        "category": "c162b2e715b9ea8c4070488a09ab060f",
+        "author": "6ad823ff2def343f12b77354",
+        "co-authors": [
+          "6ad823ff2def343f12b77354",
+          "6ad824043c4cdef8ff529d98",
+          "6ad823ee45bfdd80dc4a732a"
+        ],
+        "name": "Best CMS for Blogging",
+        "slug": "cms-for-blogging-6"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa21965",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:32:57.480Z",
+      "createdOn": "2026-10-21T02:32:57.480Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Emerging Trends</h1><p>As technology evolves, so do the trends in content management systems. Staying updated with these trends can help you leverage your CMS effectively.</p><h2>Key Trends</h2><ul><li><strong>AI Integration:</strong> AI tools are becoming common for content creation.</li><li><strong>Headless CMS:</strong> Flexibility in content delivery across platforms.</li><li><strong>Personalization:</strong> Tailoring content to user preferences is on the rise.</li></ul>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa2104c",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2104c_image5.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa2104f",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2104f_image5.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21052",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21052_image15.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21095",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21095_image3.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21058",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21058_image10.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2105e",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2105e_image5.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/79988821",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F79988821%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F79988821&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F455809692_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1280\" height=\"720\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "Design Starts Here",
+            "width": 1280,
+            "height": 720,
+            "aspectRatio": 0,
+            "author_name": "Elias Freiberger",
+            "description": "Design Starts Here is my graduation project for the MA Graphic Moving Image course at London College of Communication. From my research into the motion design and graphic design industries, I have often discovered that many people place too much of an emphasis on software.",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/455809692_1280.jpg"
+          }
+        },
+        "website": "https://example.com/trends",
+        "contact-email": "trends@example.com",
+        "phone": "+1-555-456-7890",
+        "reading-time": 5,
+        "publish-date": "2023-10-05T00:00:00.000Z",
+        "featured": true,
+        "accent-color": "#FF5733",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21018",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21018_image7.jpeg",
+          "alt": null
+        },
+        "category": "c162b2e715b9ea8c4070488a09ab060f",
+        "author": "6ad823ee45bfdd80dc4a732a",
+        "co-authors": [],
+        "name": "CMS Trends to Watch in 2023",
+        "slug": "cms-trends-2023-5"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa21963",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:32:57.452Z",
+      "createdOn": "2026-10-21T02:32:57.452Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>E-commerce Solutions</h1><p>A CMS can be a powerful tool for e-commerce businesses, allowing for easy product management and customer engagement.</p><h2>Benefits of E-commerce CMS</h2><ol><li><strong>Product Management:</strong> Easily add, edit, and remove products.</li><li><strong>Customer Interaction:</strong> Engage with customers through blogs and newsletters.</li><li><strong>Analytics:</strong> Track sales and customer behavior effectively.</li></ol>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa21040",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21040_image17.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21049",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21049_image12.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://www.youtube.com/watch?v=ipR6xq3ZjII&list=PLPmnoMVpkxfhSuCJx77M5ecapPhBHF0-v",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.youtube.com%2Fembed%2Fvideoseries%3Flist%3DPLPmnoMVpkxfhSuCJx77M5ecapPhBHF0-v&url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DipR6xq3ZjII&image=https%3A%2F%2Fi.ytimg.com%2Fvi%2FipR6xq3ZjII%2Fhqdefault.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=youtube\" width=\"854\" height=\"480\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "Dynamic content for beginners - Webflow CMS tutorial",
+            "width": 854,
+            "height": 480,
+            "aspectRatio": 0,
+            "author_name": "Webflow",
+            "description": "In this video, we'll explain the differences between static and dynamic content, and learn why the latter is so useful for some of the most popular content types on the web, from blog posts to product pages. ---------- Get started with Webflow: https://help.webflow.com/courses/getting-started http://webflow.com http://twitter.com/webflow http://facebook.com/webflow",
+            "provider_name": "YouTube",
+            "thumbnail_url": "https://i.ytimg.com/vi/ipR6xq3ZjII/hqdefault.jpg"
+          }
+        },
+        "website": "https://example.com/ecommerce",
+        "contact-email": "sales@example.com",
+        "phone": "+1-555-321-0987",
+        "reading-time": 7,
+        "publish-date": "2023-10-04T00:00:00.000Z",
+        "featured": false,
+        "accent-color": "#FF33A1",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21055",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21055_image10.jpeg",
+          "alt": null
+        },
+        "category": "9aacbc91fb9dacc1485dd580bef5ad0c",
+        "author": "6ad823ff2def343f12b77354",
+        "co-authors": [
+          "6ad824043c4cdef8ff529d98",
+          "6ad823ee45bfdd80dc4a732a",
+          "6ad823ff2def343f12b77354"
+        ],
+        "name": "Using CMS for E-commerce",
+        "slug": "cms-for-ecommerce-4"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa21961",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:32:57.432Z",
+      "createdOn": "2026-10-21T02:32:57.432Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Content Optimization</h1><p>Optimizing your content for a CMS involves using the right keywords, formatting, and multimedia elements to enhance user engagement.</p><h2>Strategies for Optimization</h2><ul><li><strong>Keyword Research:</strong> Identify relevant keywords for your audience.</li><li><strong>Use of Multimedia:</strong> Incorporate images and videos to enrich content.</li><li><strong>Clear Formatting:</strong> Use headings and lists for better readability.</li></ul>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa21015",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21015_image19.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21043",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21043_image16.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21046",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21046_image2.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2101b",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2101b_image20.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/22960091",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F22960091%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F22960091&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F149151260_1280.jpg&key=c4e54deccf4d4ec997a64902e9a30300&type=text%2Fhtml&schema=vimeo\" width=\"1280\" height=\"720\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "Helvetica in Motion",
+            "width": 1280,
+            "height": 720,
+            "aspectRatio": 0,
+            "author_name": "333",
+            "description": "1 minute animation using an interview snippet from the movie \"Helvetica\" of Mike Parker. Song by T.V. On The Radio: Love Dog.",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/149151260_1280.jpg"
+          }
+        },
+        "website": "https://example.com/optimization",
+        "contact-email": "contact@example.com",
+        "phone": "+1-555-654-3210",
+        "reading-time": 6,
+        "publish-date": "2023-10-03T00:00:00.000Z",
+        "featured": true,
+        "accent-color": "#3357FF",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa2103d",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2103d_image3.jpeg",
+          "alt": null
+        },
+        "category": "c162b2e715b9ea8c4070488a09ab060f",
+        "author": "6ad823ee45bfdd80dc4a732a",
+        "co-authors": [
+          "6ad823ff2def343f12b77354",
+          "6ad823ee45bfdd80dc4a732a",
+          "6ad824043c4cdef8ff529d98"
+        ],
+        "name": "Optimizing Content for Your CMS",
+        "slug": "optimizing-content-for-cms-3"
+      }
+    },
+    {
+      "id": "6ad82459d716cd2a5aa2195f",
+      "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+      "lastPublished": null,
+      "lastUpdated": "2026-10-21T02:32:57.398Z",
+      "createdOn": "2026-10-21T02:32:57.398Z",
+      "isArchived": false,
+      "isDraft": false,
+      "fieldData": {
+        "body": "<h1>Securing Your CMS</h1><p>Security is a critical aspect of managing a CMS. Regular updates, strong passwords, and user permissions are essential to protect your content.</p><h2>Key Security Measures</h2><ol><li><strong>Regular Updates:</strong> Keep your CMS and plugins updated.</li><li><strong>Strong Passwords:</strong> Use complex passwords for all accounts.</li><li><strong>User Permissions:</strong> Limit access to sensitive areas of your CMS.</li></ol>",
+        "main-image": {
+          "fileId": "6ad82446d716cd2a5aa21012",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21012_image20.jpeg",
+          "alt": null
+        },
+        "gallery": [
+          {
+            "fileId": "6ad82446d716cd2a5aa21034",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21034_image12.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa2108f",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2108f_image3.jpeg",
+            "alt": null
+          },
+          {
+            "fileId": "6ad82446d716cd2a5aa21024",
+            "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21024_image19.jpeg",
+            "alt": null
+          }
+        ],
+        "video": {
+          "url": "https://vimeo.com/219302853",
+          "metadata": {
+            "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F219302853%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F219302853&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F637019695_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1280\" height=\"720\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+            "type": "video",
+            "title": "Jeffrey Zeldman 20 years of Web Design and Community - an intimate portrait by lynda.com",
+            "width": 1280,
+            "height": 720,
+            "aspectRatio": 0,
+            "author_name": "Jeffrey Zeldman",
+            "description": "from lynda.com: Who is Jeffrey Zeldman? The \"Miles Davis of web design\"? \"Godfather of the web\"? Or simply \"your friend on the Internet\"? For people who make websites, Zeldman is all of these and more. He's been a guiding voice in web design since the earliest days of the Internet, leading the charge in the fight for web standards.",
+            "provider_name": "Vimeo",
+            "thumbnail_url": "https://i.vimeocdn.com/video/637019695_1280.jpg"
+          }
+        },
+        "website": "https://example.com/security",
+        "contact-email": "support@example.com",
+        "phone": "+1-555-987-6543",
+        "reading-time": 4,
+        "publish-date": "2023-10-02T00:00:00.000Z",
+        "featured": false,
+        "accent-color": "#33FF57",
+        "attachment": {
+          "fileId": "6ad82446d716cd2a5aa21037",
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21037_image17.jpeg",
+          "alt": null
+        },
+        "category": "c162b2e715b9ea8c4070488a09ab060f",
+        "author": "6ad823ff2def343f12b77354",
+        "co-authors": [
+          "6ad823ee45bfdd80dc4a732a"
+        ],
+        "name": "CMS Security Best Practices",
+        "slug": "cms-security-best-practices-2"
+      }
+    }
+  ],
+  "pagination": {
+    "limit": 100,
+    "offset": 0,
+    "total": 9
+  }
+}

@@ -10,8 +10,11 @@ import {
 } from "../../src/core";
 import { createFakeNextCache } from "../fake-next-cache";
 import {
+  OPTIONS,
   POSTS_ID,
   SITE_ID,
+  TUTORIALS_ID,
+  draftRawPost,
   fullRawPost,
   postsCollectionResponse,
   rawPost,
@@ -20,6 +23,7 @@ import {
 } from "../fixtures/schema";
 import { CDN_API, DATA_API, TEST_TOKEN, server } from "../msw";
 
+const POST = fullRawPost;
 const LIVE = `${DATA_API}/collections/${POSTS_ID}/items/live`;
 const list = (items: WebflowRawItem[], total = items.length) =>
   HttpResponse.json({ items, pagination: { limit: 100, offset: 0, total } });
@@ -45,10 +49,10 @@ describe("getItems", () => {
     server.use(http.get(LIVE, () => list([fullRawPost])));
     const { cms, cache } = setup();
 
-    const posts = await cms.getItems("blog-posts");
+    const posts = await cms.getItems("posts");
 
     expect(posts).toHaveLength(1);
-    expect(posts[0]?.fieldData.category).toEqual({ id: "opt-guides", name: "Guides" });
+    expect(posts[0]?.fieldData.category).toEqual(OPTIONS.guides);
     expect(cache.requests[0]?.init.next?.tags).toEqual(["webflow", `webflow:collection:${POSTS_ID}`]);
     expect(cache.requests[0]?.init.cache).toBe("force-cache");
   });
@@ -57,9 +61,9 @@ describe("getItems", () => {
     server.use(http.get(LIVE, () => list([fullRawPost])));
     const { cms } = setup();
 
-    const [post] = await cms.getItems("blog-posts");
-    expectTypeOf(post?.fieldData.postBody).toEqualTypeOf<string | undefined>();
-    expectTypeOf(post?.fieldData.category.name).toEqualTypeOf<"News" | "Guides" | undefined>();
+    const [post] = await cms.getItems("posts");
+    expectTypeOf(post?.fieldData.body).toEqualTypeOf<string | undefined>();
+    expectTypeOf(post?.fieldData.category?.name).toEqualTypeOf<"News" | "Guides" | undefined>();
     // @ts-expect-error: unknown collection slugs are rejected.
     await expect(cms.getItems("nope")).rejects.toThrow();
   });
@@ -74,15 +78,15 @@ describe("getItems", () => {
     );
     const { cms } = setup();
 
-    await cms.getItems("blog-posts", {
-      filter: { readingTime: { gte: 5 }, category: { in: ["opt-news"] }, featured: undefined },
+    await cms.getItems("posts", {
+      filter: { readingTime: { gte: 5 }, category: { in: [OPTIONS.news.id] }, featured: undefined },
       sortBy: "lastPublished",
       sortOrder: "desc",
       cmsLocaleId: "locale-2",
     });
 
     expect(search?.get("filter[reading-time][gte]")).toBe("5");
-    expect(search?.get("filter[category][in][0]")).toBe("opt-news");
+    expect(search?.get("filter[category][in][0]")).toBe(OPTIONS.news.id);
     expect(search?.get("sortBy")).toBe("lastPublished");
     expect(search?.get("sortOrder")).toBe("desc");
     expect(search?.get("cmsLocaleId")).toBe("locale-2");
@@ -98,7 +102,7 @@ describe("getItems", () => {
     );
     const { cms } = setup();
 
-    await cms.getItems("blog-posts", { limit: 20 });
+    await cms.getItems("posts", { limit: 20 });
     expect(limit).toBe("20");
   });
 
@@ -106,7 +110,7 @@ describe("getItems", () => {
     server.use(http.get(LIVE, () => list([fullRawPost])));
     const { cms } = setup();
 
-    const posts = await cms.getItems("blog-posts", { raw: true });
+    const posts = await cms.getItems("posts", { raw: true });
     expect(posts[0]).toEqual(fullRawPost);
     expectTypeOf(posts).toEqualTypeOf<WebflowRawItem[]>();
   });
@@ -115,7 +119,7 @@ describe("getItems", () => {
     server.use(http.get(`${CDN_API}/collections/${POSTS_ID}/items/live`, () => list([rawPost()])));
     const { cms } = setup({ source: "cdn" });
 
-    await expect(cms.getItems("blog-posts")).resolves.toHaveLength(1);
+    await expect(cms.getItems("posts")).resolves.toHaveLength(1);
   });
 });
 
@@ -130,34 +134,34 @@ describe("getItemBySlug", () => {
     );
     const { cms, cache } = setup();
 
-    const post = await cms.getItemBySlug("blog-posts", "hello-world");
+    const post = await cms.getItemBySlug("posts", POST.fieldData.slug);
 
-    expect(slug).toBe("hello-world");
-    expect(post?.fieldData.name).toBe("Hello world");
+    expect(slug).toBe(POST.fieldData.slug);
+    expect(post?.fieldData.name).toBe(POST.fieldData.name);
     expect(cache.requests).toHaveLength(1);
     expect(cache.requests[0]?.init.next?.tags).toEqual([
       "webflow",
       `webflow:collection:${POSTS_ID}`,
-      `webflow:collection:${POSTS_ID}:slug:hello-world`,
+      `webflow:collection:${POSTS_ID}:slug:${POST.fieldData.slug}`,
     ]);
   });
 
   it("returns null when no item has that slug", async () => {
     server.use(http.get(LIVE, () => list([])));
     const { cms } = setup();
-    await expect(cms.getItemBySlug("blog-posts", "missing")).resolves.toBeNull();
+    await expect(cms.getItemBySlug("posts", "missing")).resolves.toBeNull();
   });
 });
 
 describe("getItem", () => {
   it("reads a live item by ID, tagged with the item tag", async () => {
-    server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items/item-1/live`, () => HttpResponse.json(rawPost())));
+    server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items/${POST.id}/live`, () => HttpResponse.json(rawPost())));
     const { cms, cache } = setup();
 
-    const post = await cms.getItem("blog-posts", "item-1");
+    const post = await cms.getItem("posts", POST.id);
 
-    expect(post?.id).toBe("item-1");
-    expect(cache.requests[0]?.init.next?.tags).toEqual(["webflow", "webflow:item:item-1"]);
+    expect(post?.id).toBe(POST.id);
+    expect(cache.requests[0]?.init.next?.tags).toEqual(["webflow", `webflow:item:${POST.id}`]);
   });
 
   it("returns null for unknown or unpublished items (404)", async () => {
@@ -167,20 +171,20 @@ describe("getItem", () => {
       ),
     );
     const { cms } = setup();
-    await expect(cms.getItem("blog-posts", "item-9")).resolves.toBeNull();
+    await expect(cms.getItem("posts", "item-9")).resolves.toBeNull();
   });
 });
 
 describe("draft mode", () => {
   it("reads staged items from the Data API without caching", async () => {
     server.use(
-      http.get(`${DATA_API}/collections/${POSTS_ID}/items`, () => list([rawPost({ isDraft: true })])),
-      http.get(`${DATA_API}/collections/${POSTS_ID}/items/item-1`, () => HttpResponse.json(rawPost({ isDraft: true }))),
+      http.get(`${DATA_API}/collections/${POSTS_ID}/items`, () => list([draftRawPost])),
+      http.get(`${DATA_API}/collections/${POSTS_ID}/items/${draftRawPost.id}`, () => HttpResponse.json(draftRawPost)),
     );
     // Even with source: cdn, drafts come from the Data API.
     const { cms, cache } = setup({ draft: true, source: "cdn" });
 
-    const [posts, post] = await Promise.all([cms.getItems("blog-posts"), cms.getItem("blog-posts", "item-1")]);
+    const [posts, post] = await Promise.all([cms.getItems("posts"), cms.getItem("posts", draftRawPost.id)]);
 
     expect(posts[0]?.isDraft).toBe(true);
     expect(post?.isDraft).toBe(true);
@@ -200,14 +204,14 @@ describe("schema fallback", () => {
         calls.collection++;
         return HttpResponse.json(postsCollectionResponse);
       }),
-      http.get(LIVE, () => list([rawPost({ fieldData: { subtitle: "Sub", category: "opt-tutorials" } })])),
+      http.get(LIVE, () => list([rawPost({ fieldData: { subtitle: "Sub", category: TUTORIALS_ID } })])),
     );
     const { cms, logger } = setup<undefined>({ schema: undefined, siteId: SITE_ID });
 
-    const [post] = await cms.getItems("blog-posts");
-    await cms.getItemBySlug("blog-posts", "hello-world");
+    const [post] = await cms.getItems("posts");
+    await cms.getItemBySlug("posts", POST.fieldData.slug);
 
-    expect(post?.fieldData).toMatchObject({ subtitle: "Sub", category: { id: "opt-tutorials", name: "Tutorials" } });
+    expect(post?.fieldData).toMatchObject({ subtitle: "Sub", category: { id: TUTORIALS_ID, name: "Tutorials" } });
     expect(calls).toEqual({ collections: 1, collection: 1 });
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn.mock.calls[0]?.[0]).toMatch(/typegen/);
@@ -222,14 +226,14 @@ describe("schema fallback", () => {
       http.get(LIVE, () => list([])),
     );
     const { cms } = setup<undefined>({ schema: undefined });
-    await expect(cms.getItems("blog-posts")).resolves.toEqual([]);
+    await expect(cms.getItems("posts")).resolves.toEqual([]);
   });
 
   it("explains how to fix a missing schema and site ID", async () => {
     vi.stubEnv("WEBFLOW_SITE_ID", "");
     const { cms } = setup<undefined>({ schema: undefined });
 
-    const error = await cms.getItems("blog-posts").catch((caught: unknown) => caught);
+    const error = await cms.getItems("posts").catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(WebflowConfigError);
     expect((error as Error).message).toMatch(/typegen.*WEBFLOW_SITE_ID/s);
   });
@@ -241,15 +245,15 @@ describe("schema fallback", () => {
         schemaFetches++;
         return HttpResponse.json(postsCollectionResponse);
       }),
-      http.get(LIVE, () => list([rawPost({ fieldData: { category: "opt-tutorials" } })])),
+      http.get(LIVE, () => list([rawPost({ fieldData: { category: TUTORIALS_ID } })])),
     );
     const { cms, logger } = setup();
 
-    const [first] = await cms.getItems("blog-posts");
-    const [second] = await cms.getItems("blog-posts");
+    const [first] = await cms.getItems("posts");
+    const [second] = await cms.getItems("posts");
 
-    expect(first?.fieldData.category).toEqual({ id: "opt-tutorials", name: "Tutorials" });
-    expect(second?.fieldData.category).toEqual({ id: "opt-tutorials", name: "Tutorials" });
+    expect(first?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: "Tutorials" });
+    expect(second?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: "Tutorials" });
     expect(schemaFetches).toBe(1);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn.mock.calls[0]?.[0]).toMatch(/out of date.*unknown options in: category/);
@@ -262,20 +266,41 @@ describe("schema fallback", () => {
     );
     const { cms, cache } = setup();
 
-    await cms.getItems("blog-posts");
+    await cms.getItems("posts");
 
     const schemaRequest = cache.requests.find((request) => request.url.endsWith(`/collections/${POSTS_ID}`));
     expect(schemaRequest?.init.next?.tags).toEqual(["webflow", `webflow:collection:${POSTS_ID}`]);
   });
 
-  it("keeps serving items if the schema refresh fails", async () => {
+  it("keeps serving items if the schema refresh fails; unknown Options get name: undefined", async () => {
     server.use(
       http.get(`${DATA_API}/collections/${POSTS_ID}`, () => HttpResponse.json({ message: "boom" }, { status: 400 })),
-      http.get(LIVE, () => list([rawPost({ fieldData: { subtitle: "new field" } })])),
+      http.get(LIVE, () =>
+        list([rawPost({ fieldData: { subtitle: "new field", category: TUTORIALS_ID } })]),
+      ),
     );
-    const { cms } = setup();
+    const { cms, logger } = setup();
 
-    const [post] = await cms.getItems("blog-posts");
+    const [post] = await cms.getItems("posts");
+
     expect(post?.fieldData).toMatchObject({ subtitle: "new field" });
+    expect(post?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: undefined });
+    const warnings = logger.warn.mock.calls.map(([message]) => String(message));
+    expect(warnings).toEqual([
+      expect.stringMatching(/out of date/),
+      expect.stringMatching(/Could not fetch the live schema for "posts" \(boom/),
+      expect.stringMatching(/Unknown Option IDs in "posts" .*name: undefined/),
+    ]);
+  });
+
+  it("does not warn about options once the refreshed schema resolves them", async () => {
+    server.use(
+      http.get(`${DATA_API}/collections/${POSTS_ID}`, () => HttpResponse.json(postsCollectionResponse)),
+      http.get(LIVE, () => list([rawPost({ fieldData: { category: TUTORIALS_ID } })])),
+    );
+    const { cms, logger } = setup();
+
+    await cms.getItems("posts");
+    expect(logger.warn).toHaveBeenCalledTimes(1);
   });
 });

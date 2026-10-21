@@ -1,4 +1,6 @@
-import { draftMode } from "next/headers";
+// `.js` extension: `next` has no `exports` map, so the bare subpath fails in plain Node ESM
+// (CLI, scripts). Bundlers resolve both forms.
+import { draftMode } from "next/headers.js";
 import type { CacheAdapter } from "../core/cms";
 
 /**

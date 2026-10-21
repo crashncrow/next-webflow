@@ -11,7 +11,8 @@
     "test": "pnpm --filter next-webflow test",
     "test:edge": "pnpm --filter next-webflow test:edge",
     "typecheck": "pnpm --filter next-webflow typecheck",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:contract": "pnpm --filter next-webflow test:contract"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

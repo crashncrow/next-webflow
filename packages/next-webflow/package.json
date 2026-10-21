@@ -16,10 +16,12 @@
   },
   "scripts": {
     "build": "tsdown",
-    "test": "vitest run",
+    "test": "vitest run --project node --project edge",
     "test:edge": "vitest run --project edge",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test:contract": "vitest run --project contract",
+    "fixtures:update": "node scripts/update-fixtures.ts"
   },
   "keywords": [
     "webflow",

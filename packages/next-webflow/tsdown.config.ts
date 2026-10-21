@@ -9,5 +9,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   // Peer dependencies: resolved from the user's app.
-  external: [/^next(\/|$)/, /^react(\/|$)/, /^react-dom(\/|$)/],
+  deps: { neverBundle: [/^next(\/|$)/, /^react(\/|$)/, /^react-dom(\/|$)/] },
 });

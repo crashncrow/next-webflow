@@ -299,6 +299,22 @@ Route `/api/webflow/draft` = `createDraftHandler({ schema, resolvePath })`; `WEB
 
 **Protected drafts page (README example copied verbatim into `src/proxy.ts` and `src/app/drafts/page.tsx`):** Next 16 `proxy.ts` builds with "Node.js middleware support is experimental in cloudflare" and works: `/spike/drafts` → 401 with `WWW-Authenticate: Basic realm="Drafts"` without or with a wrong password, 200 with `DRAFTS_PASSWORD`; the listed links carry `/spike` (via `next/link`) and redirect to the staged item.
 
+### 9. Components on Cloud (stage 7, 2026-10-21)
+
+`/components` (dynamic, so the parser runs in workerd at request time):
+
+| Check | Result |
+| --- | --- |
+| Real Rich Text (`posts` body) | rendered inside `.w-richtext` |
+| Same-site link / external link | `/spike/load/load-test-item-1` (next/link adds the base path) / plain `https://example.com` |
+| `<wf-component name="Callout">` with `webflowComponents` | `<aside data-title="Heads up"><p>Bring your towel.</p></aside>` |
+| 13 Rich Text probes with execution vectors, as read back from the API | 0 `<script>`, 0 handlers, 0 `javascript:`, 0 `srcdoc`, 0 `<object>`/`<embed>` |
+| Server bundle | no `DOMParser`, no html-dom-parser client build |
+| `WebflowImage` 640×360 | `srcSet` lists the **same original URL** for every width: Cloud's loader doesn't optimize Webflow CDN images |
+| `DraftModeBanner` | absent without the cookie; with it, "Exit preview" → `/spike/api/webflow/draft?disable=1&path=%2Fcomponents` → 307 back, banner gone |
+
+The builder's `webflow-loader.ts` (CLI template, `images.loader: "custom"`, merged over the app's `images` settings) returns absolute URLs unchanged on purpose (its comment: external images aren't optimized, and resizing Webflow-hosted images would be billed twice); only relative `src` go through `/cdn-cgi/image/`. So `unoptimized` (prop or `images.unoptimized`) is the way to drop the repeated `srcSet`. Webflow's CDN itself doesn't resize: `?width=`, `?w=`, `?q=`, `?format=webp` return the same 176,995-byte JPEG; `-p-500` variants 403; `/cdn-cgi/image/…` 404.
+
 ### What a paid plan (Premium, 20K items) would let us measure for real
 
 Everything above for 100-item pages and > 50 items is **extrapolated** from `load-test` (35 items, ~2.4 KB each). Plan (decided 2026-10-21): upgrade the test site for one month right before releasing v0.1 and measure the final library once. **Release blockers** (can force code changes): 2, 4, 5. **Documentation numbers**: 1, 3, 6. Measurements that need the upgrade:

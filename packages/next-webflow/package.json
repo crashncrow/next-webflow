@@ -12,10 +12,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./webhook": {
+      "types": "./dist/webhook.d.ts",
+      "default": "./dist/webhook.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsdown",
     "test": "vitest run --project node --project edge",
     "test:edge": "vitest run --project edge",
     "test:watch": "vitest",
@@ -51,5 +55,8 @@
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "bin": {
+    "next-webflow": "./dist/cli.mjs"
+  }
 }

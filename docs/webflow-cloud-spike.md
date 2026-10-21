@@ -27,6 +27,67 @@ npm run deploy                          # redeploy so the app picks up the varia
 
 First deploy (2026-10-21): app `next-webflow-spike`, environment `main`, mount `/spike` on `next-webflow-d8ce88.webflow.io`. A first attempt was stopped before upload when the bundled secrets were found.
 
+## Working cache config (deploy `a779ed30`, 2026-10-21)
+
+The config that made the data cache and `revalidateTag` work. Versions: Next.js 16.4.2, `@opennextjs/cloudflare` 1.20.12, Webflow CLI 2.13.0.
+
+- **Incremental cache (fetch/data cache): Workers KV**, `kvIncrementalCache`, binding `NEXT_INC_CACHE_KV`.
+- **Tag cache: D1**, `d1NextTagCache` (OpenNext "nextMode" tag cache), binding `NEXT_TAG_CACHE_D1`, table `revalidations`. It records when each tag was revalidated; a cached entry older than its tags' last revalidation is a miss. Not KV (`kvNextTagCache`) and not Durable Objects (not documented on Webflow Cloud).
+- **Queue: none** (OpenNext default `dummy`). It's only needed for time-based ISR.
+
+`spikes/webflow-cloud/open-next.config.ts`:
+
+```ts
+// Webflow Cloud generates `defineCloudflareConfig()` (dummy caches: no data cache, revalidateTag is a
+// no-op) only when the app has no open-next.config.ts. This one backs the Next data cache with KV and
+// the tag cache with D1, both provisioned by Webflow Cloud from the bindings in wrangler.json.
+// No queue: it only serves time-based ISR, and Webflow Cloud doesn't document the service binding
+// (WORKER_SELF_REFERENCE) or Durable Objects the queue overrides need.
+// NOTE: the Webflow builder deletes this file after deploying; keep it committed (`npm run deploy`
+// checks it exists).
+import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import kvIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache";
+import d1NextTagCache from "@opennextjs/cloudflare/overrides/tag-cache/d1-next-tag-cache";
+
+export default defineCloudflareConfig({
+  incrementalCache: kvIncrementalCache,
+  tagCache: d1NextTagCache,
+});
+```
+
+`spikes/webflow-cloud/wrangler.json` (IDs are placeholders; Webflow Cloud provisions one KV namespace and one D1 database per environment and substitutes the real IDs):
+
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "next-webflow-spike",
+  "compatibility_date": "2025-03-03",
+  "kv_namespaces": [{ "binding": "NEXT_INC_CACHE_KV", "id": "local" }],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "next-tag-cache",
+      "database_id": "0",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
+```
+
+`spikes/webflow-cloud/migrations/0001_revalidations.sql` (applied by Webflow Cloud on every deploy):
+
+```sql
+-- Table OpenNext's D1 tag cache reads and writes (same DDL as `opennextjs-cloudflare populateCache`).
+-- Webflow Cloud applies migrations_dir on every deploy.
+CREATE TABLE IF NOT EXISTS revalidations (tag TEXT NOT NULL, revalidatedAt INTEGER NOT NULL, stale INTEGER, expire INTEGER default NULL, UNIQUE(tag) ON CONFLICT REPLACE);
+```
+
+## Open questions for v0.2
+
+1. **Cache behavior after a redeploy (top priority).** OpenNext keys cache entries by build ID, so a redeploy should start cold: every page refetches from Webflow, which can spike API usage on large sites. To verify: are old KV entries orphaned (storage growth)? Does the D1 `revalidations` table survive (it should; same database)? How long until the cache is warm again?
+2. Staleness across regions (KV is eventually consistent; one location measured).
+3. Pagination with more than 6 pages of 100 items against the 6-connection limit (needs > 600 items).
+
 ## Questions and how they're measured
 
 ### 1. Does the Next data cache persist across requests?
@@ -93,6 +154,26 @@ Durations are noisy (single runs, cold isolates). Exceeding 6 concurrent request
 | Base path: links and client fetches work under the mount path | OK (`/spike`, assets from `*.wf-app-prod.cosmic.webflow.services/spike`). |
 | VideoLink normalization | **Old library deployed**: `package-lock.json` pinned the previous tarball's integrity and the builder's `npm ci` installed it from cache. `pack-lib` now refreshes the lock entry; redeploy pending. |
 | `lastPublished` on live items | `null` right after the first site publish (contract test); non-null after a later site publish, and set to the publish time after an item-level publish (`2026-10-21T03:41:14Z`). Treat it as optional on live items. |
+
+### 5. Webhooks end to end (stage 4, deploy with D1 webhook log, 2026-10-21)
+
+Six signed webhooks registered with `npm run webhooks -- register` (every CMS event + `site_publish`) against `/spike/api/webflow` (the library's handler, plus a D1 log of every request). `npm run watch` polled the log and `/library` every 2 s. Actions in the CMS UI unless noted. All 11 Webflow deliveries signed and answered 200 (plus a manual unsigned request → 401).
+
+| # | Action | Webhooks (in order) | Payload | Invalidated (mapping at the time) | Visible in `/library` |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Edit name, save, don't publish | `changed` | flat, `isDraft: true`, `lastUpdated` > `lastPublished` | nothing | unchanged ✔ |
+| 2 | "Publish now" on that item | `changed` (`isDraft: false`), `published` | `published`: **`items[]`** | collection + item | new name ~1.5 s after the webhook ✔ |
+| 3 | Unpublish | `unpublished` | flat, `isDraft: false`, `lastPublished: null` | collection + item | gone ~1.5 s ✔ |
+| 4 | Delete a published item | `deleted` | flat | collection + item | **still listed**: Webflow's live list kept it until the next site publish (10 min); gone 1.5 s after `site_publish` |
+| 5 | Change slug + publish | `changed` (`isDraft: true`), `published`, `changed` | | collection + item | old slug → `null`, new slug resolves, ~1 s ✔ |
+| 6 | Publish site | `site_publish` | `siteId, publishedOn, domains, publishedBy, publishSource` | `webflow` | ✔ |
+| 7 | `PATCH /items/live` (API) | **only `changed`** | flat, `isDraft: false`, `lastPublished` = `lastUpdated` | nothing → **stale list** | stale until the next invalidation |
+
+Conclusions:
+- Flags are `isArchived`/`isDraft`; `collection_item_published` uses `items[]`, every other item event a flat item (upstream finding 5).
+- `isDraft` is `true` only while an item has staged changes. Mapping changed (2026-10-21): `created`/`changed` invalidate unless `isDraft === true` (fail-safe; timestamps are logged, never used), and `webhooks register` subscribes to every CMS event by default. Fixes case 7.
+- Case 4 is a Webflow API inconsistency (upstream finding 8). README documents publishing the site after deletes.
+- The Cloud app kept serving after site publishes. Raw payloads → `test/fixtures/api/webhooks/` (`publishedBy` anonymized).
 
 ## Contract test (real API vs fixtures)
 

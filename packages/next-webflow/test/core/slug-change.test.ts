@@ -53,8 +53,9 @@ describe("slug changes", () => {
     await cms.getItemBySlug("posts", "stable");
     cache.revalidateTag(
       ...tagsForEvent({
-        triggerType: "collection_item_changed",
-        payload: { id: "item-2", collectionId: POSTS_ID, fieldData: { slug: "other" } },
+        // Another item of the same collection is published.
+        triggerType: "collection_item_published",
+        payload: { items: [{ id: "item-2", collectionId: POSTS_ID, fieldData: { slug: "other" } }] },
       }),
     );
     await cms.getItemBySlug("posts", "stable");

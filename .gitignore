@@ -14,6 +14,7 @@ coverage/
 # Spike secrets live outside .env* (OpenNext bakes .env* into the Cloud worker bundle).
 spikes/webflow-cloud/local.env
 spikes/webflow-cloud/seed.env
+spikes/webflow-cloud/e2e-output/
 # Files the Webflow Cloud builder generates in the app directory.
 spikes/webflow-cloud/.tmp/
 spikes/webflow-cloud/clouduser.next.config.ts

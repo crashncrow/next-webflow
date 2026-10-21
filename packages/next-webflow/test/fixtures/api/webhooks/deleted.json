@@ -1,0 +1,251 @@
+{
+  "triggerType": "collection_item_deleted",
+  "payload": {
+    "id": "6ad82459d716cd2a5aa21963",
+    "siteId": "6ad820fdc7a6d0801b96394e",
+    "workspaceId": "6ad7740577ac4a39b66b0410",
+    "collectionId": "6ad82366355bfa1700d50617",
+    "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+    "lastPublished": "2026-10-21T02:38:41.410Z",
+    "lastUpdated": "2026-10-21T02:32:57.452Z",
+    "createdOn": "2026-10-21T02:32:57.452Z",
+    "isArchived": false,
+    "isDraft": false,
+    "fieldData": {
+      "_locale": "6ad821e739d35cd41a8c5fce",
+      "body": [
+        {
+          "_id": "4dec7b56-fbdd-8fc3-4945-7faa5101236e",
+          "tag": "h1",
+          "data": {
+            "tag": "h1"
+          },
+          "type": "Heading",
+          "classes": [],
+          "children": [
+            "0331e050-99d5-ac85-08db-d79e3d2c60c5"
+          ]
+        },
+        {
+          "v": "E-commerce Solutions",
+          "_id": "0331e050-99d5-ac85-08db-d79e3d2c60c5",
+          "text": true
+        },
+        {
+          "_id": "86aacc9d-56c3-e246-0530-a44df65340da",
+          "tag": "p",
+          "data": {
+            "tag": "p"
+          },
+          "type": "Paragraph",
+          "classes": [],
+          "children": [
+            "16491987-7f0c-a32e-228c-79a80cefc984"
+          ]
+        },
+        {
+          "v": "A CMS can be a powerful tool for e-commerce businesses, allowing for easy product management and customer engagement.",
+          "_id": "16491987-7f0c-a32e-228c-79a80cefc984",
+          "text": true
+        },
+        {
+          "_id": "c9656027-5634-dba6-a8c6-d0ad2ef185b5",
+          "tag": "h2",
+          "data": {
+            "tag": "h2"
+          },
+          "type": "Heading",
+          "classes": [],
+          "children": [
+            "c148ccd8-e312-af7c-6745-ab105a547acd"
+          ]
+        },
+        {
+          "v": "Benefits of E-commerce CMS",
+          "_id": "c148ccd8-e312-af7c-6745-ab105a547acd",
+          "text": true
+        },
+        {
+          "_id": "7ba22bd6-beaa-3e21-4c3b-54b5166b4d48",
+          "tag": "ol",
+          "data": {
+            "tag": "ol",
+            "list": {
+              "type": "list"
+            }
+          },
+          "type": "List",
+          "classes": [],
+          "children": [
+            "71f2e9ad-3bd6-34c5-1445-6ffb6ff6e5b2",
+            "4cada629-f26e-1fa5-9ed8-984a885469e5",
+            "25e72b2c-3172-b59d-a3f8-8a44ea518790"
+          ]
+        },
+        {
+          "_id": "71f2e9ad-3bd6-34c5-1445-6ffb6ff6e5b2",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "2d6580ce-fd0f-41d4-129b-1b45e83a07a5",
+            "003fd1b9-769f-ff27-212a-ed08ae9c2f86"
+          ]
+        },
+        {
+          "_id": "2d6580ce-fd0f-41d4-129b-1b45e83a07a5",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "29d78577-3c1d-2cd9-c033-cc02a9d055a0"
+          ]
+        },
+        {
+          "v": "Product Management:",
+          "_id": "29d78577-3c1d-2cd9-c033-cc02a9d055a0",
+          "text": true
+        },
+        {
+          "v": " Easily add, edit, and remove products.",
+          "_id": "003fd1b9-769f-ff27-212a-ed08ae9c2f86",
+          "text": true
+        },
+        {
+          "_id": "4cada629-f26e-1fa5-9ed8-984a885469e5",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "9422acb9-519c-1159-e4a2-188468000993",
+            "1011fe96-e203-99a1-aec4-8846da268bfa"
+          ]
+        },
+        {
+          "_id": "9422acb9-519c-1159-e4a2-188468000993",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "641d45a7-74ab-c59c-7b6f-fa1916954f9b"
+          ]
+        },
+        {
+          "v": "Customer Interaction:",
+          "_id": "641d45a7-74ab-c59c-7b6f-fa1916954f9b",
+          "text": true
+        },
+        {
+          "v": " Engage with customers through blogs and newsletters.",
+          "_id": "1011fe96-e203-99a1-aec4-8846da268bfa",
+          "text": true
+        },
+        {
+          "_id": "25e72b2c-3172-b59d-a3f8-8a44ea518790",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "e40cbf9b-4790-7ed0-3c92-4b370face8f8",
+            "6af569bf-dcc1-8192-d417-b3b4dbce9448"
+          ]
+        },
+        {
+          "_id": "e40cbf9b-4790-7ed0-3c92-4b370face8f8",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "6e2624bb-1731-53ca-022f-3971ac29d042"
+          ]
+        },
+        {
+          "v": "Analytics:",
+          "_id": "6e2624bb-1731-53ca-022f-3971ac29d042",
+          "text": true
+        },
+        {
+          "v": " Track sales and customer behavior effectively.",
+          "_id": "6af569bf-dcc1-8192-d417-b3b4dbce9448",
+          "text": true
+        }
+      ],
+      "main-image": {
+        "alt": null,
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21040_image17.jpeg",
+        "fileId": "6ad82446d716cd2a5aa21040"
+      },
+      "gallery": [
+        {
+          "alt": null,
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21049_image12.jpeg",
+          "fileId": "6ad82446d716cd2a5aa21049"
+        }
+      ],
+      "video": {
+        "url": "https://www.youtube.com/watch?v=ipR6xq3ZjII&list=PLPmnoMVpkxfhSuCJx77M5ecapPhBHF0-v",
+        "metadata": {
+          "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.youtube.com%2Fembed%2Fvideoseries%3Flist%3DPLPmnoMVpkxfhSuCJx77M5ecapPhBHF0-v&url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DipR6xq3ZjII&image=https%3A%2F%2Fi.ytimg.com%2Fvi%2FipR6xq3ZjII%2Fhqdefault.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=youtube\" width=\"854\" height=\"480\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+          "type": "video",
+          "title": "Dynamic content for beginners - Webflow CMS tutorial",
+          "width": 854,
+          "height": 480,
+          "aspectRatio": 0,
+          "author_name": "Webflow",
+          "description": "In this video, we'll explain the differences between static and dynamic content, and learn why the latter is so useful for some of the most popular content types on the web, from blog posts to product pages. ---------- Get started with Webflow: https://help.webflow.com/courses/getting-started http://webflow.com http://twitter.com/webflow http://facebook.com/webflow",
+          "provider_name": "YouTube",
+          "thumbnail_url": "https://i.ytimg.com/vi/ipR6xq3ZjII/hqdefault.jpg"
+        }
+      },
+      "website": "https://example.com/ecommerce",
+      "contact-email": "sales@example.com",
+      "phone": "+1-555-321-0987",
+      "reading-time": 7,
+      "publish-date": "2023-10-04T00:00:00.000Z",
+      "featured": false,
+      "accent-color": "#FF33A1",
+      "attachment": {
+        "alt": null,
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21055_image10.jpeg",
+        "fileId": "6ad82446d716cd2a5aa21055"
+      },
+      "category": "9aacbc91fb9dacc1485dd580bef5ad0c",
+      "author": "6ad823ff2def343f12b77354",
+      "co-authors": [
+        "6ad824043c4cdef8ff529d98",
+        "6ad823ee45bfdd80dc4a732a",
+        "6ad823ff2def343f12b77354"
+      ],
+      "name": "Using CMS for E-commerce",
+      "slug": "cms-for-ecommerce-4",
+      "_noSearch": false
+    }
+  }
+}

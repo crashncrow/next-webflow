@@ -1,0 +1,261 @@
+{
+  "triggerType": "collection_item_unpublished",
+  "payload": {
+    "id": "6ad82459d716cd2a5aa21961",
+    "siteId": "6ad820fdc7a6d0801b96394e",
+    "workspaceId": "6ad7740577ac4a39b66b0410",
+    "collectionId": "6ad82366355bfa1700d50617",
+    "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+    "lastPublished": null,
+    "lastUpdated": "2026-10-21T02:32:57.432Z",
+    "createdOn": "2026-10-21T02:32:57.432Z",
+    "isArchived": false,
+    "isDraft": false,
+    "fieldData": {
+      "_locale": "6ad821e739d35cd41a8c5fce",
+      "body": [
+        {
+          "_id": "82c9cad4-ea04-4039-44e4-b4dd69289d41",
+          "tag": "h1",
+          "data": {
+            "tag": "h1"
+          },
+          "type": "Heading",
+          "classes": [],
+          "children": [
+            "ea172800-fa33-0868-caa5-535b48d782e0"
+          ]
+        },
+        {
+          "v": "Content Optimization",
+          "_id": "ea172800-fa33-0868-caa5-535b48d782e0",
+          "text": true
+        },
+        {
+          "_id": "e10a4523-9c17-4c8c-3abf-94e0c15cea5d",
+          "tag": "p",
+          "data": {
+            "tag": "p"
+          },
+          "type": "Paragraph",
+          "classes": [],
+          "children": [
+            "cabd76ce-4479-05be-2a5a-b85ec6c68128"
+          ]
+        },
+        {
+          "v": "Optimizing your content for a CMS involves using the right keywords, formatting, and multimedia elements to enhance user engagement.",
+          "_id": "cabd76ce-4479-05be-2a5a-b85ec6c68128",
+          "text": true
+        },
+        {
+          "_id": "6cd11d57-5ae8-40e1-6a65-e81cf6d712dc",
+          "tag": "h2",
+          "data": {
+            "tag": "h2"
+          },
+          "type": "Heading",
+          "classes": [],
+          "children": [
+            "d2592195-33f6-9fca-0015-cdef5a5b62a9"
+          ]
+        },
+        {
+          "v": "Strategies for Optimization",
+          "_id": "d2592195-33f6-9fca-0015-cdef5a5b62a9",
+          "text": true
+        },
+        {
+          "_id": "4288a160-eaa4-45e1-89e7-b5d1784e1e9a",
+          "tag": "ul",
+          "data": {
+            "tag": "ul",
+            "list": {
+              "type": "list"
+            }
+          },
+          "type": "List",
+          "classes": [],
+          "children": [
+            "11dc6b2d-2713-eaba-9107-ab0bf6fb8cdc",
+            "b9914a13-8882-cbc4-4551-6bb5f5821ca2",
+            "9171ff58-3163-ddcb-aa35-8664698860d5"
+          ]
+        },
+        {
+          "_id": "11dc6b2d-2713-eaba-9107-ab0bf6fb8cdc",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "b7a513e2-45bc-ec3f-90ec-3bdb5c1d5ae1",
+            "b6018971-3744-e24c-4084-659a705bdd8a"
+          ]
+        },
+        {
+          "_id": "b7a513e2-45bc-ec3f-90ec-3bdb5c1d5ae1",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "d044e654-40e2-08e6-1cfb-1562c84dc02d"
+          ]
+        },
+        {
+          "v": "Keyword Research:",
+          "_id": "d044e654-40e2-08e6-1cfb-1562c84dc02d",
+          "text": true
+        },
+        {
+          "v": " Identify relevant keywords for your audience.",
+          "_id": "b6018971-3744-e24c-4084-659a705bdd8a",
+          "text": true
+        },
+        {
+          "_id": "b9914a13-8882-cbc4-4551-6bb5f5821ca2",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "997a94a0-7aa2-7ab5-dd21-89a50a1433cc",
+            "b505f8b6-d2a7-9cfe-b44a-1978d5611da2"
+          ]
+        },
+        {
+          "_id": "997a94a0-7aa2-7ab5-dd21-89a50a1433cc",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "cb2d9fc1-6359-82f8-5a28-b02fbd5fa453"
+          ]
+        },
+        {
+          "v": "Use of Multimedia:",
+          "_id": "cb2d9fc1-6359-82f8-5a28-b02fbd5fa453",
+          "text": true
+        },
+        {
+          "v": " Incorporate images and videos to enrich content.",
+          "_id": "b505f8b6-d2a7-9cfe-b44a-1978d5611da2",
+          "text": true
+        },
+        {
+          "_id": "9171ff58-3163-ddcb-aa35-8664698860d5",
+          "tag": "li",
+          "data": {
+            "tag": "li",
+            "list": {
+              "type": "item"
+            }
+          },
+          "type": "ListItem",
+          "classes": [],
+          "children": [
+            "1238e775-9569-20c2-a7c7-2289569d38df",
+            "37a6193e-0163-290e-bdfd-b5d83fc5a1ff"
+          ]
+        },
+        {
+          "_id": "1238e775-9569-20c2-a7c7-2289569d38df",
+          "tag": "strong",
+          "data": {
+            "tag": "strong"
+          },
+          "type": "Strong",
+          "classes": [],
+          "children": [
+            "e4678130-e78b-56ce-126a-9690e0dd6c20"
+          ]
+        },
+        {
+          "v": "Clear Formatting:",
+          "_id": "e4678130-e78b-56ce-126a-9690e0dd6c20",
+          "text": true
+        },
+        {
+          "v": " Use headings and lists for better readability.",
+          "_id": "37a6193e-0163-290e-bdfd-b5d83fc5a1ff",
+          "text": true
+        }
+      ],
+      "main-image": {
+        "alt": null,
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21015_image19.jpeg",
+        "fileId": "6ad82446d716cd2a5aa21015"
+      },
+      "gallery": [
+        {
+          "alt": null,
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21043_image16.jpeg",
+          "fileId": "6ad82446d716cd2a5aa21043"
+        },
+        {
+          "alt": null,
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21046_image2.jpeg",
+          "fileId": "6ad82446d716cd2a5aa21046"
+        },
+        {
+          "alt": null,
+          "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2101b_image20.jpeg",
+          "fileId": "6ad82446d716cd2a5aa2101b"
+        }
+      ],
+      "video": {
+        "url": "https://vimeo.com/22960091",
+        "metadata": {
+          "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F22960091%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F22960091&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F149151260_1280.jpg&key=c4e54deccf4d4ec997a64902e9a30300&type=text%2Fhtml&schema=vimeo\" width=\"1280\" height=\"720\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+          "type": "video",
+          "title": "Helvetica in Motion",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 0,
+          "author_name": "333",
+          "description": "1 minute animation using an interview snippet from the movie \"Helvetica\" of Mike Parker. Song by T.V. On The Radio: Love Dog.",
+          "provider_name": "Vimeo",
+          "thumbnail_url": "https://i.vimeocdn.com/video/149151260_1280.jpg"
+        }
+      },
+      "website": "https://example.com/optimization",
+      "contact-email": "contact@example.com",
+      "phone": "+1-555-654-3210",
+      "reading-time": 6,
+      "publish-date": "2023-10-03T00:00:00.000Z",
+      "featured": true,
+      "accent-color": "#3357FF",
+      "attachment": {
+        "alt": null,
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2103d_image3.jpeg",
+        "fileId": "6ad82446d716cd2a5aa2103d"
+      },
+      "category": "c162b2e715b9ea8c4070488a09ab060f",
+      "author": "6ad823ee45bfdd80dc4a732a",
+      "co-authors": [
+        "6ad823ff2def343f12b77354",
+        "6ad823ee45bfdd80dc4a732a",
+        "6ad824043c4cdef8ff529d98"
+      ],
+      "name": "Optimizing Content for Your CMS",
+      "slug": "optimizing-content-for-cms-3",
+      "_noSearch": false
+    }
+  }
+}

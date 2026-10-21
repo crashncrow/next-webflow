@@ -1,0 +1,20 @@
+{
+  "triggerType": "site_publish",
+  "payload": {
+    "siteId": "6ad820fdc7a6d0801b96394e",
+    "publishedOn": "2026-10-21T15:18:36.107Z",
+    "domains": [
+      "next-webflow-d8ce88.webflow.io"
+    ],
+    "publishedBy": {
+      "displayName": "Test User",
+      "email": "test@example.com",
+      "id": "000000000000000000000000"
+    },
+    "publishSource": {
+      "type": "designer",
+      "clientId": null,
+      "clientName": null
+    }
+  }
+}

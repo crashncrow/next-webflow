@@ -58,8 +58,34 @@ export {
   listTags,
   slugLookupTags,
   slugTag,
-  tagsForEvent,
 } from "./tags";
+export {
+  CMS_WEBHOOK_EVENTS,
+  DEFAULT_TIMESTAMP_TOLERANCE_MS,
+  DEFAULT_WEBHOOK_EVENTS,
+  SIGNATURE_HEADER,
+  TIMESTAMP_HEADER,
+  constantTimeEqual,
+  parseSecrets,
+  parseWebhookEvent,
+  tagsForEvent,
+  verifyWebflowSignature,
+  type CmsWebhookEvent,
+  type EventTagsOptions,
+  type SignatureFailure,
+  type SignatureResult,
+  type VerifySignatureInput,
+  type WebflowWebhookEvent,
+  type WebhookItem,
+} from "./webhook";
+export {
+  UNSIGNED_WEBHOOK_MESSAGE,
+  createWebhookRequestHandler,
+  type RevalidateProfile,
+  type WebhookHandlerDeps,
+  type WebhookHandlerOptions,
+  type WebhookLogger,
+} from "./webhook-handler";
 export {
   WebflowApiError,
   WebflowBadRequestError,

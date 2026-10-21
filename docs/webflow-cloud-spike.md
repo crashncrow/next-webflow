@@ -87,11 +87,12 @@ Durations are noisy (single runs, cold isolates). Exceeding 6 concurrent request
 | --- | --- |
 | `getItems("posts")` without generated schema (API fallback + warning) | Not tested (deployed with a snapshot). |
 | With `src/webflow-schema.ts` snapshot: no warnings | OK, no warnings. |
-| After adding a new Option + item using it: warning, correct name via fallback | Pending. |
+| After adding a new Option + item using it: warning, correct name via fallback | **OK** (KV + D1 deploy). Added `Tutorials` in the Designer, set it on `cms-trends-2023-5`, item-level "Publish now". `getItemBySlug` warned "generated schema for \"posts\" is out of date (unknown options in: category)" and returned `{ id, name: "Tutorials" }`. |
+| Cached list + collection tag (the webhook flow) | **OK.** `getItems("posts")` kept serving the cached `News` after publishing; `revalidateTag("webflow:collection:<postsId>", { expire: 0 })` → `Tutorials` on the next read (~1 s), stable after. |
 | `getItemBySlug` | OK (`?slug=cms-future-10`). |
 | Base path: links and client fetches work under the mount path | OK (`/spike`, assets from `*.wf-app-prod.cosmic.webflow.services/spike`). |
 | VideoLink normalization | **Old library deployed**: `package-lock.json` pinned the previous tarball's integrity and the builder's `npm ci` installed it from cache. `pack-lib` now refreshes the lock entry; redeploy pending. |
-| `lastPublished` on live items | **Non-null here** (`2026-10-21T02:38:41.410Z`), although the contract test saw `null` on every live item ~30 min earlier, before the CLI republished the site. To re-verify. |
+| `lastPublished` on live items | `null` right after the first site publish (contract test); non-null after a later site publish, and set to the publish time after an item-level publish (`2026-10-21T03:41:14Z`). Treat it as optional on live items. |
 
 ## Contract test (real API vs fixtures)
 
@@ -115,4 +116,6 @@ Run on 2026-10-20 against the test site (`next-webflow-d8ce88.webflow.io`): 10/1
 
 For v0.2 (decided 2026-10-21): document the KV + D1 setup (`open-next.config.ts`, `wrangler.json` bindings, D1 migration) and the builder pitfalls (deletes `open-next.config.ts`, bakes `.env*` into the bundle, `npm ci` uses the lockfile). No library changes needed. Fallback if it regresses: `source: "cdn"` as the Cloud default (up to 5 min stale after publish). A library-owned KV cache only if there's demand. Route handlers must not export `runtime = "edge"` (500 on Cloud).
 
-Still to measure: cross-region staleness, a redeploy, the stale-schema fallback with a new Option, and pagination with > 6 pages of 100.
+Verified end to end: new Option → schema fallback warning + correct name; cached list → collection-tag revalidation → fresh in ~1 s.
+
+Still to measure: cross-region staleness, a redeploy, and pagination with > 6 pages of 100 (needs > 600 items).

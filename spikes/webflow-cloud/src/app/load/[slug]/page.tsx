@@ -3,7 +3,8 @@ import { createWebflow, WebflowNotFoundError } from "next-webflow";
 import { createMeasuredFetch } from "@/lib/measured-fetch";
 import { schema } from "@/webflow/schema";
 
-// Spike only (stage 5b): a page per load-test item, prerendered with generateStaticParams.
+// Spike only (stages 5b, 2b): a page per load-test item, prerendered with generateStaticParams.
+// Build-time slug lookups read the cached list; `include` joins the author.
 // `LOAD_SOURCE=cdn` switches the source at build time. Every Webflow request is logged to the build output.
 // Webflow Cloud builds locally without the app's env vars: export WEBFLOW_CMS_TOKEN in the deploy
 // shell (it doesn't clash with the Webflow CLI, which reads WEBFLOW_API_TOKEN).
@@ -30,13 +31,14 @@ export async function generateStaticParams() {
 
 export default async function LoadItemPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const item = await cms.getItemBySlug("load-test", slug);
+  const item = await cms.getItemBySlug("load-test", slug, { include: ["author"] });
   if (!item) notFound();
   return (
     <main>
       <h1>{item.fieldData.name}</h1>
       <p>
-        Rank {item.fieldData.rank} · {item.fieldData.tier?.name ?? "no tier"}
+        Rank {item.fieldData.rank} · {item.fieldData.tier?.name ?? "no tier"} ·{" "}
+        <span id="author">{item.fieldData.author?.fieldData.name ?? "no author"}</span>
       </p>
       <div dangerouslySetInnerHTML={{ __html: item.fieldData.body ?? "" }} />
     </main>

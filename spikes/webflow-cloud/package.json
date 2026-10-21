@@ -11,7 +11,7 @@
     "seed": "node --env-file=local.env --env-file=seed.env scripts/seed.mjs",
     "snapshot-schema": "node --env-file=local.env scripts/snapshot-schema.mjs",
     "check-env": "node scripts/check-no-env.mjs",
-    "deploy": "node scripts/check-no-env.mjs && webflow apps deploy",
+    "deploy": "node scripts/check-no-env.mjs && node -e \"require('fs').rmSync('.next/cache/fetch-cache',{recursive:true,force:true})\" && webflow apps deploy",
     "measure": "node --env-file=local.env scripts/measure-cache.mjs",
     "watch": "node --env-file=local.env scripts/watch-e2e.mjs",
     "api-edit-live": "node --env-file=local.env --env-file=seed.env scripts/api-edit-live.mjs",

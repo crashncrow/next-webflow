@@ -254,7 +254,7 @@ Each build worker has its own client (and limiter), so build concurrency is up t
 - Interim workaround: export the token as `WEBFLOW_BUILD_TOKEN` and pass it as `token`. **Resolved (2026-10-21) by renaming next-webflow's variable to `WEBFLOW_CMS_TOKEN`**: the deploy shell now exports `local.env` as is (`set -a; . ./local.env; set +a`), the CLI keeps using its own login, the build reads the token, and no exported value (token, webhook secret, spike secret) appears in any file under `.open-next/` or `.next/` (unlike `.env*` values, see "Deploying the spike"). Cloud's old `WEBFLOW_API_TOKEN` secret was deleted.
 - `/items/live` of a collection that was **never published** answers **404**, not an empty list, so `getItems` throws `WebflowNotFoundError`.
 
-**Never-published collection on a prerendered page (2026-10-21).** Library change: a 404 on a live list of a collection that exists → `getItems` returns `[]`, `getItemBySlug` `null`, one debug log, the answer memoized 60 s per instance (Next.js only caches 200 responses, `patch-fetch.js:707`). Experiment: `npm run never-published` created `never-published` (`6ad905e9012451f40a7889ce`) with one queued item; `/never` is a static page listing it.
+**Never-published collection on a prerendered page (2026-10-21).** Library change: a 404 on a live list of a collection that exists → `getItems` returns `[]`, `getItemBySlug` `null`, one debug log. Not cacheable (Next.js only caches 200 responses, `patch-fetch.js:707`) and, after this experiment, not memoized either: a per-instance memo could outlive the publish webhook and regenerate the page empty. Experiment: `npm run never-published` created `never-published` (`6ad905e9012451f40a7889ce`) with one queued item; `/never` is a static page listing it.
 
 | Step | Local (`next build` + `next start`) | Cloud (deploy `never` build) |
 | --- | --- | --- |
@@ -262,7 +262,34 @@ Each build worker has its own client (and limiter), so build concurrency is up t
 | Site publish (API, 18:37:17) | live list 200 at 18:37:22; `revalidateTag("webflow")` by hand (no webhook locally) | `site_publish` webhook at 18:37:20 |
 | Next request | **1 item** | **1 item** at 18:37:29 |
 
-Next.js collects a fetch's tags onto the prerender **before** the request and regardless of its status (`patch-fetch.js:340-371`), so the empty page still carries the collection and site tags and the first publish invalidates it. No dynamic opt-in (`connection()`) needed. The collection is published now; re-running the experiment needs a fresh collection (the site is at the Starter limit of 50 items).
+Next.js collects a fetch's tags onto the prerender **before** the request and regardless of its status (`patch-fetch.js:340-371`), so the empty page still carries the collection and site tags and the first publish invalidates it. No dynamic opt-in (`connection()`) needed. The collection was deleted afterwards (unit tests cover the case; `npm run never-published` recreates it).
+
+### 7. Stage 2b on Cloud: build-time list lookups and `include` (2026-10-21)
+
+`/load/[slug]` now uses `getItemBySlug("load-test", slug, { include: ["author"] })`.
+
+| | Before (5b, `?slug=` per page) | After (2b) |
+| --- | --- | --- |
+| `load-test` requests in a cold local build (35 pages) | 36 (1 list + 35 slug lookups) | **1** network request + 35 data-cache hits (0–14 ms) |
+| `authors` (include) | – | ~7 network requests (concurrent first renders in 10 workers miss together) + hits |
+| Tags on a prerendered page | `webflow`, collection, slug | `webflow`, `load-test` collection, `authors` collection |
+
+`NEXT_PHASE` is set in Next 16 build workers (the list path was taken). After the deploy: staged edit + `POST /items/publish` of `load-test-item-7` (18:56:38) → `collection_item_published` → the prerendered page showed the new name on the first check, on Cloud and locally (after `revalidateTag` of the collection tag).
+
+Found while deploying: **the CLI's build reuses `.next/cache/fetch-cache` from earlier local builds** (`generateStaticParams` took 19 ms: all hits), so prerendered pages can carry data from an old build. `npm run deploy` now deletes `.next/cache/fetch-cache` first; the README tells users to.
+
+Build-time cost of list lookups (each page parses every cached list page), estimated with synthetic 100-item pages built from real `load-test` items (232 KB per page): ~6.5 ms per page lookup at 5,000 items (~33 s CPU, ~3 s over 10 workers), ~26 ms at 20,000 (~52 s over 10 workers). Hence a **warning** at 5,000 (`maxBuildListItems`), not a fallback to per-slug requests.
+
+### What a paid plan (Premium, 20K items) would let us measure for real
+
+Everything above for 100-item pages and > 50 items is **extrapolated** from `load-test` (35 items, ~2.4 KB each). Measurements that need the upgrade:
+
+1. **Size and latency of a real 100-item page** (`/items/live?limit=100`), Data API and CDN: decides the 2 MB data cache warning and the per-page time used everywhere below.
+2. **Cold `getItems` over > 6 pages of 100** (≥ 700 items) on Cloud: time against the 20 s limit, requests, and rate limit used with concurrency 4.
+3. **`include` at the threshold:** a referenced collection of ~1,000 items (10 pages) fetched whole, cold and warm; and above it (e.g. 1,500), the by-ID path with many references per page.
+4. **`generateStaticParams` builds with hundreds of pages:** 1 + N vs build-time list lookups (2b), Data API vs CDN, and how the build stalls on `Retry-After` when the budget runs out.
+5. **A real `collection_item_published` with `items[100]`** (API publish of 100 IDs): handler round trip and whether all ~200 deferred tag writes land in D1.
+6. **Rate limit on a paid plan:** whether `X-RateLimit-Limit` matches the plan (120) or the 150 seen on Starter (upstream finding 11).
 
 ## Contract test (real API vs fixtures)
 

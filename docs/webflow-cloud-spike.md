@@ -115,7 +115,16 @@ The app ships its own `open-next.config.ts` (`kvIncrementalCache` + `d1NextTagCa
 | Fresh data after `revalidateTag` (node route) | n/a | **~1 s** (first poll) |
 | Stale data after the first fresh response | n/a | **None** (20/20 fresh, 10 isolates) |
 
-Caveats: one run, from one client location (Worker placement `local-IAD`); KV is eventually consistent across locations, which this can't show, but invalidation is decided by the D1 tag table, so a stale KV entry is treated as a miss. Cache entries are keyed by build ID, so a redeploy starts cold. The builder **deletes `open-next.config.ts` after each deploy** ("cleaning up additional config file"); `npm run deploy` refuses to run without it.
+Caveats: one run, from one client location (Worker placement `local-IAD`); KV is eventually consistent across locations, which this can't show, but invalidation is decided by the D1 tag table, so a stale KV entry is treated as a miss. Cache entries are keyed by build ID, so a redeploy starts cold. The CLI **deletes `open-next.config.ts` from the local working copy after each deploy**, but the deployed build used it (see below); `npm run deploy` refuses to run without it.
+
+#### Does a deploy lose `open-next.config.ts`? (clarified 2026-10-21, CLI 2.13.0)
+
+Only the local copy. From the CLI debug log of deploy `f0f22fc9`:
+
+1. Build: `open-next.config.ts found, skipping creation (opennextjs-cloudflare will validate)`. The build uses the app's file.
+2. After upload, "Revert framework configuration": `cleaning up additional config file …/open-next.config.ts`. The CLI deletes it locally, as if it had generated it.
+
+`npm run measure` against that deploy: 11/11 HITs across 7 isolates, fresh 1.5 s after `revalidateTag`. So the deployed app keeps the KV + D1 cache. The risk is the **next** deploy from the same working copy: without the file, the CLI generates its default (dummy caches, §1), and caching silently stops. Deploys from a fresh checkout (CI) are safe. For users (v0.2 README): commit `open-next.config.ts`, deploy from CI or restore it before each local deploy (`git checkout -- open-next.config.ts`), and add a pre-deploy check like `scripts/check-no-env.mjs`. Upstream finding 10.
 
 ### 2. Does `revalidateTag` invalidate, and how fast?
 
@@ -177,7 +186,7 @@ Six signed webhooks registered with `npm run webhooks -- register` (every CMS ev
 | 8 | `POST /items/live` (API create, `npm run api-create-live`) | `created`, `published` (`items[]`) | `created`: `isDraft: false`, `lastPublished` = `lastUpdated` | collection + item (both events) | listed ~1.8 s after the POST ✔ |
 | 9 | New item in the CMS, saved, not published | `created`, then `changed` ×2 (later saves) | `isDraft: true`, `lastPublished: null` | nothing | unchanged ✔ |
 
-Deploying non-interactively needs the mount: `npx webflow apps deploy -a <appId> -e main -m /spike -s <siteId>`; the builder still deletes `open-next.config.ts` (restore it from git after each deploy).
+Deploying non-interactively needs the mount: `npx webflow apps deploy -a <appId> -e main -m /spike -s <siteId>`; the CLI still deletes the local `open-next.config.ts` (restore it from git after each deploy; the deployed build is unaffected).
 
 Conclusions:
 - Flags are `isArchived`/`isDraft`; `collection_item_published` uses `items[]`, every other item event a flat item (upstream finding 5).
@@ -185,6 +194,75 @@ Conclusions:
 - Unlike edits, API creates also fire `published`; the new mapping is needed for API edits only, and harmless (double invalidation) for creates.
 - Case 4 is a Webflow API inconsistency (upstream finding 8). README documents publishing the site after deletes.
 - The Cloud app kept serving after site publishes. Raw payloads → `test/fixtures/api/webhooks/` (`publishedBy` anonymized).
+
+### 6. Load test: pagination, builds and big webhooks (stage 5b, 2026-10-21, deploy `f7ebc670`)
+
+**Constraint:** the test site is on the **Starter** plan: **50 CMS items** (and, on Cloud, 100K KV / 10M D1 simple operations a month). 600+ items need a paid plan, so the collection `load-test` (`6ad8fd8ec7f36839f0d31230`, kept for regression tests) has **35 items** (~2.4 KB each as JSON: rich text body, summary, number, Option, Reference). Many pages are simulated with small page sizes; numbers for 100-item pages are extrapolated and marked as such.
+
+**Seeding** (`npm run seed -- 35`): one `POST /collections/{id}/items/insert` with 35 items, `isDraft: false` (queued for the next site publish; `isDraft: true` items are *not* published by a site publish since Dec 2024). The script refuses to exceed the plan limit (counts every collection). Webhooks: **35 × `collection_item_created`**, one per item, `isDraft: false` → our fail-safe mapping invalidates the collection tag 35 times (harmless: invalidation is lazy).
+
+**Publishing:**
+
+| Action | Webhooks | Notes |
+| --- | --- | --- |
+| Site publish via API (`POST /sites/{id}/publish`), 35 queued items | **only `site_publish`** | no `collection_item_published` at all; items live afterwards |
+| `POST /collections/{id}/items/publish`, 35 IDs | 1 × `collection_item_published` with **`items[35]` (90 KB)** + 1 × `collection_item_changed` per item | first attempt answered **502** but had already fired 4 `changed`; the retry → 202 in 2.3 s |
+
+So a big `items` array comes from API item publishes (max 100 IDs per request → ~250 KB), not from site publishes.
+
+**Handler time vs the 20 s limit.** Inside the Worker the handler measured 0 ms: Workers' clock only advances on I/O, and `revalidateTag` defers its D1 writes. Measured from outside instead: the real 35-item body, resized and signed, replayed 3× each:
+
+| Items in `items[]` | Body | Round trip (3 runs) | Tags revalidated |
+| --- | --- | --- | --- |
+| 1 | 3 KB | 841 / 511 / 442 ms | 2 |
+| 35 | 88 KB | 932 / 777 / 640 ms | 36 |
+| 100 | 252 KB | 1134 / 1605 / 911 ms | 101 |
+| 600 | 1.5 MB | 2145 / 1277 / 2092 ms | 601 |
+
+Far below 20 s. Not verified: that all 601 deferred tag writes land (no read access to D1 from outside besides the spike's own log).
+
+**Cold `getItems` on Cloud** (`npm run measure-load`: revalidate the collection tag, wait 2 s, call `/api/measure-items`; concurrency 4 unless noted):
+
+| Run | Requests | Total | Per request (p50) | Data | Rate limit used | CDN cache |
+| --- | --- | --- | --- | --- | --- | --- |
+| library `getItems`, data | 1 | 269 ms | 269 ms | 82 KB | 1 | – |
+| library `getItems`, cdn | 1 | 491 ms | 491 ms | 82 KB | 0 (no headers) | MISS |
+| 35 per page, data / cdn | 1 / 1 | 170 / 686 ms | | 82 KB | 1 / 0 | – / MISS |
+| 10 per page, data / cdn | 4 / 4 | 576 / 1076 ms | 211 / 447 ms | 83 KB | 4 / 0 | – / MISS |
+| 5 per page, data / cdn | 7 / 7 | 600 / 1037 ms | 111 / 359 ms | 83 KB | 7 / 0 | – / MISS |
+| 1 per page, data / cdn | 35 / 35 | 3846 / 4020 ms | 107 / 332 ms | 84 KB | 35 / 0 | – / MISS |
+| 1 per page, data, c=6 | 35 | 1735 ms | 108 ms | 84 KB | 35 | – |
+| 1 per page, data, c=12 | 51 (16 × 429) | 15 711 ms | 179 ms | 86 KB | window exhausted | – |
+
+- Data API: ~100–270 ms per page, roughly flat in page size up to 35 items. CDN misses are 2–3× slower and carry **no rate limit headers** (hits don't count, per the docs).
+- More than 6 concurrent requests didn't fail (c=12); the 429s came from the **per-minute budget** (`X-RateLimit-Limit: 150`, already drained by the previous runs). The client honored `Retry-After` and finished.
+- **Extrapolation (100 items per page, ~240 KB):** ~0.3–0.6 s per page; with concurrency 4, N pages ≈ ⌈N/4⌉ waves → 1,000 items (10 pages) ≈ 1–2 s and 10 requests; 5,000 items (50 pages) ≈ 4–8 s and 50 requests, a third of a 150/min budget (all of a 60/min Starter budget per the plan page).
+
+**`generateStaticParams` build** (local `next build`, 10 workers, cold `.next`; a page per item calling `getItemBySlug`). On Webflow Cloud this runs in the CLI's **local** build:
+
+| Source | Webflow requests | Build | Requests span | Per request | Rate limit used |
+| --- | --- | --- | --- | --- | --- |
+| data | 36 (1 list + 35 slug lookups) | 11 s | 5.4 s | 215–3523 ms | 35 (133 → 98) |
+| cdn | 36 (all MISS) | 9 s | 3.7 s | 461–1137 ms | 0 (no headers) |
+
+Each build worker has its own client (and limiter), so build concurrency is up to 10 × 4. A site with N items costs **1 + N requests per cold build** on the Data API: 600 items would exceed a 150/min budget and stall on `Retry-After`. Prefer `source: "cdn"` for builds, or render from the list (no per-page lookups); a future "build prefetch" could serve slug lookups from the cached list.
+
+**Build-time environment on Webflow Cloud (new):**
+
+- The CLI builds locally **without the app's Cloud env vars**: `generateStaticParams` failed with "Missing Webflow API token".
+- **The Webflow CLI reads `WEBFLOW_API_TOKEN` itself** (from `.env` and the environment; it expects a *workspace* token). Exporting our site token under that name made `webflow apps deploy` fail with "Your access token is missing required permissions". Same variable name as next-webflow's.
+- Interim workaround: export the token as `WEBFLOW_BUILD_TOKEN` and pass it as `token`. **Resolved (2026-10-21) by renaming next-webflow's variable to `WEBFLOW_CMS_TOKEN`**: the deploy shell now exports `local.env` as is (`set -a; . ./local.env; set +a`), the CLI keeps using its own login, the build reads the token, and no exported value (token, webhook secret, spike secret) appears in any file under `.open-next/` or `.next/` (unlike `.env*` values, see "Deploying the spike"). Cloud's old `WEBFLOW_API_TOKEN` secret was deleted.
+- `/items/live` of a collection that was **never published** answers **404**, not an empty list, so `getItems` throws `WebflowNotFoundError`.
+
+**Never-published collection on a prerendered page (2026-10-21).** Library change: a 404 on a live list of a collection that exists → `getItems` returns `[]`, `getItemBySlug` `null`, one debug log, the answer memoized 60 s per instance (Next.js only caches 200 responses, `patch-fetch.js:707`). Experiment: `npm run never-published` created `never-published` (`6ad905e9012451f40a7889ce`) with one queued item; `/never` is a static page listing it.
+
+| Step | Local (`next build` + `next start`) | Cloud (deploy `never` build) |
+| --- | --- | --- |
+| Build | `○ /never` prerendered, 0 items; `.next/server/app/never.meta` → `x-next-cache-tags: …,webflow,webflow:collection:6ad905e9…` | prerendered, 0 items |
+| Site publish (API, 18:37:17) | live list 200 at 18:37:22; `revalidateTag("webflow")` by hand (no webhook locally) | `site_publish` webhook at 18:37:20 |
+| Next request | **1 item** | **1 item** at 18:37:29 |
+
+Next.js collects a fetch's tags onto the prerender **before** the request and regardless of its status (`patch-fetch.js:340-371`), so the empty page still carries the collection and site tags and the first publish invalidates it. No dynamic opt-in (`connection()`) needed. The collection is published now; re-running the experiment needs a fresh collection (the site is at the Starter limit of 50 items).
 
 ## Contract test (real API vs fixtures)
 

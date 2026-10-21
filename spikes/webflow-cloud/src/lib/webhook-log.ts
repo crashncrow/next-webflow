@@ -19,6 +19,7 @@ export interface WebhookLogRow {
   signed: number;
   response: string;
   raw_body: string;
+  duration_ms: number | null;
 }
 
 export async function logWebhook(entry: {
@@ -28,14 +29,15 @@ export async function logWebhook(entry: {
   signed: boolean;
   response: string;
   rawBody: string;
+  durationMs: number;
 }): Promise<void> {
   const database = await db();
   if (!database) return;
   await database
     .prepare(
-      "INSERT INTO webhook_log (received_at, status, trigger_type, signed, response, raw_body) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO webhook_log (received_at, status, trigger_type, signed, response, raw_body, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(entry.receivedAt, entry.status, entry.triggerType, entry.signed ? 1 : 0, entry.response, entry.rawBody)
+    .bind(entry.receivedAt, entry.status, entry.triggerType, entry.signed ? 1 : 0, entry.response, entry.rawBody, entry.durationMs)
     .run();
 }
 

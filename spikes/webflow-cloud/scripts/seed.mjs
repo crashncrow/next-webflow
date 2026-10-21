@@ -1,9 +1,12 @@
-// Creates and publishes N items in the "bulk-items" collection of the TEST site, so pagination
-// needs more pages than Cloudflare's 6 concurrent requests. Usage: npm run seed [-- 650]
+// Stage 5b: fills the "load-test" collection of the TEST site (creating it if missing) with N items
+// queued for the next site publish (`isDraft: false`), in bulk requests of up to 100.
+// Refuses to exceed the plan's CMS item limit (LOAD_TEST_ITEM_LIMIT, default 50 = Starter).
+// Usage: npm run seed [-- 35]. Kept afterwards for regression tests.
 const API = "https://api.webflow.com/v2";
 const { WEBFLOW_WRITE_TOKEN: token, WEBFLOW_SITE_ID: siteId, SEED_CONFIRM_SITE_ID: confirm } = process.env;
-const COLLECTION_SLUG = "bulk-items";
-const count = Number(process.argv[2] ?? 650);
+const COLLECTION_SLUG = "load-test";
+const PLAN_ITEM_LIMIT = Number(process.env.LOAD_TEST_ITEM_LIMIT ?? 50);
+const count = Number(process.argv[2] ?? 35);
 
 if (!token || !siteId) throw new Error("Set WEBFLOW_WRITE_TOKEN (seed.env) and WEBFLOW_SITE_ID (local.env)");
 if (confirm !== siteId) {
@@ -29,34 +32,66 @@ async function api(path, init = {}) {
 }
 
 const { collections } = await api(`/sites/${siteId}/collections`);
-const collection = collections.find((candidate) => candidate.slug === COLLECTION_SLUG);
-if (!collection) throw new Error(`Create a "${COLLECTION_SLUG}" collection on the test site first.`);
+const authors = collections.find((candidate) => candidate.slug === "authors");
 
-const existing = await api(`/collections/${collection.id}/items?limit=1`);
-const start = existing.pagination.total;
-console.log(`"${COLLECTION_SLUG}" has ${start} items; creating ${count} more…`);
+// Plan headroom: every staged item of every collection counts.
+let total = 0;
+for (const candidate of collections) total += (await api(`/collections/${candidate.id}/items?limit=1`)).pagination.total;
+if (total + count > PLAN_ITEM_LIMIT) {
+  throw new Error(`Site has ${total} items; ${count} more would exceed the plan limit of ${PLAN_ITEM_LIMIT}.`);
+}
 
-const ids = [];
+let collection = collections.find((candidate) => candidate.slug === COLLECTION_SLUG);
+if (!collection) {
+  collection = await api(`/sites/${siteId}/collections`, {
+    method: "POST",
+    body: JSON.stringify({
+      displayName: "Load Test",
+      singularName: "Load Test Item",
+      slug: COLLECTION_SLUG,
+      fields: [
+        { type: "RichText", displayName: "Body", slug: "body" },
+        { type: "PlainText", displayName: "Summary", slug: "summary" },
+        { type: "Number", displayName: "Rank", slug: "rank" },
+        { type: "Option", displayName: "Tier", slug: "tier", metadata: { options: [{ name: "Gold" }, { name: "Silver" }, { name: "Bronze" }] } },
+        ...(authors ? [{ type: "Reference", displayName: "Author", slug: "author", metadata: { collectionId: authors.id } }] : []),
+      ],
+    }),
+  });
+  console.log(`Created collection "${COLLECTION_SLUG}" (${collection.id}).`);
+  collection = await api(`/collections/${collection.id}`);
+} else {
+  collection = await api(`/collections/${collection.id}`);
+}
+
+const tiers = collection.fields.find((field) => field.slug === "tier")?.validations?.options ?? [];
+const authorIds = authors ? (await api(`/collections/${authors.id}/items/live`)).items.map((item) => item.id) : [];
+const start = (await api(`/collections/${collection.id}/items?limit=1`)).pagination.total;
+console.log(`Site has ${total} items (limit ${PLAN_ITEM_LIMIT}); "${COLLECTION_SLUG}" has ${start}; creating ${count}…`);
+
+// ~2 KB of rich text per item, close to the "posts" bodies.
+const paragraph = "Load test content for pagination and payload size measurements. ".repeat(6);
+const body = (n) => `<h2>Item ${n}</h2>${`<p>${paragraph}</p>`.repeat(5)}`;
+
+let created = 0;
 for (let offset = 0; offset < count; offset += 100) {
-  const batch = Array.from({ length: Math.min(100, count - offset) }, (_, index) => {
+  const items = Array.from({ length: Math.min(100, count - offset) }, (_, index) => {
     const n = start + offset + index + 1;
-    return { fieldData: { name: `Bulk item ${n}`, slug: `bulk-item-${n}` } };
+    return {
+      isDraft: false, // queued for the next site publish
+      fieldData: {
+        name: `Load test item ${n}`,
+        slug: `load-test-item-${n}`,
+        body: body(n),
+        summary: `Summary of load test item ${n}.`,
+        rank: n,
+        ...(tiers.length && { tier: tiers[n % tiers.length].id }),
+        ...(authorIds.length && { author: authorIds[n % authorIds.length] }),
+      },
+    };
   });
-  const created = await api(`/collections/${collection.id}/items`, {
-    method: "POST",
-    body: JSON.stringify({ items: batch }),
-  });
-  const createdItems = created.items ?? (created.id ? [created] : []);
-  if (createdItems.length === 0) throw new Error(`Unexpected bulk create response: ${JSON.stringify(created)}`);
-  ids.push(...createdItems.map((item) => item.id));
-  console.log(`created ${ids.length}/${count}`);
+  const response = await api(`/collections/${collection.id}/items/insert`, { method: "POST", body: JSON.stringify({ items }) });
+  created += (response.items ?? []).length;
+  console.log(`created ${created}/${count}`);
 }
-
-for (let offset = 0; offset < ids.length; offset += 100) {
-  await api(`/collections/${collection.id}/items/publish`, {
-    method: "POST",
-    body: JSON.stringify({ itemIds: ids.slice(offset, offset + 100) }),
-  });
-  console.log(`published ${Math.min(offset + 100, ids.length)}/${ids.length}`);
-}
-console.log("Done.");
+console.log('Done. Publish the site to make them live (isDraft: false queues them).');

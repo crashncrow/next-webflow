@@ -10,7 +10,9 @@ const handler = createWebhookHandler({
 export async function POST(request: Request): Promise<Response> {
   const receivedAt = new Date().toISOString();
   const rawBody = await request.clone().text();
+  const started = Date.now();
   const response = await handler(request);
+  const durationMs = Date.now() - started;
   let triggerType: string | null = null;
   try {
     triggerType = (JSON.parse(rawBody) as { triggerType?: string }).triggerType ?? null;
@@ -24,6 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     signed: request.headers.has("x-webflow-signature"),
     response: await response.clone().text(),
     rawBody,
+    durationMs,
   }).catch((error: unknown) => console.error("webhook_log insert failed", error));
   return response;
 }

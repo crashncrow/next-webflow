@@ -24,7 +24,7 @@ export async function probe(tag: string, runtime: string): Promise<ProbeResult> 
   const base = { tag, runtime, isolate, servedAt: new Date().toISOString() };
   try {
     const response = await fetch(`https://api.webflow.com/v2/sites/${process.env.WEBFLOW_SITE_ID}`, {
-      headers: { authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`, accept: "application/json" },
+      headers: { authorization: `Bearer ${process.env.WEBFLOW_CMS_TOKEN}`, accept: "application/json" },
       cache: "force-cache",
       next: { tags: [tag] },
     });

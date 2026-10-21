@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   const configured = {
-    WEBFLOW_API_TOKEN: Boolean(process.env.WEBFLOW_API_TOKEN),
+    WEBFLOW_CMS_TOKEN: Boolean(process.env.WEBFLOW_CMS_TOKEN),
     WEBFLOW_SITE_ID: Boolean(process.env.WEBFLOW_SITE_ID),
     SPIKE_SECRET: Boolean(process.env.SPIKE_SECRET),
   };

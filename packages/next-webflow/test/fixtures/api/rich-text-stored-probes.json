@@ -1,0 +1,15 @@
+{
+  "script": "<p>a</p><script>alert(1)</script>",
+  "onclick": "<p onclick=\"alert(2)\">b</p>",
+  "jsHref": "<p><a href=\"javascript:alert(3)\">c</a></p>",
+  "dataHref": "<p><a href=\"data:text/html,&lt;script&gt;alert(4)&lt;/script&gt;\">d</a></p>",
+  "iframeSrcdoc": "<iframe srcdoc=\"&lt;script&gt;alert(5)&lt;/script&gt;\"></iframe>",
+  "iframeJsSrc": "<iframe src=\"javascript:alert(6)\"></iframe>",
+  "objectEmbed": "<object data=\"x.swf\"></object><embed src=\"y.swf\">",
+  "imgOnerror": "<p><img src=\"x\" onerror=\"alert(7)\"></p>",
+  "form": "<form action=\"javascript:alert(8)\"><button formaction=\"javascript:alert(9)\">e</button></form>",
+  "svg": "<svg><script>alert(10)</script><a xlink:href=\"javascript:alert(11)\">f</a></svg>",
+  "styleUrl": "<p style=\"background:url(javascript:alert(12))\">g</p>",
+  "embedDiv": "<div class=\"w-embed\"><script>alert(13)</script></div>",
+  "mixedCaseJs": "<p><a href=\" JaVaScRiPt:alert(14)\">h</a></p>"
+}

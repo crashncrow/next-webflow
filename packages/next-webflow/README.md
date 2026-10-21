@@ -161,6 +161,63 @@ export default async function Drafts() {
 
 `next/link` adds the base path on Webflow Cloud; with a plain `<a>`, add it yourself.
 
+## Components (`next-webflow/components`)
+
+Server Components (no `"use client"`, no parser in the browser bundle). The only subpath with runtime dependencies (`html-react-parser`, MIT).
+
+### `WebflowRichText`
+
+```tsx
+import { WebflowRichText } from "next-webflow/components";
+
+<WebflowRichText
+  html={post.fieldData.body}
+  components={{ blockquote: MyQuote }}             // replace elements by tag
+  webflowComponents={{ Callout: MyCallout }}       // <wf-component name="Callout"> → your component
+/>
+```
+
+- Same-site links (`/…`) render with `next/link` (base path included); others stay `<a>`.
+- Webflow component instances in Rich Text (`<wf-component>`) render through `webflowComponents` by name: you get scalar props (`props`, by property ID), rendered rich text props (`slots`, by ID; `slotIds` maps labels to IDs) and the parsed node. Without a mapping, their text renders and you get a development warning.
+- Images inside Rich Text stay `<img>` (Webflow doesn't give their dimensions); override `img` to change that.
+- **Sanitized by default.** Rich Text is HTML from your CMS: treat it as untrusted input, since anyone who can edit the CMS (or holds a token with CMS write access) can put scripts in it. next-webflow removes `<script>`, `<object>`, `<embed>`, `<base>`, `<meta>`, every `on*` attribute, `srcdoc`, `javascript:` / `vbscript:` / `data:` URLs (in `href`, `src`, `action`, `formaction`, `xlink:href`, `srcset`, SVG animation values…) and styles with `javascript:` / `expression()`. Iframes with normal URLs (YouTube, Vimeo) and code embeds without scripts still render.
+- `allowScripts` turns sanitizing off for that render. **Don't enable it for all content** to make a tweet or an Instagram post work: replace those embeds with a React component through `components` (e.g. detect `blockquote.twitter-tweet` and render your `<Tweet id>`). React 19 blocks `javascript:` links even then.
+
+### `WebflowImage`
+
+```tsx
+import { WebflowImage } from "next-webflow/components";
+
+<WebflowImage image={post.fieldData.mainImage} width={1200} height={630} sizes="100vw" />
+<WebflowImage image={post.fieldData.mainImage} fill sizes="50vw" /> {/* parent: position relative + size */}
+```
+
+- Webflow doesn't report image dimensions, so the types require `width` + `height`, or `fill`.
+- `alt` comes from the field. Webflow returns `alt: null` when it's empty (every image on our test site): the image renders as decorative (`alt=""`) and, in development, a warning names it once. Pass `alt` to override.
+- Allow Webflow's asset CDN in `next.config.ts` (the only asset host in real CMS data; add `i.vimeocdn.com` / `i.ytimg.com` only if you render video thumbnails from `VideoLink` metadata):
+
+  ```ts
+  images: { remotePatterns: [{ protocol: "https", hostname: "cdn.prod.website-files.com" }] },
+  ```
+- **Webflow's CDN doesn't resize images** (verified: `width`, `w`, `q`, `format` parameters are ignored, no `-p-500` variants for CMS images, no `/cdn-cgi/image/`), so next-webflow has no custom loader. On Vercel or `next start`, Next.js' optimizer resizes and re-encodes them.
+- **On Webflow Cloud, CMS images are always served at their original size.** Neither Webflow's CDN nor `next/image` resizes them: the Cloud builder installs its own image loader, which returns absolute URLs unchanged, so every `srcSet` entry is the original file. This is by design, not a bug: Webflow's loader skips absolute URLs on purpose, so that resizing images already hosted on Webflow's CDN isn't billed as bandwidth twice (once for the original, once for the resized copy). **Upload pre-optimized images**: resized to the largest size you display (e.g. 2× the layout width) and compressed (WebP or AVIF, or a well-compressed JPEG).
+- On Webflow Cloud, pass `unoptimized` to skip the `srcSet` that repeats the same file (the browser downloads it once either way, so this only trims HTML). For every image at once, set `images: { unoptimized: true }` in `next.config.ts`; the Cloud builder keeps your `images` settings, but this also turns off resizing for local images in `public/`, which Cloud's loader sends through its image resizer.
+
+  ```tsx
+  <WebflowImage image={post.fieldData.mainImage} width={1200} height={630} unoptimized />
+  ```
+
+### `DraftModeBanner`
+
+```tsx
+// app/layout.tsx
+import { DraftModeBanner } from "next-webflow/components";
+// …inside <body>:
+<DraftModeBanner />  {/* route="/api/webflow/draft" by default */}
+```
+
+Renders only in draft mode: a fixed bar with "Exit preview", linking to the draft route's `?disable=1&path=<current page>` (base path included). The link is a plain `<a>`, not `next/link`, because prefetching it would leave preview by itself. `className` replaces the default inline styles.
+
 ## Webhooks
 
 `npx next-webflow webhooks register --url https://your-site.com/api/webflow` subscribes to every CMS event and `site_publish`. The handler invalidates:
@@ -188,4 +245,5 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
 - **Don't add `export const runtime = "edge"` to route handlers.** Webflow's docs say API routes need the edge runtime, but in our tests every edge route returned `500 Internal Server Error`, while the same handlers on the default Node.js runtime worked. next-webflow's route handlers (webhook, draft) don't export `runtime`.
 - **Keep secrets out of `.env*` files when deploying.** `webflow apps deploy` builds on your machine, and the build bakes every `.env*` file into the worker bundle in plain text. Upload variables with `webflow apps env-vars import <file> --secret` instead.
 - **Clear the build's data cache before deploying.** The CLI builds in your working copy and reuses `.next/cache/fetch-cache` from earlier local builds, so prerendered pages can contain data from an old build. Delete `.next/cache/fetch-cache` before `webflow apps deploy` (deploying from CI with a fresh checkout avoids it).
+- **CMS images are served at their original size** (see [`WebflowImage`](#webflowimage)): upload pre-optimized images.
 - **Builds don't see Cloud's variables.** The CLI builds locally, so `generateStaticParams` and other build-time reads need `WEBFLOW_CMS_TOKEN` in the deploy shell's environment (e.g. `set -a; . ./local.env; set +a` before `webflow apps deploy`). Values from the process environment are not written into the bundle (checked on 2026-10-21); `.env*` files are.

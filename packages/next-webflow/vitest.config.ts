@@ -2,12 +2,16 @@ import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    // Same as tsconfig paths: the client entry from source (it's imported by its package name).
+    alias: { "next-webflow/components/client": new URL("./src/components/exit-preview-link.tsx", import.meta.url).pathname },
+  },
   test: {
     projects: [
       {
         test: {
           name: "node",
-          include: ["test/**/*.test.ts"],
+          include: ["test/**/*.test.{ts,tsx}"],
           exclude: ["test/edge/**", "test/contract/**"],
           environment: "node",
           setupFiles: ["test/setup.ts"],

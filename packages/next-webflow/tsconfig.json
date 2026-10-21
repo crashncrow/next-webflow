@@ -1,7 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "next-webflow/components/client": [
+        "./src/components/exit-preview-link.tsx"
+      ]
+    }
   },
-  "include": ["src", "test", "scripts", "*.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "scripts",
+    "*.config.ts"
+  ]
 }

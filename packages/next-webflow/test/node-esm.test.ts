@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -35,6 +35,18 @@ describe.skipIf(!existsSync(dist))("built package in plain Node ESM", () => {
       { cwd: packageRoot, encoding: "utf8" },
     );
     expect(output.trim()).toBe("function function false");
+  });
+
+  it("imports next-webflow/components, and the client entry keeps \"use client\" first", () => {
+    const entry = fileURLToPath(new URL("../dist/components.js", import.meta.url));
+    const output = execFileSync(
+      process.execPath,
+      ["--input-type=module", "-e", `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.WebflowRichText, typeof m.WebflowImage, typeof m.DraftModeBanner);`],
+      { cwd: packageRoot, encoding: "utf8" },
+    );
+    expect(output.trim()).toBe("function function function");
+    const client = readFileSync(new URL("../dist/components-client.js", import.meta.url), "utf8");
+    expect(client.startsWith('"use client";')).toBe(true);
   });
 
   it("runs the CLI binary", () => {

@@ -41,6 +41,21 @@ const RUNTIME_ENTRIES: Array<{ file: string; smoke: string; expected: unknown }>
     `,
     expected: { link: true },
   },
+  {
+    // Parses and sanitizes Rich Text with the server parser: no DOM in edge runtimes.
+    file: "src/components/index.ts",
+    smoke: `
+      const element = NextWebflow.WebflowRichText({ html: '<p onclick="x()">hi <a href="/a">a</a></p><script>x()</script>' });
+      const children = [].concat(element.props.children); // the <script> is gone: one child left
+      const paragraph = children[0];
+      globalThis.__result = Promise.resolve({
+        wrapper: element.props.className,
+        children: children.length,
+        onclick: "onClick" in paragraph.props || "onclick" in paragraph.props,
+      });
+    `,
+    expected: { wrapper: "w-richtext", children: 1, onclick: false },
+  },
 ];
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -55,8 +70,14 @@ const stubNext: Plugin = {
     const stubs: Record<string, string> = {
       "next/headers": "export const draftMode = async () => ({ isEnabled: false });",
       "next/cache": "export const revalidateTag = () => {};",
+      "next/link": "export default function Link(props) { return props; }",
+      "next/image": "export default function Image(props) { return props; }",
+      "next/navigation": "export const usePathname = () => '/';",
     };
-    build.onResolve({ filter: /^next\/(headers|cache)(\.js)?$/ }, (args) => ({
+    build.onResolve({ filter: /^next-webflow\/components\/client$/ }, () => ({
+      path: fileURLToPath(new URL("../src/components/exit-preview-link.tsx", import.meta.url)),
+    }));
+    build.onResolve({ filter: /^next\/(headers|cache|link|image|navigation)(\.js)?$/ }, (args) => ({
       path: args.path.replace(/\.js$/, ""),
       namespace: "stub",
     }));

@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw/http";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   WebflowConfigError,
+  WebflowNotFoundError,
   createWebflowCms,
   type WebflowCmsConfig,
   type WebflowItem,
@@ -21,6 +22,7 @@ import {
   schema,
   sitesCollectionsResponse,
 } from "../fixtures/schema";
+import { webflowError } from "../helpers";
 import { CDN_API, DATA_API, TEST_TOKEN, server } from "../msw";
 
 const POST = fullRawPost;
@@ -302,5 +304,81 @@ describe("schema fallback", () => {
 
     await cms.getItems("posts");
     expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("never-published collection (live list answers 404)", () => {
+  const notFound = () => HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 });
+
+  function site({ exists = true } = {}) {
+    const calls = { live: 0, collection: 0 };
+    let published = false;
+    server.use(
+      http.get(LIVE, () => {
+        calls.live++;
+        if (!published) return notFound();
+        return list([POST]);
+      }),
+      http.get(`${DATA_API}/collections/${POSTS_ID}`, () => {
+        calls.collection++;
+        return exists ? HttpResponse.json(postsCollectionResponse) : notFound();
+      }),
+      http.get(`${DATA_API}/sites/${SITE_ID}/collections`, () => HttpResponse.json(sitesCollectionsResponse)),
+    );
+    return { calls, publish: () => (published = true) };
+  }
+
+  it("returns [] / null when the collection exists, and logs once at debug level", async () => {
+    site();
+    const debug = vi.fn();
+    const { cms, logger } = setup({ logger: { warn: vi.fn(), debug } });
+
+    await expect(cms.getItems("posts")).resolves.toEqual([]);
+    await expect(cms.getItemBySlug("posts", POST.fieldData.slug)).resolves.toBeNull();
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug.mock.calls[0]?.[0]).toMatch(/"posts" has never been published/);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("still tags the 404 request with the site and collection tags", async () => {
+    site();
+    const { cms, cache } = setup();
+    await cms.getItems("posts");
+    expect(cache.requests[0]?.init.next?.tags).toEqual(["webflow", `webflow:collection:${POSTS_ID}`]);
+  });
+
+  it("remembers the 404 for 60 s per instance, then sees the published items", async () => {
+    vi.useFakeTimers({ now: Date.UTC(2026, 9, 21), toFake: ["Date"] });
+    const { calls, publish } = site();
+    const { cms } = setup();
+
+    await cms.getItems("posts");
+    await cms.getItems("posts");
+    expect(calls.live).toBe(1);
+
+    publish();
+    vi.setSystemTime(Date.now() + 61_000);
+    await expect(cms.getItems("posts")).resolves.toHaveLength(1);
+    expect(calls.live).toBe(2);
+    vi.useRealTimers();
+  });
+
+  it("rethrows when the collection itself doesn't exist", async () => {
+    site({ exists: false });
+    const { cms } = setup();
+    await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowNotFoundError);
+  });
+
+  it("confirms the collection through the schema fallback when there's no generated schema", async () => {
+    const { calls } = site();
+    const { cms } = setup<undefined>({ schema: undefined, siteId: SITE_ID });
+    await expect(cms.getItems("posts")).resolves.toEqual([]);
+    expect(calls.collection).toBe(1); // the fallback's schema request doubles as the existence check
+  });
+
+  it("doesn't apply to draft reads (staged items exist for unpublished collections)", async () => {
+    server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items`, () => notFound()));
+    const { cms } = setup({ draft: true });
+    await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowNotFoundError);
   });
 });

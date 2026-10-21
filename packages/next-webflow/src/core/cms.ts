@@ -48,7 +48,8 @@ export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefine
    */
   source?: ContentSource | undefined;
   cache?: CacheAdapter | undefined;
-  logger?: Pick<Console, "warn"> | undefined;
+  /** `warn` for problems (stale schema…); optional `debug` for one-time notes (never-published collections). */
+  logger?: (Pick<Console, "warn"> & Partial<Pick<Console, "debug">>) | undefined;
 }
 
 export type SortBy = "createdOn" | "lastPublished" | "lastUpdated" | "name" | "slug";
@@ -114,6 +115,11 @@ export type WebflowCms<S extends WebflowSchema | undefined> = [S] extends [Webfl
 
 /** How long a schema fetched from the API is reused in memory (on top of the framework cache). */
 const REMOTE_SCHEMA_TTL_MS = 60_000;
+/**
+ * How long a "never published" answer is remembered per instance. Next.js only caches 200
+ * responses, so the live list's 404 can't sit in the data cache under the collection tags.
+ */
+const NEVER_PUBLISHED_TTL_MS = 60_000;
 
 interface ReadContext {
   host: WebflowHost;
@@ -134,12 +140,37 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
   /** Collections whose generated schema turned out to be stale: use the API schema instead. */
   const stale = new Set<string>();
   const warned = new Set<string>();
+  /** Collection ID → until when its live list is known to be empty (never published). */
+  const neverPublished = new Map<string, number>();
 
   const warnOnce = (key: string, message: string) => {
     if (warned.has(key)) return;
     warned.add(key);
     logger.warn(`[next-webflow] ${message}`);
   };
+
+  /**
+   * Webflow answers 404 (not an empty list) on `/items/live` of a collection that was never
+   * published. If the collection exists, treat it as empty; otherwise rethrow.
+   */
+  async function readLive<T>(collection: CollectionSchema, ctx: ReadContext, read: () => Promise<T>, empty: T): Promise<T> {
+    if (ctx.draft) return read();
+    if ((neverPublished.get(collection.id) ?? 0) > Date.now()) return empty;
+    try {
+      return await read();
+    } catch (error) {
+      if (!(error instanceof WebflowNotFoundError)) throw error;
+      await fetchSchemaById(collection.id); // throws if the collection itself doesn't exist
+      neverPublished.set(collection.id, Date.now() + NEVER_PUBLISHED_TTL_MS);
+      if (!warned.has(`unpublished:${collection.id}`)) {
+        warned.add(`unpublished:${collection.id}`);
+        logger.debug?.(
+          `[next-webflow] Collection "${collection.slug}" has never been published; treating it as empty until it is.`,
+        );
+      }
+      return empty;
+    }
+  }
 
   async function context(): Promise<ReadContext> {
     if (await cache.isDraft()) {
@@ -260,27 +291,36 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
 
   async function getItems(slug: string, options: GetItemsOptions & { raw?: boolean } = {}) {
     const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const { items } = await client.paginate<WebflowRawItem>(itemsPath(collection.id, ctx.draft), {
-      host: ctx.host,
-      query: buildQuery(collection, options),
-      limit: options.limit,
-      offset: options.offset,
-      signal: options.signal,
-      init: ctx.init(listTags(collection.id)),
-    });
+    const { items } = await readLive(
+      collection,
+      ctx,
+      () =>
+        client.paginate<WebflowRawItem>(itemsPath(collection.id, ctx.draft), {
+          host: ctx.host,
+          query: buildQuery(collection, options),
+          limit: options.limit,
+          offset: options.offset,
+          signal: options.signal,
+          init: ctx.init(listTags(collection.id)),
+        }),
+      { items: [] as WebflowRawItem[], total: 0 },
+    );
     return options.raw ? items : normalizeAll(slug, collection, items);
   }
 
   async function getItemBySlug(slug: string, itemSlug: string, options: ReadOptions & { raw?: boolean } = {}) {
     const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const { items } = await client.request<WebflowListResponse<WebflowRawItem>>(
-      itemsPath(collection.id, ctx.draft),
-      {
-        host: ctx.host,
-        query: { slug: itemSlug, cmsLocaleId: options.cmsLocaleId },
-        signal: options.signal,
-        init: ctx.init(slugLookupTags(collection.id, itemSlug)),
-      },
+    const { items } = await readLive(
+      collection,
+      ctx,
+      () =>
+        client.request<WebflowListResponse<WebflowRawItem>>(itemsPath(collection.id, ctx.draft), {
+          host: ctx.host,
+          query: { slug: itemSlug, cmsLocaleId: options.cmsLocaleId },
+          signal: options.signal,
+          init: ctx.init(slugLookupTags(collection.id, itemSlug)),
+        }),
+      { items: [] as WebflowRawItem[], pagination: { limit: 0, offset: 0, total: 0 } },
     );
     const raw = items.find((item) => item.fieldData.slug === itemSlug);
     if (!raw) return null;

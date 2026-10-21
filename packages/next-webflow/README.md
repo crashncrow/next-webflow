@@ -4,10 +4,23 @@ Use the Webflow CMS as a headless content source in Next.js (App Router): genera
 
 > **Work in progress.** Not published yet. The full README (setup, API, deployment) comes with v0.1.
 
+## Tokens and scopes
+
+next-webflow reads **`WEBFLOW_CMS_TOKEN`**, a site token (Site settings → Apps & integrations → API access). It never reads `WEBFLOW_API_TOKEN`: that's the Webflow CLI's variable and holds a *workspace* token. If only `WEBFLOW_API_TOKEN` is set, the error message says so.
+
+| Used by | Token | Scopes |
+| --- | --- | --- |
+| Your app at runtime (`getItems`, …) and builds | `WEBFLOW_CMS_TOKEN` | CMS: Read (read-only) |
+| `npx next-webflow typegen` | same token | CMS: Read |
+| `npx next-webflow webhooks register / list / unregister` | a separate site token, e.g. `WEBFLOW_ADMIN_TOKEN`, via `--token-env WEBFLOW_ADMIN_TOKEN` (or `--token`) | Sites: Read and write + CMS: Read |
+| `webflow apps deploy` (Webflow CLI, Cloud) | `WEBFLOW_API_TOKEN` | workspace token (Webflow's docs) |
+
+Keep the runtime token read-only. `--token <value>` works on every CLI command, but `--token-env` keeps the token out of your shell history.
+
 ## Types (`typegen`)
 
 ```bash
-npx next-webflow typegen          # reads WEBFLOW_API_TOKEN + WEBFLOW_SITE_ID (env or .env.local); CMS: Read is enough
+npx next-webflow typegen          # reads WEBFLOW_CMS_TOKEN + WEBFLOW_SITE_ID (env or .env.local); CMS: Read is enough
 npx next-webflow typegen --check  # CI: exit 1 if webflow/schema.ts no longer matches the site
 ```
 
@@ -58,6 +71,10 @@ post.fieldData.video?.metadata?.aspectRatio; // width / height, computed by next
 
 If a payload has no `isDraft`, the handler invalidates: a wrong guess costs a refetch, never stale content. Set `invalidateOnStagedChanges: true` to invalidate on staged edits too.
 
+### Collections that were never published
+
+Webflow answers 404 on the live items of a collection that exists but was never published. next-webflow treats it as empty: `getItems` returns `[]` and `getItemBySlug` returns `null` (a missing collection still throws). Pages rendered this way keep the collection's cache tags, so the first site publish refreshes them.
+
 ### Known Webflow behavior: deleted items linger in live lists
 
 After you delete a published item, Webflow's `/items/live` list (and `?slug=` lookups) keeps returning it until the next site publish, even though the item itself returns 404 (measured on 2026-10-21: still listed after 10 minutes). next-webflow invalidates on the delete webhook, but the refetch gets the same stale list from Webflow. **Workaround:** publish the site after deleting items. The `site_publish` webhook then invalidates everything, and the item disappears. This is Webflow's behavior, not something next-webflow requires.
@@ -68,3 +85,4 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
 
 - **Don't add `export const runtime = "edge"` to route handlers.** Webflow's docs say API routes need the edge runtime, but in our tests every edge route returned `500 Internal Server Error`, while the same handlers on the default Node.js runtime worked. next-webflow's route handlers (webhook, draft) don't export `runtime`.
 - **Keep secrets out of `.env*` files when deploying.** `webflow apps deploy` builds on your machine, and the build bakes every `.env*` file into the worker bundle in plain text. Upload variables with `webflow apps env-vars import <file> --secret` instead.
+- **Builds don't see Cloud's variables.** The CLI builds locally, so `generateStaticParams` and other build-time reads need `WEBFLOW_CMS_TOKEN` in the deploy shell's environment (e.g. `set -a; . ./local.env; set +a` before `webflow apps deploy`). Values from the process environment are not written into the bundle (checked on 2026-10-21); `.env*` files are.

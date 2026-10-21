@@ -20,7 +20,7 @@ describe("request", () => {
     expect(headers?.get("accept")).toBe("application/json");
   });
 
-  it("reads the token from WEBFLOW_API_TOKEN lazily", async () => {
+  it("reads the token from WEBFLOW_CMS_TOKEN lazily", async () => {
     let authorization: string | null = null;
     server.use(
       http.get(`${DATA_API}/sites`, ({ request }) => {
@@ -30,15 +30,23 @@ describe("request", () => {
     );
 
     const client = createWebflowClient();
-    vi.stubEnv("WEBFLOW_API_TOKEN", "env-token");
+    vi.stubEnv("WEBFLOW_CMS_TOKEN", "env-token");
     await client.request("/sites");
     expect(authorization).toBe("Bearer env-token");
   });
 
   it("throws a config error when no token is available", async () => {
-    vi.stubEnv("WEBFLOW_API_TOKEN", "");
     const client = createWebflowClient();
     await expect(client.request("/sites")).rejects.toBeInstanceOf(WebflowConfigError);
+    await expect(client.request("/sites")).rejects.not.toThrow(/WEBFLOW_API_TOKEN/);
+  });
+
+  it("never reads WEBFLOW_API_TOKEN (the Webflow CLI's workspace token), but says so", async () => {
+    vi.stubEnv("WEBFLOW_API_TOKEN", "cli-workspace-token");
+    const client = createWebflowClient();
+    await expect(client.request("/sites")).rejects.toThrow(
+      /Set WEBFLOW_CMS_TOKEN.*WEBFLOW_API_TOKEN is set but next-webflow doesn't read it/,
+    );
   });
 
   it("uses the Content Delivery API host when asked", async () => {

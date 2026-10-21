@@ -37,7 +37,7 @@ function setup(files: Record<string, string> = {}) {
     }),
     confirm: async () => false,
   };
-  const context: CommandContext = { client: createTestClient().client, siteId: SITE, io, tokenEnv: "WEBFLOW_API_TOKEN" };
+  const context: CommandContext = { client: createTestClient().client, siteId: SITE, io, tokenEnv: "WEBFLOW_CMS_TOKEN" };
   return { context, io, files, output: () => output.join("\n"), warnings: () => warnings.join("\n") };
 }
 

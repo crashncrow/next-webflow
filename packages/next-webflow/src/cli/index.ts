@@ -5,7 +5,7 @@ import { dirname } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { createWebflowClient } from "../core/client";
-import { ENV } from "../core/env";
+import { ENV, WEBFLOW_CLI_TOKEN_ENV } from "../core/env";
 import { WebflowError } from "../core/errors";
 import { parseEnvFile } from "./env-file";
 import { DEFAULT_OUT_DIR, runTypegen } from "./typegen";
@@ -34,8 +34,11 @@ webhooks options:
 Common options:
   --env-file <path>     Read config from it (default: .env.local); webhooks register appends
                         secrets to it. On Webflow Cloud use a file NOT named .env* (it would be bundled).
-  --token-env <name>    Env var holding the API token (default: ${ENV.apiToken}).
-                        typegen: CMS: Read. webhooks: Sites: Read and write + CMS: Read.
+  --token-env <name>    Env var holding the site token (default: ${ENV.cmsToken}).
+                        typegen: CMS: Read. webhooks: Sites: Read and write + CMS: Read,
+                        so point it at a separate variable (e.g. WEBFLOW_ADMIN_TOKEN).
+  --token <token>       The token itself (overrides --token-env). Prefer --token-env:
+                        a literal token stays in your shell history.
   --site-id <id>        Default: ${ENV.siteId}
   -h, --help
 `;
@@ -68,7 +71,8 @@ async function main(argv: string[]): Promise<number> {
       events: { type: "string" },
       "env-file": { type: "string", default: ".env.local" },
       print: { type: "boolean", default: false },
-      "token-env": { type: "string", default: ENV.apiToken },
+      "token-env": { type: "string", default: ENV.cmsToken },
+      token: { type: "string" },
       "site-id": { type: "string" },
       yes: { type: "boolean", default: false },
       out: { type: "string", default: DEFAULT_OUT_DIR },
@@ -90,12 +94,20 @@ async function main(argv: string[]): Promise<number> {
   const env = (name: string) => process.env[name] || fileEnv[name] || undefined;
 
   const tokenEnv = values["token-env"];
-  const token = env(tokenEnv);
+  const token = values.token ?? env(tokenEnv);
   const siteId = values["site-id"] ?? env(ENV.siteId);
-  if (!token) throw new WebflowError(`No API token: set ${tokenEnv} (in the environment or ${envFile}).`);
+  if (!token) {
+    throw new WebflowError(
+      `No API token: set ${tokenEnv} (in the environment or ${envFile}) or pass --token.` +
+        (tokenEnv !== WEBFLOW_CLI_TOKEN_ENV && env(WEBFLOW_CLI_TOKEN_ENV)
+          ? ` ${WEBFLOW_CLI_TOKEN_ENV} is set but isn't read: it's the Webflow CLI's variable (a workspace token).`
+          : ""),
+    );
+  }
   if (!siteId) throw new WebflowError(`No site ID: set ${ENV.siteId} or pass --site-id.`);
 
-  const context: CommandContext = { client: createWebflowClient({ token }), siteId, io, tokenEnv };
+  const tokenSource = values.token ? "--token" : tokenEnv;
+  const context: CommandContext = { client: createWebflowClient({ token }), siteId, io, tokenEnv: tokenSource };
   if (group === "typegen") return runTypegen(context, { out: values.out, check: values.check, force: values.force });
   switch (command) {
     case "register":

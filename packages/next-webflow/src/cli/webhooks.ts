@@ -33,14 +33,14 @@ export interface CommandContext {
   client: WebflowClient;
   siteId: string;
   io: CliIO;
-  /** Env var the token came from, for error messages. */
+  /** Where the token came from (an env var name or `--token`), for error messages. */
   tokenEnv: string;
 }
 
 const REQUIRED_SCOPES =
   "The token needs **Sites: Read and write** (to create webhooks) and **CMS: Read** (for collection_item_* " +
   "events). Generate a site token in Site settings → Apps & integrations → API access and point " +
-  "--token-env at the variable that holds it.";
+  "--token-env at the variable that holds it (or pass --token).";
 
 export function requireHttpsUrl(url: string | undefined): string {
   if (!url) throw new WebflowConfigError("Missing --url (the https URL of your webhook route, e.g. https://example.com/api/webflow).");

@@ -1,4 +1,4 @@
-import { ENV, readEnv } from "./env";
+import { ENV, WEBFLOW_CLI_TOKEN_ENV, readEnv } from "./env";
 import {
   WebflowApiError,
   WebflowConfigError,
@@ -36,7 +36,7 @@ export const MAX_PAGE_SIZE = 100;
 export const DEFAULT_CONCURRENCY = 4;
 
 export interface WebflowClientConfig {
-  /** API token. Defaults to `WEBFLOW_API_TOKEN`, read lazily on the first request. */
+  /** API token. Defaults to `WEBFLOW_CMS_TOKEN`, read lazily on the first request. */
   token?: string | undefined;
   /** Custom `fetch`. Defaults to the global one (which Next.js patches for caching). */
   fetch?: typeof fetch | undefined;
@@ -112,10 +112,13 @@ export function createWebflowClient(
   const random = internals.random ?? Math.random;
 
   const resolveToken = (): string => {
-    const token = config.token ?? readEnv(ENV.apiToken);
+    const token = config.token ?? readEnv(ENV.cmsToken);
     if (!token) {
       throw new WebflowConfigError(
-        `Missing Webflow API token. Set ${ENV.apiToken} or pass \`token\` to the client.`,
+        `Missing Webflow API token. Set ${ENV.cmsToken} (a site token with CMS: Read) or pass \`token\` to the client.` +
+          (readEnv(WEBFLOW_CLI_TOKEN_ENV)
+            ? ` ${WEBFLOW_CLI_TOKEN_ENV} is set but next-webflow doesn't read it: it's the Webflow CLI's variable (a workspace token).`
+            : ""),
       );
     }
     return token;

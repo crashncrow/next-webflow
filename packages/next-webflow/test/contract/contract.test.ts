@@ -3,7 +3,7 @@
  *
  *   WEBFLOW_CONTRACT=1 pnpm --filter next-webflow test:contract
  *
- * Reads WEBFLOW_API_TOKEN / WEBFLOW_SITE_ID from packages/next-webflow/.env.local. Only GET
+ * Reads WEBFLOW_CMS_TOKEN / WEBFLOW_SITE_ID from packages/next-webflow/.env.local. Only GET
  * requests. Saves every real response to test/contract/output/ (git-ignored) and reports how
  * their shape differs from our MSW fixtures, so fixtures can be updated from reality.
  */
@@ -23,7 +23,7 @@ import { fullRawPost, realPostsCollection, sitesCollectionsResponse, stagedItems
 import { diffShapes, type ShapeDifference } from "./shape";
 
 const env = process.env;
-const enabled = env.WEBFLOW_CONTRACT === "1" && Boolean(env.WEBFLOW_API_TOKEN) && Boolean(env.WEBFLOW_SITE_ID);
+const enabled = env.WEBFLOW_CONTRACT === "1" && Boolean(env.WEBFLOW_CMS_TOKEN) && Boolean(env.WEBFLOW_SITE_ID);
 const COLLECTION_SLUG = env.WEBFLOW_CONTRACT_COLLECTION ?? "posts";
 const OUTPUT_DIR = fileURLToPath(new URL("./output/", import.meta.url));
 
@@ -41,7 +41,7 @@ interface ApiField {
 }
 
 describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECTION_SLUG}")`, () => {
-  const client = createWebflowClient({ token: env.WEBFLOW_API_TOKEN, concurrency: 2 });
+  const client = createWebflowClient({ token: env.WEBFLOW_CMS_TOKEN, concurrency: 2 });
   const report: Record<string, unknown> = {};
   const diffs: Record<string, ShapeDifference[]> = {};
 
@@ -224,7 +224,7 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
 
   it("the Content Delivery API returns the same live items", async () => {
     const response = await fetch(`https://api-cdn.webflow.com/v2/collections/${collection.id}/items/live?limit=100`, {
-      headers: { authorization: `Bearer ${env.WEBFLOW_API_TOKEN}`, accept: "application/json" },
+      headers: { authorization: `Bearer ${env.WEBFLOW_CMS_TOKEN}`, accept: "application/json" },
     });
     expect(response.ok).toBe(true);
     report.cdnCacheStatus = response.headers.get("cf-cache-status");

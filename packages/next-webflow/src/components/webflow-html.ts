@@ -6,17 +6,31 @@ import { isInheritedAlt } from "../core/alt";
 import { warnInheritedAlt } from "./dev-warnings";
 
 /** Mutates the tree in place. */
-export function prepareWebflowNodes(nodes: ChildNode[]): void {
+export function prepareWebflowNodes(nodes: ChildNode[], inImageFigure = false): void {
   for (const node of nodes) {
     if (!(node instanceof Element)) continue;
-    if (node.name === "img" && isInheritedAlt(node.attribs.alt)) {
-      node.attribs.alt = "";
-      warnInheritedAlt(node.attribs.src ?? "(no src)", "select the image in the Rich Text field and set its alt text");
+    if (node.name === "img") {
+      if (isInheritedAlt(node.attribs.alt)) {
+        node.attribs.alt = "";
+        warnInheritedAlt(node.attribs.src ?? "(no src)", "select the image in the Rich Text field and set its alt text");
+      }
+      if (inImageFigure) fitImage(node);
     } else if (node.name === "figure" && node.attribs["data-rt-type"] === "video") {
       sizeVideoFigure(node);
     }
-    prepareWebflowNodes(node.children);
+    prepareWebflowNodes(node.children, inImageFigure || (node.name === "figure" && node.attribs["data-rt-type"] === "image"));
   }
+}
+
+/**
+ * Webflow writes `width="auto" height="auto"` (not valid values) and relies on webflow.css to fit
+ * the image; without it a full-size upload overflows the page. Drop them and cap the width.
+ */
+function fitImage(img: Element): void {
+  img.attribs = Object.fromEntries(
+    Object.entries(img.attribs).filter(([name, value]) => !((name === "width" || name === "height") && value === "auto")),
+  );
+  img.attribs.style = withStyle(img.attribs.style, "max-width:100%;height:auto");
 }
 
 /**

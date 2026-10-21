@@ -58,6 +58,8 @@ describe("WebflowRichText", () => {
       expect(out).toContain('<a href="/post/cms-future-10">dummy</a>');
       expect(out).toContain('<a href="https://google.com" target="_blank">Lorem Ipsum</a>');
       expect(out).toContain('<img alt="A desert next to the sea (alt)"');
+      expect(out).not.toContain('width="auto"');
+      expect(out.match(/<img [^>]*style="max-width:100%;height:auto"/g)).toHaveLength(2);
       expect(out).toContain("<figcaption>A desert next to the sea (under)</figcaption>");
       expect(out).toContain("<blockquote>Beware of the assumption");
       expect(out).toContain("<ol><li>Node</li>");

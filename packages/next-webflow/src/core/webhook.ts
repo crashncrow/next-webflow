@@ -60,7 +60,8 @@ export async function verifyWebflowSignature(input: VerifySignatureInput): Promi
   return { ok: false, reason: "invalid" };
 }
 
-async function hmacSha256(secret: string, message: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
+/** HMAC-SHA256 with `crypto.subtle` (edge-compatible). Shared with preview links. */
+export async function hmacSha256(secret: string, message: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -71,7 +72,7 @@ async function hmacSha256(secret: string, message: Uint8Array<ArrayBuffer>): Pro
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, message));
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
   for (let index = 0; index < bytes.length; index++) {
     bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);

@@ -31,6 +31,16 @@ const RUNTIME_ENTRIES: Array<{ file: string; smoke: string; expected: unknown }>
     `,
     expected: { ok: false, reason: "invalid" },
   },
+  {
+    // Signs a preview link with crypto.subtle.
+    file: "src/draft/index.ts",
+    smoke: `
+      globalThis.__result = NextWebflow.createPreviewUrl({
+        url: "/api/webflow/draft", collection: "posts", itemId: "i1", secret: "s", now: 0,
+      }).then((url) => ({ link: url.startsWith("/api/webflow/draft?collection=posts&item=i1&expires=3600&sig=") && url.length === 125 }));
+    `,
+    expected: { link: true },
+  },
 ];
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));

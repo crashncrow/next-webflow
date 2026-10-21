@@ -7,6 +7,7 @@ import { parseArgs } from "node:util";
 import { createWebflowClient } from "../core/client";
 import { ENV, WEBFLOW_CLI_TOKEN_ENV } from "../core/env";
 import { WebflowError } from "../core/errors";
+import { createPreviewUrl } from "../core/preview";
 import { parseEnvFile } from "./env-file";
 import { DEFAULT_OUT_DIR, runTypegen } from "./typegen";
 import { listWebhooks, registerWebhooks, unregisterWebhooks, type CliIO, type CommandContext } from "./webhooks";
@@ -14,6 +15,7 @@ import { listWebhooks, registerWebhooks, unregisterWebhooks, type CliIO, type Co
 const HELP = `Usage:
   next-webflow typegen [options]            Generate ${DEFAULT_OUT_DIR}/schema.ts (+ index.ts the first time)
   next-webflow webhooks <command> [options]
+  next-webflow preview-url --url <draft route> --collection <slug> --item <id> [--expires <seconds>]
 
 Webhook commands:
   register    Create signed webhooks (every CMS event + site_publish by default)
@@ -30,6 +32,12 @@ webhooks options:
   --events <list>       Comma-separated (default: every CMS event and site_publish)
   --print               Print the secrets instead of writing them to the env file
   --yes                 unregister: don't ask for confirmation
+
+preview-url options (prints a signed draft-mode link; reads WEBFLOW_PREVIEW_SECRET):
+  --url <url>           Your draft route, e.g. https://example.com/api/webflow/draft
+  --collection <slug>   Collection slug
+  --item <id>           Item ID (survives slug changes)
+  --expires <seconds>   Link lifetime (default: 3600)
 
 Common options:
   --env-file <path>     Read config from it (default: .env.local); webhooks register appends
@@ -78,12 +86,15 @@ async function main(argv: string[]): Promise<number> {
       out: { type: "string", default: DEFAULT_OUT_DIR },
       check: { type: "boolean", default: false },
       force: { type: "boolean", default: false },
+      collection: { type: "string" },
+      item: { type: "string" },
+      expires: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
 
   const [group, command] = positionals;
-  if (values.help || !(group === "typegen" || (group === "webhooks" && command))) {
+  if (values.help || !(group === "typegen" || group === "preview-url" || (group === "webhooks" && command))) {
     console.log(HELP);
     return values.help ? 0 : 1;
   }
@@ -92,6 +103,22 @@ async function main(argv: string[]): Promise<number> {
   // process.env wins over the file, like Next.js.
   const fileEnv = { ...parseEnvFile(io.readFile(".env") ?? ""), ...parseEnvFile(io.readFile(envFile) ?? "") };
   const env = (name: string) => process.env[name] || fileEnv[name] || undefined;
+
+  if (group === "preview-url") {
+    if (!values.url || !values.collection || !values.item) {
+      throw new WebflowError("preview-url needs --url, --collection and --item.");
+    }
+    console.log(
+      await createPreviewUrl({
+        url: values.url,
+        collection: values.collection,
+        itemId: values.item,
+        secret: env(ENV.previewSecret),
+        expiresIn: values.expires === undefined ? undefined : Number(values.expires),
+      }),
+    );
+    return 0;
+  }
 
   const tokenEnv = values["token-env"];
   const token = values.token ?? env(tokenEnv);

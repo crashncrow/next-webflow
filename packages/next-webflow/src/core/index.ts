@@ -17,6 +17,7 @@ export {
 } from "./client";
 export {
   createWebflowCms,
+  unsafeStagedCache,
   noCache,
   type CacheAdapter,
   type ContentSource,
@@ -29,7 +30,17 @@ export {
   type WebflowCms,
   type WebflowCmsConfig,
 } from "./cms";
+export { requireBasicAuth, type BasicAuthOptions } from "./basic-auth";
 export { ENV, readEnv } from "./env";
+export {
+  createPreviewUrl,
+  safeRelativePath,
+  verifyPreviewParams,
+  DEFAULT_MAX_PREVIEW_LIFETIME_SECONDS,
+  DEFAULT_PREVIEW_EXPIRES_IN_SECONDS,
+  type CreatePreviewUrlOptions,
+  type PreviewVerification,
+} from "./preview";
 export { camelCase, normalizeItem, schemaFromApi } from "./normalize";
 export type {
   BaseFields,

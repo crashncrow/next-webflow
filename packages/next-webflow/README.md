@@ -80,6 +80,87 @@ During `next build`, `getItemBySlug` doesn't send one `?slug=` request per page.
 - Alternatives for very large collections: prerender a subset in `generateStaticParams` and let the rest render on demand (`dynamicParams`, the default), or use `source: "cdn"` (no rate limit). `buildSlugLookups: "request"` restores one request per page.
 - Next.js doesn't cache responses over 2 MB. next-webflow warns if a list page is that big (items averaging over ~20 KB, e.g. very long rich text).
 
+## Draft mode (previews)
+
+Previews use **signed links that expire**: the secret never appears in a URL. A link names a collection and an **item ID** (it survives slug changes while editors work); the route reads the staged item, enables Next.js draft mode and redirects to the item's current path. While draft mode is on, every read returns staged content from the Data API, uncached.
+
+```ts
+// app/api/webflow/draft/route.ts (don't export `runtime`)
+import { createDraftHandler } from "next-webflow/draft";
+import { schema } from "@/webflow/schema";
+
+export const { GET, DELETE } = createDraftHandler({
+  schema,
+  resolvePath: (collection, item) => `/blog/${item.fieldData.slug}`, // required
+});
+```
+
+- Set `WEBFLOW_PREVIEW_SECRET` (a long random string; comma-separated values all verify, the first signs, for rotation).
+- Links last 1 hour by default (`expiresIn`); the route rejects links that claim to live longer than 30 days (`maxLinkLifetimeSeconds`).
+- Leave preview with `GET /api/webflow/draft?disable=1&path=/blog/x` (redirects; `path` must be a same-site path, anything else goes to `/`) or `DELETE` (no redirect). Export `DELETE` from the route if you use it.
+- Redirects include the app's base path. On Webflow Cloud set `NEXT_PUBLIC_BASE_PATH` to the mount path (as Webflow's docs recommend); otherwise next-webflow falls back to the base path Next.js inlines at build time (an internal that could change). The `basePath` option overrides both.
+- Responses: expired or tampered link → 401, malformed → 400, unknown item or collection → 404, missing `resolvePath` or secret → 500 with the fix.
+
+**Making links.** `createPreviewUrl()` runs on the server (it needs the secret). Developers can also run `npx next-webflow preview-url --url https://example.com/api/webflow/draft --collection posts --item <id>`. Editors won't use a CLI, so give them an internal page that lists drafts with their links.
+
+> **Warning: `unsafeStagedCache` publishes your drafts on any page that uses it.** It reads staged (unpublished) content without draft mode, so whoever can load the page sees every draft. Use it only on a page that is authenticated, like the one below. Never on a public page, and never with `generateStaticParams` or static rendering.
+
+On Webflow Cloud, Next 16's `proxy.ts` works but OpenNext marks Node.js middleware as experimental (warning at build time; verified working on 2026-10-21). The page's own check still protects it if the proxy ever stops running.
+
+The example protects the page twice with HTTP Basic auth (`DRAFTS_PASSWORD`, a long random string; without it, the page answers 503 to everyone): a proxy that asks for the password, and the page itself, which renders nothing without valid credentials, so a wrong `matcher` doesn't expose it. Copy both files.
+
+```ts
+// proxy.ts (Next 16; on Next 15 name it middleware.ts and the function `middleware`)
+import { NextResponse, type NextRequest } from "next/server";
+import { requireBasicAuth } from "next-webflow/draft";
+
+export const config = { matcher: ["/drafts", "/drafts/:path*"] };
+
+export async function proxy(request: NextRequest) {
+  const denied = await requireBasicAuth(request, { password: process.env.DRAFTS_PASSWORD, realm: "Drafts" });
+  return denied ?? NextResponse.next();
+}
+```
+
+```tsx
+// app/drafts/page.tsx
+import Link from "next/link";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { createWebflowCms, unsafeStagedCache } from "next-webflow";
+import { createPreviewUrl, requireBasicAuth } from "next-webflow/draft";
+import { schema } from "@/webflow/schema";
+
+export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
+
+// Staged content, never cached. Only on this authenticated page.
+const staged = createWebflowCms({ schema, cache: unsafeStagedCache });
+
+export default async function Drafts() {
+  // Second check: if the proxy's matcher ever misses this page, it still shows nothing.
+  if (await requireBasicAuth(await headers(), { password: process.env.DRAFTS_PASSWORD })) notFound();
+
+  const posts = (await staged.getItems("posts")).filter((post) => post.isDraft);
+  const links = await Promise.all(
+    posts.map((post) => createPreviewUrl({ url: "/api/webflow/draft", collection: "posts", itemId: post.id })),
+  );
+  return (
+    <ul>
+      {posts.map((post, index) => (
+        <li key={post.id}>
+          <Link href={links[index] ?? "#"} prefetch={false}>
+            {post.fieldData.name}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`next/link` adds the base path on Webflow Cloud; with a plain `<a>`, add it yourself.
+
 ## Webhooks
 
 `npx next-webflow webhooks register --url https://your-site.com/api/webflow` subscribes to every CMS event and `site_publish`. The handler invalidates:

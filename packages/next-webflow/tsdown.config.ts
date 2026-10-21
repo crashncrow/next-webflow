@@ -6,7 +6,7 @@ const neverBundle = [/^next(\/|$)/, /^react(\/|$)/, /^react-dom(\/|$)/];
 export default defineConfig([
   {
     // Runtime entries: edge-compatible, no Node built-ins.
-    entry: { index: "src/index.ts", webhook: "src/webhook/index.ts" },
+    entry: { index: "src/index.ts", webhook: "src/webhook/index.ts", draft: "src/draft/index.ts" },
     format: "esm",
     platform: "neutral",
     target: "es2022",

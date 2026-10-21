@@ -16,6 +16,10 @@
       "types": "./dist/webhook.d.ts",
       "default": "./dist/webhook.js"
     },
+    "./draft": {
+      "types": "./dist/draft.d.ts",
+      "default": "./dist/draft.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

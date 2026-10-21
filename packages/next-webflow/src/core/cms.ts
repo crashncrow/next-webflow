@@ -41,6 +41,16 @@ export const noCache: CacheAdapter = {
   isDraft: async () => false,
 };
 
+/**
+ * UNSAFE ON PUBLIC PAGES: always reads staged (unpublished) content, never cached, without
+ * draft mode. Only for an internal, authenticated page that lists drafts with their preview links
+ * (README "Making links"); anywhere else it publishes your drafts.
+ */
+export const unsafeStagedCache: CacheAdapter = {
+  init: () => ({ cache: "no-store" }),
+  isDraft: async () => true,
+};
+
 export type ContentSource = "data" | "cdn";
 
 export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefined>

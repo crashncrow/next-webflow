@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WebflowRichText, type WebflowComponentProps } from "../../src/components";
 import stored from "../fixtures/api/rich-text-stored-probes.json";
 import postsLive from "../fixtures/api/items-live.json";
+import sample from "../fixtures/api/rich-text-sample.json";
 
 // React 19 hoists a <link rel="preload"> for every <img> when rendering on the server; not ours.
 const html = (props: Parameters<typeof WebflowRichText>[0]) =>
@@ -35,6 +36,61 @@ describe("WebflowRichText", () => {
     expect(html({ html: '<blockquote cite="/s">Q <strong>x</strong></blockquote>', components: { blockquote: Quote } })).toBe(
       '<div class="w-richtext"><figure data-cite="/s">Q <strong>x</strong></figure></div>',
     );
+  });
+
+  // A real post written in Webflow's editor (staged): links, images with and without alt, a caption,
+  // a YouTube video, a tweet (stored as an Embedly video), a code block, quote, H3 and list.
+  describe("real editor content", () => {
+    const body = sample.fieldData.body;
+
+    // First render of the sample: development warnings are once per image for the whole process.
+    it("renders images that inherit the asset's alt as decorative, never the placeholder", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const out = html({ html: body });
+      expect(out).not.toContain("__wf_reserved_inherit");
+      expect(out).toMatch(/<img alt="" src="[^"]+sayan-nath[^"]+"/);
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0]?.[0]).toMatch(/inherits its alt text from the Webflow asset.*set its alt text/);
+    });
+
+    it("keeps links, captions, quotes and lists as Webflow wrote them", () => {
+      const out = html({ html: body });
+      expect(out).toContain('<a href="/post/cms-future-10">dummy</a>');
+      expect(out).toContain('<a href="https://google.com" target="_blank">Lorem Ipsum</a>');
+      expect(out).toContain('<img alt="A desert next to the sea (alt)"');
+      expect(out).toContain("<figcaption>A desert next to the sea (under)</figcaption>");
+      expect(out).toContain("<blockquote>Beware of the assumption");
+      expect(out).toContain("<ol><li>Node</li>");
+    });
+
+    it("sizes video figures with aspect-ratio instead of Webflow's padding, keeping its classes", () => {
+      const out = html({ html: body });
+      expect(out).not.toContain("padding-bottom");
+      expect(out).toContain(
+        '<figure class="w-richtext-figure-type-video w-richtext-align-center" style="aspect-ratio:854/480" data-rt-type="video"',
+      );
+      expect(out).toContain('<figure class="w-richtext-figure-type-video w-richtext-align-center" style="aspect-ratio:500/281"');
+      expect(out).toContain('<div style="height:100%"><iframe src="https://www.youtube.com/embed/3mC_QUbGCUw"');
+      expect(out).toContain('src="//cdn.embedly.com/widgets/media.html?');
+      expect(out.match(/style="display:block;width:100%;height:100%"/g)).toHaveLength(2);
+    });
+
+    it("leaves figures without valid dimensions alone, and keeps other inline styles", () => {
+      expect(html({ html: '<figure data-rt-type="video" style="padding-bottom:50%"><div></div></figure>' })).toContain(
+        'style="padding-bottom:50%"',
+      );
+      expect(
+        html({ html: '<figure data-rt-type="video" data-rt-dimensions="16:9" style="padding-bottom:50%;max-width:600px"><div></div></figure>' }),
+      ).toContain('style="max-width:600px;aspect-ratio:16/9"');
+    });
+
+    it("gives a figure override the adjusted style and Webflow's classes", () => {
+      const Figure = ({ className, style, children }: { className?: string; style?: object; children?: React.ReactNode }) => (
+        <section data-class={className} data-style={JSON.stringify(style)}>{children}</section>
+      );
+      const out = html({ html: body, components: { figure: Figure as never } });
+      expect(out).toContain('data-class="w-richtext-figure-type-video w-richtext-align-center" data-style="{&quot;aspectRatio&quot;:&quot;854/480&quot;}"');
+    });
   });
 
   describe("Webflow components (<wf-component>)", () => {

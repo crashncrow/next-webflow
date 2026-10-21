@@ -42,6 +42,7 @@ export {
   type PreviewVerification,
 } from "./preview";
 export { camelCase, normalizeItem, schemaFromApi } from "./normalize";
+export { INHERIT_ASSET_ALT, isInheritedAlt } from "./alt";
 export type {
   BaseFields,
   CollectionSchema,

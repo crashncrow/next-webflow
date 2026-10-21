@@ -1,0 +1,76 @@
+{
+  "id": "6ad82459d716cd2a5aa21965",
+  "cmsLocaleId": "6ad821e739d35cd41a8c5fce",
+  "lastPublished": "2026-10-21T16:02:27.482Z",
+  "lastUpdated": "2026-10-21T22:48:06.918Z",
+  "createdOn": "2026-10-21T02:32:57.480Z",
+  "isArchived": false,
+  "isDraft": true,
+  "fieldData": {
+    "body": "<h1>Emerging Trends</h1><p>As technology evolves, so do the trends in content management systems. Staying updated with these trends can help you leverage your CMS effectively.</p><h2>Key Trends</h2><ul><li><strong>AI Integration:</strong> AI tools are becoming common for content creation.</li><li><strong>Headless CMS:</strong> Flexibility in content delivery across platforms.</li><li><strong>Personalization:</strong> Tailoring content to user preferences is on the rise.</li></ul><p>‍</p><p>‍</p><p><strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make <a href=\"/post/cms-future-10\">dummy</a> text for Letraset's Body Type sheets. It has survived not only many decades, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised thanks to these sheets and more recently with desktop publishing software like Aldus PageMaker and Microsoft Word including versions of <a href=\"https://google.com\" target=\"_blank\">Lorem Ipsum</a>.</p><p>‍</p><figure class=\"w-richtext-figure-type-image w-richtext-align-center\" data-rt-type=\"image\" data-rt-align=\"center\"><div><img alt=\"A desert next to the sea (alt)\" src=\"https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad93d16ffc1f45ac24908cf_agnieszka-stankiewicz-He_XQol_cKM-unsplash.jpg\" width=\"auto\" height=\"auto\" loading=\"lazy\"></div><figcaption>A desert next to the sea (under)</figcaption></figure><p>‍</p><figure class=\"w-richtext-figure-type-image w-richtext-align-center\" data-rt-type=\"image\" data-rt-align=\"center\"><div><img alt=\"__wf_reserved_inherit\" src=\"https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad93d7e94e53e41815e6e03_sayan-nath-FOyh83HHy6o-unsplash.jpg\" width=\"auto\" height=\"auto\" loading=\"lazy\"></div></figure><p>‍</p><figure class=\"w-richtext-figure-type-video w-richtext-align-center\" style=\"padding-bottom:33.723653395784545%\" data-rt-type=\"video\" data-rt-align=\"center\" data-rt-max-width=\"\" data-rt-max-height=\"33.723653395784545%\" data-rt-dimensions=\"854:480\" data-page-url=\"https://www.youtube.com/watch?v=3mC_QUbGCUw\"><div><iframe src=\"https://www.youtube.com/embed/3mC_QUbGCUw\" title=\"Moby & Jacob Lusk - &quot;Natural Blues&quot; (Live at Coachella 2026)\" scrolling=\"no\" frameborder=\"0\" allowfullscreen=\"true\"></iframe></div></figure><p>‍</p><p>‍</p><pre></pre><p>‍</p><blockquote>Beware of the assumption that the way you work is the best way simply because it's the way you've done it before.</blockquote><p>‍</p><h3>The Creative Act: A Way of Being</h3><p>‍</p><ol><li>Node</li><li>TypeScript</li><li>PHP</li><li>MySQL</li></ol><figure class=\"w-richtext-figure-type-video w-richtext-align-center\" style=\"padding-bottom:33.72%\" data-rt-type=\"video\" data-rt-align=\"center\" data-rt-max-width=\"\" data-rt-max-height=\"33.72%\" data-rt-dimensions=\"500:281\" data-page-url=\"https://x.com/thephpf/status/2112633155631108544?s=48\"><div><iframe src=\"//cdn.embedly.com/widgets/media.html?type=text%2Fhtml&key=96f1f04c5f4143bcb0f2e68c87d65feb&schema=twitter&url=https%3A//x.com/ThePHPF/status/2112633155631108544&image=https%3A//pbs.twimg.com/profile_images/1462756177696206854/YcHaTzic_400x400.jpg\" title=\"The PHP Foundation on X (formerly Twitter): &quot;The PHP security team is giving advance notice: Upcoming security release Wed, Oct 21st 2026, 14:00UTC, two critical vulnerabilities, both rated CVSSv4 9.2.PHP users are encouraged to prepare to update. Earlier release if details become public or active exploit evidence. / X&quot;\" scrolling=\"no\" frameborder=\"0\" allowfullscreen=\"true\"></iframe></div></figure>",
+    "main-image": {
+      "fileId": "6ad82446d716cd2a5aa2104c",
+      "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2104c_image5.jpeg",
+      "alt": null
+    },
+    "gallery": [
+      {
+        "fileId": "6ad82446d716cd2a5aa2104f",
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2104f_image5.jpeg",
+        "alt": null
+      },
+      {
+        "fileId": "6ad82446d716cd2a5aa21052",
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21052_image15.jpeg",
+        "alt": null
+      },
+      {
+        "fileId": "6ad82446d716cd2a5aa21095",
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21095_image3.jpeg",
+        "alt": null
+      },
+      {
+        "fileId": "6ad82446d716cd2a5aa21058",
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21058_image10.jpeg",
+        "alt": null
+      },
+      {
+        "fileId": "6ad82446d716cd2a5aa2105e",
+        "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa2105e_image5.jpeg",
+        "alt": null
+      }
+    ],
+    "video": {
+      "url": "https://vimeo.com/79988821",
+      "metadata": {
+        "html": "<iframe class=\"embedly-embed\" src=\"//cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fplayer.vimeo.com%2Fvideo%2F79988821%3Fapp_id%3D122963&dntp=1&url=https%3A%2F%2Fvimeo.com%2F79988821&image=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F455809692_1280.jpg&key=96f1f04c5f4143bcb0f2e68c87d65feb&type=text%2Fhtml&schema=vimeo\" width=\"1280\" height=\"720\" scrolling=\"no\" frameborder=\"0\" allow=\"autoplay; fullscreen\" allowfullscreen=\"true\"></iframe>",
+        "type": "video",
+        "title": "Design Starts Here",
+        "width": 1280,
+        "height": 720,
+        "aspectRatio": 0,
+        "author_name": "Elias Freiberger",
+        "description": "Design Starts Here is my graduation project for the MA Graphic Moving Image course at London College of Communication. From my research into the motion design and graphic design industries, I have often discovered that many people place too much of an emphasis on software.",
+        "provider_name": "Vimeo",
+        "thumbnail_url": "https://i.vimeocdn.com/video/455809692_1280.jpg"
+      }
+    },
+    "website": "https://example.com/trends",
+    "contact-email": "trends@example.com",
+    "phone": "+1-555-456-7890",
+    "reading-time": 5,
+    "publish-date": "2023-10-05T00:00:00.000Z",
+    "featured": true,
+    "accent-color": "#FF5733",
+    "attachment": {
+      "fileId": "6ad82446d716cd2a5aa21018",
+      "url": "https://cdn.prod.website-files.com/6ad821e739d35cd41a8c5fcf/6ad82446d716cd2a5aa21018_image7.jpeg",
+      "alt": null
+    },
+    "category": "e13c051f8ba4f79e6c38ad8aa72afb98",
+    "author": "6ad823ee45bfdd80dc4a732a",
+    "co-authors": [],
+    "name": "CMS Trends to Watch in 2023 ",
+    "slug": "cms-trends-2023-5"
+  }
+}

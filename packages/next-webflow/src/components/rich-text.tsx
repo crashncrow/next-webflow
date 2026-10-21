@@ -9,6 +9,7 @@ import Link from "next/link.js";
 import { Fragment, type ComponentType, type JSX, type ReactNode } from "react";
 import { warnOnceInDev } from "./dev-warnings";
 import { sanitizeNodes } from "./sanitize";
+import { prepareWebflowNodes } from "./webflow-html";
 
 /** Props an element override receives: the element's attributes as React props, its children, and the parsed node. */
 export type RichTextElementProps = Record<string, unknown> & { children?: ReactNode; node: Element };
@@ -60,6 +61,7 @@ export function WebflowRichText({
 }: WebflowRichTextProps): ReactNode {
   if (!html) return null;
   const nodes = sanitizeNodes(htmlToDOM(html) as ChildNode[], { allowScripts });
+  prepareWebflowNodes(nodes);
 
   const options: HTMLReactParserOptions = {
     replace(domNode) {

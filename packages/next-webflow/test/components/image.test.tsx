@@ -39,6 +39,14 @@ describe("WebflowImage", () => {
     expect(render({ image: { ...image, alt: "x" }, width: 1, height: 1, unoptimized: true })).toContain('data-unoptimized=""');
   });
 
+  it("never renders Webflow's inherit-alt placeholder (raw items), with a specific warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const out = render({ image: { ...image, fileId: "inherit", alt: "__wf_reserved_inherit" }, width: 1, height: 1 });
+    expect(out).toContain('alt=""');
+    expect(out).not.toContain("__wf_reserved_inherit");
+    expect(warn.mock.calls[0]?.[0]).toMatch(/inherits its alt text from the Webflow asset.*set it on the image itself/);
+  });
+
   it("doesn't warn when alt is passed explicitly", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(render({ image: { ...image, fileId: "other" }, alt: "", width: 1, height: 1 })).toContain('alt=""');

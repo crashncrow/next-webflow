@@ -1,3 +1,4 @@
+import { isInheritedAlt } from "./alt";
 import type {
   CollectionSchema,
   FieldSchema,
@@ -25,7 +26,8 @@ export interface NormalizeResult<Fields> {
 }
 
 /**
- * Converts a raw API item: camelCase keys, Option IDs → `{ id, name }`, `null` → absent.
+ * Converts a raw API item: camelCase keys, Option IDs → `{ id, name }`, `null` → absent, Webflow's
+ * "inherit the asset's alt" placeholder → `alt: null` (next-webflow doesn't resolve asset alt text).
  * Fields missing from the schema are kept (camelCased, untouched) and reported in `mismatch`.
  */
 export function normalizeItem<Fields = UnknownFields>(
@@ -59,6 +61,10 @@ export function normalizeItem<Fields = UnknownFields>(
       }
     } else if (field.type === "VideoLink") {
       fieldData[key] = normalizeVideo(value);
+    } else if (field.type === "Image" || field.type === "File") {
+      fieldData[key] = withoutInheritedAlt(value);
+    } else if (field.type === "MultiImage" && Array.isArray(value)) {
+      fieldData[key] = value.map(withoutInheritedAlt);
     } else {
       fieldData[key] = value;
     }
@@ -81,6 +87,9 @@ export function normalizeItem<Fields = UnknownFields>(
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const withoutInheritedAlt = (value: unknown): unknown =>
+  isRecord(value) && isInheritedAlt(value.alt) ? { ...value, alt: null } : value;
 
 /**
  * `{ url, metadata }` (what the API returns) → `WebflowVideo` with camelCase metadata keys. A plain

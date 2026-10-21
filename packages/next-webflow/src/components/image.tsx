@@ -1,7 +1,8 @@
 import NextImage, { type ImageProps } from "next/image.js";
 import type { ReactNode } from "react";
 import type { WebflowImage as WebflowImageValue } from "../core/schema";
-import { warnOnceInDev } from "./dev-warnings";
+import { isInheritedAlt } from "../core/alt";
+import { warnInheritedAlt, warnOnceInDev } from "./dev-warnings";
 
 type BaseProps = Omit<ImageProps, "src" | "alt" | "width" | "height" | "fill"> & {
   /** An `Image` field value (or one item of a `MultiImage`). Nothing renders without it. */
@@ -21,8 +22,12 @@ export type WebflowImageProps =
  */
 export function WebflowImage({ image, alt, ...props }: WebflowImageProps): ReactNode {
   if (!image?.url) return null;
-  const text = alt ?? image.alt ?? "";
-  if (alt === undefined && !image.alt) {
+  // Raw items (`{ raw: true }`) can still hold Webflow's inherit placeholder; normalized ones can't.
+  const inherited = isInheritedAlt(image.alt);
+  const text = alt ?? (inherited ? "" : image.alt) ?? "";
+  if (alt === undefined && inherited) {
+    warnInheritedAlt(image.url);
+  } else if (alt === undefined && !image.alt) {
     warnOnceInDev(
       `alt:${image.fileId ?? image.url}`,
       `Image ${image.url} has no alt text in Webflow; rendering it as decorative (alt=""). ` +

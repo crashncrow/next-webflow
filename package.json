@@ -10,11 +10,14 @@
     "build": "pnpm --filter next-webflow build",
     "test": "pnpm --filter next-webflow test",
     "test:edge": "pnpm --filter next-webflow test:edge",
-    "typecheck": "pnpm --filter next-webflow typecheck",
+    "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
-    "test:contract": "pnpm --filter next-webflow test:contract"
+    "test:contract": "pnpm --filter next-webflow test:contract",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "devDependencies": {
+    "@changesets/cli": "3.0.3",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.13.0",
     "typescript": "~6.0.3",

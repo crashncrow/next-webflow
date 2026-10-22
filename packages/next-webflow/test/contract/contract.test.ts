@@ -3,11 +3,12 @@
  *
  *   WEBFLOW_CONTRACT=1 pnpm --filter next-webflow test:contract
  *
- * Reads WEBFLOW_CMS_TOKEN / WEBFLOW_SITE_ID from packages/next-webflow/.env.local. Only GET
- * requests. Saves every real response to test/contract/output/ (git-ignored) and reports how
- * their shape differs from our MSW fixtures, so fixtures can be updated from reality.
+ * Reads WEBFLOW_CMS_TOKEN / WEBFLOW_SITE_ID from the environment or packages/next-webflow/.env.local.
+ * Only GET requests. Saves every real response to test/contract/output/ (git-ignored) and fails
+ * when their shape drifts from our MSW fixtures (a key we read is gone or changed type), so
+ * fixtures can be updated from reality. Runs weekly in GitHub Actions (.github/workflows/contract.yml).
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -20,7 +21,7 @@ import {
 } from "../../src/core";
 import type { ApiCollection } from "../../src/core/normalize";
 import { fullRawPost, realPostsCollection, sitesCollectionsResponse, stagedItems } from "../fixtures/schema";
-import { diffShapes, type ShapeDifference } from "./shape";
+import { diffItemShapes, diffShapes, driftLines, type ShapeDifference } from "./shape";
 
 const env = process.env;
 const enabled = env.WEBFLOW_CONTRACT === "1" && Boolean(env.WEBFLOW_CMS_TOKEN) && Boolean(env.WEBFLOW_SITE_ID);
@@ -81,8 +82,8 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     staged = await client.request(`/collections/${match.id}/items`, { query: { limit: 100 } });
     save("items-live", live);
     save("items-staged", staged);
-    diffs.liveItem = diffShapes(fullRawPost, live.items[0]);
-    diffs.stagedItem = diffShapes(stagedItems[0], staged.items[0]);
+    diffs.liveItem = diffItemShapes(fullRawPost, live.items);
+    if (stagedItems[0]) diffs.stagedItem = diffItemShapes(stagedItems[0], staged.items);
   });
 
   afterAll(() => {
@@ -95,6 +96,26 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
       if (relevant.length > 0) console.log(`\n[${name}]`, relevant);
     }
     console.log("\n[report]", JSON.stringify(report, null, 2));
+  });
+
+  it("real responses keep the shape of our fixtures (API drift)", () => {
+    const drift = driftLines(diffs);
+    const extra = Object.entries(diffs).flatMap(([name, list]) =>
+      list.filter((difference) => difference.type === "extra").map((difference) => `${name}: ${difference.path} (${difference.real})`),
+    );
+    if (env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(
+        env.GITHUB_STEP_SUMMARY,
+        [
+          "## Webflow API vs fixtures",
+          drift.length ? "**Drift (fails the run):**\n" + drift.map((line) => `- \`${line}\``).join("\n") : "No drift.",
+          extra.length ? "\nNew keys (informational):\n" + extra.map((line) => `- \`${line}\``).join("\n") : "",
+          "\nUpdate fixtures: run the contract test locally, then `pnpm --filter next-webflow fixtures:update` and review the diff.",
+          "",
+        ].join("\n"),
+      );
+    }
+    expect(drift, "The real Webflow API no longer matches test/fixtures/api (see test/contract/output/diff.json)").toEqual([]);
   });
 
   it("the test site covers every field type", () => {

@@ -1,0 +1,44 @@
+name: Contract (real Webflow API)
+
+# Checks that the real Webflow API still matches our fixtures, against the TEST site only.
+# Never runs on pull requests (forks must not reach the secret): schedule and manual runs only.
+on:
+  schedule:
+    - cron: "23 6 * * 1" # Mondays 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    # Forks get the schedule too, but not the secret.
+    if: github.repository == 'crashncrow/next-webflow'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WEBFLOW_CONTRACT: "1"
+      # Read-only site token (CMS: Read) of the test site, and its site ID.
+      WEBFLOW_CMS_TOKEN: ${{ secrets.WEBFLOW_CONTRACT_CMS_TOKEN }}
+      WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_CONTRACT_SITE_ID }}
+    steps:
+      - name: Require the secrets
+        # Without them the suite would be skipped and the run would pass silently.
+        run: |
+          if [ -z "$WEBFLOW_CMS_TOKEN" ] || [ -z "$WEBFLOW_SITE_ID" ]; then
+            echo "::error::Set the WEBFLOW_CONTRACT_CMS_TOKEN and WEBFLOW_CONTRACT_SITE_ID repository secrets."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # On drift it fails with one line per changed key, also in the run summary.
+      - run: pnpm test:contract

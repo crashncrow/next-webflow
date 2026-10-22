@@ -15,11 +15,11 @@ App: `spikes/webflow-cloud/` (outside the pnpm workspace, npm, library installed
 
 ## Deploying the spike (secrets!)
 
-Secrets are uploaded to Webflow Cloud with `webflow apps env-vars import local.env --secret`, never deployed through `.env*` files. The spike keeps its values in **`local.env`** (deploy vars) and **`seed.env`** (write token, local only), both git-ignored and never named `.env*`.
+Secrets are uploaded to Webflow Cloud with `webflow apps env-vars import local.env --secret`, never deployed through `.env*` files of any mode (`.env`, `.env.local`, `.env.production`, `.env.development.local`, `.env.test`…), in the app directory or at the project root above it (the nearest parent folder with a lockfile, in a monorepo). The spike keeps its values in **`local.env`** (deploy vars) and **`seed.env`** (write token, local only), both git-ignored and never named `.env*`.
 
 ```bash
 cp local.env.example local.env          # fill in: read-only token, site ID, SPIKE_SECRET
-npm run deploy                          # refuses if any .env* file exists, then `webflow apps deploy`
+npm run deploy                          # refuses if any .env* file exists (app or project root), then `webflow apps deploy`
 webflow apps env-vars import local.env --secret --dry-run
 webflow apps env-vars import local.env --secret
 npm run deploy                          # redeploy so the app picks up the variables

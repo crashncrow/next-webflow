@@ -15,7 +15,7 @@ App: `spikes/webflow-cloud/` (outside the pnpm workspace, npm, library installed
 
 ## Deploying the spike (secrets!)
 
-`webflow apps deploy` builds locally and OpenNext bakes every `.env*` file into the worker bundle in plain text (`.open-next/cloudflare/next-env.mjs`). So the spike keeps its values in **`local.env`** (deploy vars) and **`seed.env`** (write token, local only), both git-ignored and never named `.env*`.
+Secrets are uploaded to Webflow Cloud with `webflow apps env-vars import local.env --secret`, never deployed through `.env*` files. The spike keeps its values in **`local.env`** (deploy vars) and **`seed.env`** (write token, local only), both git-ignored and never named `.env*`.
 
 ```bash
 cp local.env.example local.env          # fill in: read-only token, site ID, SPIKE_SECRET
@@ -348,7 +348,7 @@ Run on 2026-10-20 against the test site (`next-webflow-d8ce88.webflow.io`): 10/1
 
 **The default mode works on Webflow Cloud, but only with app-provided cache config.** Out of the box (builder-generated `open-next.config.ts`) there is no data cache and `revalidateTag` is a no-op. With a KV incremental cache + D1 tag cache, `force-cache` is shared across isolates and `revalidateTag` shows fresh data in ~1 s.
 
-For v0.2 (decided 2026-10-21): document the KV + D1 setup (`open-next.config.ts`, `wrangler.json` bindings, D1 migration) and the builder pitfalls (deletes `open-next.config.ts`, bakes `.env*` into the bundle, `npm ci` uses the lockfile). No library changes needed. Fallback if it regresses: `source: "cdn"` as the Cloud default (up to 5 min stale after publish). A library-owned KV cache only if there's demand. Route handlers must not export `runtime = "edge"` (500 on Cloud).
+For v0.2 (decided 2026-10-21): document the KV + D1 setup (`open-next.config.ts`, `wrangler.json` bindings, D1 migration) and the builder pitfalls (deletes `open-next.config.ts`, secrets only through `env-vars import --secret`, `npm ci` uses the lockfile). No library changes needed. Fallback if it regresses: `source: "cdn"` as the Cloud default (up to 5 min stale after publish). A library-owned KV cache only if there's demand. Route handlers must not export `runtime = "edge"` (500 on Cloud).
 
 Verified end to end: new Option → schema fallback warning + correct name; cached list → collection-tag revalidation → fresh in ~1 s.
 

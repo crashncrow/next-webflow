@@ -11,7 +11,7 @@ coverage/
 # Secrets: never commit env files (only the example template).
 .env*
 !.env.example
-# Spike secrets live outside .env* (OpenNext bakes .env* into the Cloud worker bundle).
+# Spike secrets live outside .env* (uploaded with `webflow apps env-vars import --secret`).
 spikes/webflow-cloud/local.env
 spikes/webflow-cloud/seed.env
 spikes/webflow-cloud/e2e-output/

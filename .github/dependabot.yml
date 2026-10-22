@@ -1,0 +1,40 @@
+# Monthly version updates, one PR per group. Security updates (enabled in the repo settings)
+# still open as soon as an advisory appears, outside these groups.
+version: 2
+
+updates:
+  # Workflows pin actions by commit SHA with the version in a comment
+  # (`actions/checkout@<sha> # v7.0.1`); Dependabot updates both.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  # The pnpm workspace (packages/*, examples/*), from the root lockfile. spikes/ is outside the
+  # workspace on purpose (Webflow Cloud spike, npm, pinned to what was measured) and isn't listed.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    # pnpm refuses versions younger than its minimum release age (1 day by default), and CI's
+    # frozen install re-checks the lockfile against it: wait a week so Dependabot PRs pass CI.
+    cooldown:
+      default-days: 7
+    groups:
+      # `dependencies` of every workspace package: the library's runtime dependencies
+      # (html-react-parser…) and the example app's next/react.
+      runtime:
+        dependency-type: production
+        patterns: ["*"]
+      # `devDependencies`: toolchain, test and type packages.
+      dev:
+        dependency-type: development
+        patterns: ["*"]
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(dev-deps)

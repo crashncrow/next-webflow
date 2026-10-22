@@ -7,6 +7,10 @@
  * Only GET requests. Saves every real response to test/contract/output/ (git-ignored) and fails
  * when their shape drifts from our MSW fixtures (a key we read is gone or changed type), so
  * fixtures can be updated from reality. Runs weekly in GitHub Actions (.github/workflows/contract.yml).
+ *
+ * In CI (`CI` set) it prints only the drift summary: Actions logs of a public repo are public, so
+ * real content (field values, URLs, IDs) stays in the local output files. Assertions report keys,
+ * counts and booleans, never item data, so a failure doesn't print it either.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -24,6 +28,7 @@ import { fullRawPost, realPostsCollection, sitesCollectionsResponse, stagedItems
 import { diffItemShapes, diffShapes, driftLines, type ShapeDifference } from "./shape";
 
 const env = process.env;
+const inCI = Boolean(env.CI);
 const enabled = env.WEBFLOW_CONTRACT === "1" && Boolean(env.WEBFLOW_CMS_TOKEN) && Boolean(env.WEBFLOW_SITE_ID);
 const COLLECTION_SLUG = env.WEBFLOW_CONTRACT_COLLECTION ?? "posts";
 const OUTPUT_DIR = fileURLToPath(new URL("./output/", import.meta.url));
@@ -90,6 +95,11 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     if (!collection) return;
     save("report", report);
     save("diff", diffs);
+    if (inCI) {
+      const drift = driftLines(diffs);
+      console.log(drift.length ? `\nAPI drift:\n${drift.join("\n")}` : "\nNo API drift.");
+      return;
+    }
     console.log(`\nContract output written to ${OUTPUT_DIR}`);
     for (const [name, list] of Object.entries(diffs)) {
       const relevant = list.filter((difference) => difference.type !== "extra" || !difference.path.includes("fieldData"));
@@ -146,9 +156,12 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     const options = collection.fields.filter((field) => field.type === "Option");
     expect(options.length).toBeGreaterThan(0);
     for (const field of options) {
-      expect(field.validations?.options).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: expect.any(String), name: expect.any(String) })]),
-      );
+      const list = field.validations?.options;
+      const valid =
+        Array.isArray(list) &&
+        list.length > 0 &&
+        list.every((option) => typeof option?.id === "string" && typeof option?.name === "string");
+      expect(valid, `${field.slug}: validations.options is a list of { id, name }`).toBe(true);
     }
   });
 
@@ -164,16 +177,15 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
   });
 
   it("items have the top-level fields we read", () => {
-    for (const item of [...live.items, ...staged.items]) {
-      expect(item).toMatchObject({
-        id: expect.any(String),
-        lastUpdated: expect.any(String),
-        createdOn: expect.any(String),
-        isArchived: expect.any(Boolean),
-        isDraft: expect.any(Boolean),
-        fieldData: { name: expect.any(String), slug: expect.any(String) },
-      });
-    }
+    const expected = { id: "string", lastUpdated: "string", createdOn: "string", isArchived: "boolean", isDraft: "boolean" };
+    const problems = [...live.items, ...staged.items].flatMap((item, index) => {
+      const wrong = Object.entries(expected)
+        .filter(([key, type]) => typeof (item as unknown as Record<string, unknown>)[key] !== type)
+        .map(([key]) => key);
+      for (const key of ["name", "slug"]) if (typeof item.fieldData[key] !== "string") wrong.push(`fieldData.${key}`);
+      return wrong.map((key) => `item ${index}: ${key}`);
+    });
+    expect(problems).toEqual([]);
     report.cmsLocaleId = live.items[0]?.cmsLocaleId ?? "(missing)";
   });
 
@@ -200,7 +212,7 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     for (const { item } of results) {
       for (const key of videoKeys) {
         const video = item.fieldData[key];
-        if (video !== undefined) expect(video).toMatchObject({ url: expect.any(String) });
+        if (video !== undefined) expect(typeof (video as { url?: unknown }).url, `${key} has no url`).toBe("string");
       }
     }
   });
@@ -224,25 +236,28 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
       `/collections/${collection.id}/items`,
       { query: { slug } },
     );
-    expect(bySlugLive.items.map((item) => item.id)).toEqual([target.id]);
-    expect(bySlugStaged.items.map((item) => item.id)).toEqual([target.id]);
+    for (const [name, response] of [["live", bySlugLive], ["staged", bySlugStaged]] as const) {
+      expect(response.items.length, `?slug= (${name}) item count`).toBe(1);
+      expect(response.items[0]?.id === target.id, `?slug= (${name}) returned another item`).toBe(true);
+    }
   });
 
   it("get item by ID works live and staged; staged-only items 404 on live", async () => {
     const target = firstLiveItem();
     const one = await client.request<WebflowRawItem>(`/collections/${collection.id}/items/${target.id}/live`);
-    expect(one.id).toBe(target.id);
+    expect(one.id === target.id, "by-ID (live) returned another item").toBe(true);
     save("item-live", one);
 
     const liveIds = new Set(live.items.map((item) => item.id));
     const draftOnly = staged.items.find((item) => !liveIds.has(item.id));
     report.hasDraftOnlyItem = Boolean(draftOnly);
     if (draftOnly) {
-      await expect(client.request(`/collections/${collection.id}/items/${draftOnly.id}/live`)).rejects.toMatchObject({
-        status: 404,
-      });
+      const status = await client
+        .request(`/collections/${collection.id}/items/${draftOnly.id}/live`)
+        .then(() => 200, (error: { status?: number }) => error.status);
+      expect(status, "a staged-only item on /items/{id}/live").toBe(404);
       const stagedOne = await client.request<WebflowRawItem>(`/collections/${collection.id}/items/${draftOnly.id}`);
-      expect(stagedOne.id).toBe(draftOnly.id);
+      expect(stagedOne.id === draftOnly.id, "by-ID (staged) returned another item").toBe(true);
     }
   });
 
@@ -254,6 +269,11 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     report.cdnCacheStatus = response.headers.get("cf-cache-status");
     const body = (await response.json()) as WebflowListResponse<WebflowRawItem>;
     save("items-cdn", body);
-    expect(body.items.map((item) => item.id).sort()).toEqual(live.items.map((item) => item.id).sort());
+    const cdnIds = new Set(body.items.map((item) => item.id));
+    const liveIds = new Set(live.items.map((item) => item.id));
+    expect({
+      missingOnCdn: [...liveIds].filter((id) => !cdnIds.has(id)).length,
+      extraOnCdn: [...cdnIds].filter((id) => !liveIds.has(id)).length,
+    }).toEqual({ missingOnCdn: 0, extraOnCdn: 0 });
   });
 });

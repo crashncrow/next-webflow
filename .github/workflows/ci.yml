@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6 # reads `packageManager` from package.json
-      - uses: actions/setup-node@v7
+      # Downloads exactly the pnpm in package.json's `packageManager` (no bootstrap version +
+      # self-update), installs Node.js from .nvmrc, then runs `pnpm install --frozen-lockfile`.
+      - uses: pnpm/setup@v3
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          cache: true
+          require-lockfile: true
       - run: pnpm lint # library and examples
       - run: pnpm build # first: examples type-check against dist/, and the Node ESM import test needs it
       # Library + examples/blog. The example's schema is committed, so this catches library changes

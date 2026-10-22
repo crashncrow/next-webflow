@@ -16,6 +16,7 @@ jobs:
         with:
           cache: true
           require-lockfile: true
+      - run: pnpm format:check # whole repo, incl. spikes/ and docs (skips .prettierignore and .gitignore)
       - run: pnpm lint # library and examples
       - run: pnpm build # first: examples type-check against dist/, and the Node ESM import test needs it
       # Library + examples/blog. The example's schema is committed, so this catches library changes

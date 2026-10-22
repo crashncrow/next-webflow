@@ -33,6 +33,10 @@ updates:
       # @types/node follows the library's lowest supported Node.js (`engines`: 22), not the latest release.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # Prettier is pinned to an exact version on purpose: a new release can reformat code, which
+      # would fail `format:check` in the monthly dev group, mixed with unrelated updates. We update
+      # it by hand, in its own commit together with any resulting reformat.
+      - dependency-name: prettier
     groups:
       # `dependencies` of every workspace package: the library's runtime dependencies
       # (html-react-parser…) and the example app's next/react.

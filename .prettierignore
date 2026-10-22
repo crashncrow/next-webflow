@@ -1,0 +1,15 @@
+# Prettier also skips everything in .gitignore.
+
+# Lockfiles and the packed library the Webflow Cloud spike installs.
+pnpm-lock.yaml
+**/package-lock.json
+*.tgz
+
+# Real API responses, rewritten by `pnpm --filter next-webflow fixtures:update`.
+packages/next-webflow/test/fixtures/api/
+
+# Generated code, rewritten by its generator: the typegen golden file is compared byte for byte.
+packages/next-webflow/test/fixtures/generated/
+examples/blog/webflow/schema.ts
+spikes/webflow-cloud/src/webflow/schema.ts
+spikes/webflow-cloud/src/webflow-schema.ts

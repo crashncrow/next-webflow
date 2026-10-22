@@ -12,6 +12,8 @@
     "test:edge": "pnpm --filter next-webflow test:edge",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test:contract": "pnpm --filter next-webflow test:contract",
     "changeset": "changeset",
     "version-packages": "changeset version"
@@ -20,6 +22,7 @@
     "@changesets/cli": "3.0.3",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.13.0",
+    "prettier": "3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "~8.71.2"
   }

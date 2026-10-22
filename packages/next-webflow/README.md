@@ -189,6 +189,7 @@ Every read is a `fetch` with `cache: "force-cache"` and cache tags, so pages are
 - Slug lookups carry the collection tag, so renaming a slug refreshes the old URL too (it then returns `null` → `notFound()`). The trade-off: any change in a collection refreshes all its cached slug lookups, lazily, on their next visit.
 - next-webflow doesn't use `"use cache"` (unsupported on Webflow Cloud). Draft mode bypasses the cache.
 - Reads in route handlers, server actions or dynamic pages are cached the same way.
+- To read without caching on purpose (every call hits the API and counts against the rate limit), use `createWebflowCms({ schema })` from `next-webflow` instead of `createWebflow`: without a `cache` option it never caches and ignores draft mode.
 
 ### Data API or CDN
 

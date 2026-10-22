@@ -31,10 +31,10 @@ jobs:
             echo "::error::Set the WEBFLOW_CONTRACT_CMS_TOKEN and WEBFLOW_CONTRACT_SITE_ID repository secrets."
             exit 1
           fi
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Downloads exactly the pnpm in package.json's `packageManager` (no bootstrap version +
       # self-update), installs Node.js from .nvmrc, then runs `pnpm install --frozen-lockfile`.
-      - uses: pnpm/setup@v3
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           cache: true
           require-lockfile: true

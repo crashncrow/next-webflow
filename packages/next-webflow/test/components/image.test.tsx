@@ -4,9 +4,16 @@ import { WebflowImage, type WebflowImageProps } from "../../src/components";
 import postsLive from "../fixtures/api/items-live.json";
 
 vi.mock("next/image.js", () => ({
-  // next/image needs the app's image config; the wrapper's job is what it passes to it.
-  default: ({ unoptimized, ...props }: Record<string, unknown>) => (
-    <img data-next-image="" data-unoptimized={unoptimized ? "" : undefined} {...(props as object)} />
+  // next/image needs the app's image config; the wrapper's job is what it passes to it. Its own
+  // props (`fill`, `unoptimized`, `priority`) become data attributes: a plain <img> doesn't take them.
+  default: ({ fill, unoptimized, priority, ...props }: Record<string, unknown>) => (
+    <img
+      data-next-image=""
+      data-fill={fill ? "" : undefined}
+      data-unoptimized={unoptimized ? "" : undefined}
+      data-priority={priority ? "" : undefined}
+      {...(props as object)}
+    />
   ),
 }));
 
@@ -29,7 +36,9 @@ describe("WebflowImage", () => {
 
   it("treats alt: null as decorative, warning once per image in development", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(render({ image, fill: true })).toContain('alt=""');
+    const out = render({ image, fill: true });
+    expect(out).toContain('alt=""');
+    expect(out).toContain('data-fill=""'); // `fill` reaches next/image
     render({ image, fill: true });
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0]?.[0]).toMatch(/has no alt text in Webflow/);

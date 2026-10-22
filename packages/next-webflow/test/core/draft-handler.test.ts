@@ -102,9 +102,13 @@ describe("draft route: entering preview", () => {
   });
 
   it("answers 404 for an unknown collection", async () => {
+    // Expected: no generated schema for "nope", so the CMS looks it up in the API first.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { handler } = setup();
     const response = await handler.GET(await previewRequest({ collection: "nope" }));
     expect(response.status).toBe(404);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/No generated schema for collection "nope"/));
+    warn.mockRestore();
   });
 
   it("explains a missing resolvePath or secret (500)", async () => {

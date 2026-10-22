@@ -1,12 +1,12 @@
-import { createWebflowClient, type WebflowListResponse } from "next-webflow";
 import { createWebflow } from "next-webflow";
 import { checkSecret } from "@/lib/probe";
 import { createMeasuredFetch } from "@/lib/measured-fetch";
+import { readRawPages } from "@/lib/raw-pages";
 import { schema } from "@/webflow/schema";
 
 // Spike only (stage 5b). Call right after revalidating the collection tag (cold cache).
 // mode=library: the real getItems (100 per page). mode=pages: raw list requests of `pageSize`
-// items, all pages in parallel through the client's limiter (simulates many pages on a small site).
+// items, all pages in parallel up to `c` at a time (simulates many pages on a small site).
 export async function GET(request: Request): Promise<Response> {
   if (!checkSecret(request.headers.get("x-spike-secret")))
     return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -21,20 +21,13 @@ export async function GET(request: Request): Promise<Response> {
   try {
     if (params.get("mode") === "pages") {
       const pageSize = Number(params.get("pageSize") ?? 5);
-      const client = createWebflowClient({ concurrency, fetch: measured.fetch });
-      const path = `/collections/${schema[collection].id}/items/live`;
-      const page = (offset: number) =>
-        client.request<WebflowListResponse<unknown>>(path, {
-          host: source,
-          query: { limit: pageSize, offset },
-          init: { cache: "no-store" },
-        });
-      const first = await page(0);
-      const offsets: number[] = [];
-      for (let offset = pageSize; offset < first.pagination.total; offset += pageSize) offsets.push(offset);
-      const rest = await Promise.all(offsets.map(page));
-      items = first.items.length + rest.reduce((sum, next) => sum + next.items.length, 0);
-      pages = offsets.length + 1;
+      ({ items, pages } = await readRawPages({
+        collectionId: schema[collection].id,
+        pageSize,
+        concurrency,
+        host: source,
+        fetch: measured.fetch,
+      }));
     } else {
       const cms = createWebflow({ schema, source, concurrency, fetch: measured.fetch });
       items = (await cms.getItems(collection)).length;

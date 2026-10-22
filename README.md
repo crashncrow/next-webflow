@@ -13,7 +13,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 ## Development
 
-Node 22.22 (`.nvmrc`; CI tests exactly this version) and pnpm (installed with `npm i -g pnpm`, not Corepack).
+Node 22.22 for development (`.nvmrc`, root `engines`; the build needs ≥22.18) and pnpm (installed with `npm i -g pnpm`, not Corepack). Users only need what the library's `engines` says (Node 22.12+); CI also runs the library's tests on 22.12 and the latest LTS.
 
 ```bash
 pnpm install

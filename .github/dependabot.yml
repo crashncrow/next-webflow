@@ -30,7 +30,7 @@ updates:
       # typescript-eslint and our typecheck need checking first).
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
-      # @types/node follows the lowest Node.js in `engines` (22), not the latest release.
+      # @types/node follows the library's lowest supported Node.js (`engines`: 22), not the latest release.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:

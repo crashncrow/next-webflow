@@ -22,3 +22,41 @@ jobs:
       # that break the example, not Webflow API changes (contract.yml covers those).
       - run: pnpm typecheck
       - run: pnpm test # node + edge projects, edge bundle check (contract test: contract.yml)
+
+  # The library's tests on the lowest Node.js it supports (packages/next-webflow `engines`) and on
+  # the latest LTS. Users' floor, not the dev toolchain's: install and build run on .nvmrc first
+  # (tsdown needs >=22.18), then the runtime switches to the matrix version for the tests.
+  library-node:
+    name: library tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22.12.0: the floor (Vitest 5 and MSW need it). 24: the most common version among users
+        # for a while, kept after `lts` moves on. `lts` follows Node's active LTS (26 from 2026-10-28).
+        node: ["22.12.0", "24", "lts"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          cache: true
+          save-cache: false # the `check` job saves the store
+          require-lockfile: true
+      - run: pnpm build
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@${{ matrix.node }}
+          install: false
+      # Fails if the switch didn't happen, so the job can't pass on the wrong Node.
+      - name: Check the Node version
+        env:
+          WANTED: ${{ matrix.node }}
+        run: |
+          GOT="$(node --version)"
+          echo "Wanted: $WANTED, got: $GOT"
+          case "$WANTED" in
+            lts) [ "$GOT" != "v$(cat .nvmrc)" ] || { echo "::error::Still on the dev Node ($GOT), not the latest LTS"; exit 1; } ;;
+            *.*.*) [ "$GOT" = "v$WANTED" ] || { echo "::error::Expected Node v$WANTED, got $GOT"; exit 1; } ;;
+            *) case "$GOT" in "v$WANTED".*) ;; *) echo "::error::Expected Node $WANTED.x, got $GOT"; exit 1 ;; esac ;;
+          esac
+      - run: pnpm --filter next-webflow test

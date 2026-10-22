@@ -11,7 +11,7 @@
     "typegen:check": "next-webflow typegen --check"
   },
   "engines": {
-    "node": ">=22.22.0"
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "next": "^16.4.2",

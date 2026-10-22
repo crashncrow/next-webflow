@@ -88,7 +88,8 @@ export function diffItemShapes(fixture: ItemLike, realItems: readonly ItemLike[]
     differences.push(...diffShapes(value, withValue ?? null, `$.fieldData.${slug}`));
   }
   for (const slug of Object.keys(realFields)) {
-    if (!(slug in fixtureFields)) differences.push({ path: `$.fieldData.${slug}`, type: "extra", real: shapeOf(realFields[slug]).kind });
+    if (!(slug in fixtureFields))
+      differences.push({ path: `$.fieldData.${slug}`, type: "extra", real: shapeOf(realFields[slug]).kind });
   }
   return differences;
 }

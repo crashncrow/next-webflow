@@ -6,8 +6,10 @@ import { safeRelativePath, verifyPreviewParams } from "./preview";
 import type { WebflowItem, WebflowSchema } from "./schema";
 import { parseSecrets } from "./webhook";
 
-export interface DraftHandlerOptions<S extends WebflowSchema | undefined = undefined>
-  extends Pick<WebflowCmsConfig<S>, "schema" | "siteId" | "token" | "fetch" | "baseUrls" | "retry" | "concurrency"> {
+export interface DraftHandlerOptions<S extends WebflowSchema | undefined = undefined> extends Pick<
+  WebflowCmsConfig<S>,
+  "schema" | "siteId" | "token" | "fetch" | "baseUrls" | "retry" | "concurrency"
+> {
   /**
    * Where the previewed item lives in your app, e.g. `(collection, item) => \`/blog/${item.fieldData.slug}\``.
    * Receives the **staged** item, so a slug changed in a draft is already the new one. Required.
@@ -112,7 +114,10 @@ export function createDraftRequestHandler<S extends WebflowSchema | undefined = 
 
     let item: WebflowItem | null;
     try {
-      item = (await (getCms() as WebflowCms<undefined>).getItem(verification.collection, verification.itemId)) as WebflowItem | null;
+      item = (await (getCms() as WebflowCms<undefined>).getItem(
+        verification.collection,
+        verification.itemId,
+      )) as WebflowItem | null;
     } catch (error) {
       if (error instanceof WebflowNotFoundError || error instanceof WebflowConfigError) {
         return json(404, { ok: false, error: `Collection "${verification.collection}" not found.` });
@@ -124,7 +129,9 @@ export function createDraftRequestHandler<S extends WebflowSchema | undefined = 
     const resolved = await options.resolvePath(verification.collection, item);
     const path = safeRelativePath(resolved);
     if (!path) {
-      logger.warn(`[next-webflow] Draft route: resolvePath returned ${JSON.stringify(resolved)}, not a same-site path.`);
+      logger.warn(
+        `[next-webflow] Draft route: resolvePath returned ${JSON.stringify(resolved)}, not a same-site path.`,
+      );
       return json(500, { ok: false, error: "resolvePath must return a same-site path starting with /." });
     }
 

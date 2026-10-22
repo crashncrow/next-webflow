@@ -208,10 +208,7 @@ export function tagsForEvent(event: unknown, options: EventTagsOptions = {}): st
   } else return [];
 
   return validTags(
-    items.flatMap((item) => [
-      ...(item.collectionId ? [collectionTag(item.collectionId)] : []),
-      itemTag(item.id),
-    ]),
+    items.flatMap((item) => [...(item.collectionId ? [collectionTag(item.collectionId)] : []), itemTag(item.id)]),
   );
 }
 

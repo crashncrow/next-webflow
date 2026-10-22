@@ -157,7 +157,9 @@ describe("getItemBySlug", () => {
 
 describe("getItem", () => {
   it("reads a live item by ID, tagged with the item tag", async () => {
-    server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items/${POST.id}/live`, () => HttpResponse.json(rawPost())));
+    server.use(
+      http.get(`${DATA_API}/collections/${POSTS_ID}/items/${POST.id}/live`, () => HttpResponse.json(rawPost())),
+    );
     const { cms, cache } = setup();
 
     const post = await cms.getItem("posts", POST.id);
@@ -277,9 +279,7 @@ describe("schema fallback", () => {
   it("keeps serving items if the schema refresh fails; unknown Options get name: undefined", async () => {
     server.use(
       http.get(`${DATA_API}/collections/${POSTS_ID}`, () => HttpResponse.json({ message: "boom" }, { status: 400 })),
-      http.get(LIVE, () =>
-        list([rawPost({ fieldData: { subtitle: "new field", category: TUTORIALS_ID } })]),
-      ),
+      http.get(LIVE, () => list([rawPost({ fieldData: { subtitle: "new field", category: TUTORIALS_ID } })])),
     );
     const { cms, logger } = setup();
 
@@ -308,7 +308,8 @@ describe("schema fallback", () => {
 });
 
 describe("never-published collection (live list answers 404)", () => {
-  const notFound = () => HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 });
+  const notFound = () =>
+    HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 });
 
   function site({ exists = true } = {}) {
     const calls = { live: 0, collection: 0 };

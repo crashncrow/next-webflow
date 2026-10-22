@@ -8,7 +8,8 @@ import { schema } from "@/webflow/schema";
 // mode=library: the real getItems (100 per page). mode=pages: raw list requests of `pageSize`
 // items, all pages in parallel through the client's limiter (simulates many pages on a small site).
 export async function GET(request: Request): Promise<Response> {
-  if (!checkSecret(request.headers.get("x-spike-secret"))) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!checkSecret(request.headers.get("x-spike-secret")))
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   const params = new URL(request.url).searchParams;
   const collection = (params.get("collection") ?? "load-test") as keyof typeof schema;
   const source = params.get("source") === "cdn" ? "cdn" : "data";
@@ -39,10 +40,23 @@ export async function GET(request: Request): Promise<Response> {
       items = (await cms.getItems(collection)).length;
       pages = measured.records.length;
     }
-    return Response.json({ ok: true, source, concurrency, items, pages, ms: Date.now() - started, requests: measured.records });
+    return Response.json({
+      ok: true,
+      source,
+      concurrency,
+      items,
+      pages,
+      ms: Date.now() - started,
+      requests: measured.records,
+    });
   } catch (error) {
     return Response.json(
-      { ok: false, ms: Date.now() - started, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error), requests: measured.records },
+      {
+        ok: false,
+        ms: Date.now() - started,
+        error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+        requests: measured.records,
+      },
       { status: 500 },
     );
   }

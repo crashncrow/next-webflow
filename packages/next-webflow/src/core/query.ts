@@ -1,8 +1,5 @@
 export type QueryPrimitive = string | number | boolean;
-export type QueryValue =
-  | QueryPrimitive
-  | readonly QueryValue[]
-  | { readonly [key: string]: QueryValue | undefined };
+export type QueryValue = QueryPrimitive | readonly QueryValue[] | { readonly [key: string]: QueryValue | undefined };
 export type QueryParams = { readonly [key: string]: QueryValue | undefined };
 
 /**

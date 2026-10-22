@@ -11,7 +11,11 @@ describe.skipIf(!existsSync(dist))("built package in plain Node ESM", () => {
   it("imports without resolution errors", () => {
     const output = execFileSync(
       process.execPath,
-      ["--input-type=module", "-e", `const m = await import(${JSON.stringify(dist)}); console.log(typeof m.createWebflow);`],
+      [
+        "--input-type=module",
+        "-e",
+        `const m = await import(${JSON.stringify(dist)}); console.log(typeof m.createWebflow);`,
+      ],
       { cwd: packageRoot, encoding: "utf8" },
     );
     expect(output.trim()).toBe("function");
@@ -21,7 +25,11 @@ describe.skipIf(!existsSync(dist))("built package in plain Node ESM", () => {
     const entry = fileURLToPath(new URL("../dist/webhook.js", import.meta.url));
     const output = execFileSync(
       process.execPath,
-      ["--input-type=module", "-e", `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.POST, "runtime" in m);`],
+      [
+        "--input-type=module",
+        "-e",
+        `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.POST, "runtime" in m);`,
+      ],
       { cwd: packageRoot, encoding: "utf8" },
     );
     expect(output.trim()).toBe("function false");
@@ -31,17 +39,25 @@ describe.skipIf(!existsSync(dist))("built package in plain Node ESM", () => {
     const entry = fileURLToPath(new URL("../dist/draft.js", import.meta.url));
     const output = execFileSync(
       process.execPath,
-      ["--input-type=module", "-e", `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.createDraftHandler, typeof m.createPreviewUrl, "runtime" in m);`],
+      [
+        "--input-type=module",
+        "-e",
+        `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.createDraftHandler, typeof m.createPreviewUrl, "runtime" in m);`,
+      ],
       { cwd: packageRoot, encoding: "utf8" },
     );
     expect(output.trim()).toBe("function function false");
   });
 
-  it("imports next-webflow/components, and the client entry keeps \"use client\" first", () => {
+  it('imports next-webflow/components, and the client entry keeps "use client" first', () => {
     const entry = fileURLToPath(new URL("../dist/components.js", import.meta.url));
     const output = execFileSync(
       process.execPath,
-      ["--input-type=module", "-e", `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.WebflowRichText, typeof m.WebflowImage, typeof m.DraftModeBanner);`],
+      [
+        "--input-type=module",
+        "-e",
+        `const m = await import(${JSON.stringify(entry)}); console.log(typeof m.WebflowRichText, typeof m.WebflowImage, typeof m.DraftModeBanner);`,
+      ],
       { cwd: packageRoot, encoding: "utf8" },
     );
     expect(output.trim()).toBe("function function function");

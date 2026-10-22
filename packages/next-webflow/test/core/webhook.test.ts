@@ -39,7 +39,10 @@ describe("verifyWebflowSignature", () => {
   });
 
   it("rejects a signature from another secret", async () => {
-    await expect(verify({ signature: sign(body, NOW, "whsec_wrong") })).resolves.toEqual({ ok: false, reason: "invalid" });
+    await expect(verify({ signature: sign(body, NOW, "whsec_wrong") })).resolves.toEqual({
+      ok: false,
+      reason: "invalid",
+    });
   });
 
   it("rejects a tampered body (signature is over the raw body)", async () => {

@@ -24,10 +24,14 @@ const POSTS_LIVE = `${DATA_API}/collections/${POSTS_ID}/items/live`;
 const AUTHORS_LIVE = `${DATA_API}/collections/${AUTHORS_ID}/items/live`;
 const list = (items: WebflowRawItem[], total = items.length) =>
   HttpResponse.json({ items, pagination: { limit: 100, offset: 0, total } });
-const notFound = () => HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 });
+const notFound = () =>
+  HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 });
 
 /** A fake site: posts as captured; authors live unless `unpublished` (mutable, to republish). */
-function site({ unpublished = new Set<string>(), totalAuthors }: { unpublished?: Set<string>; totalAuthors?: number } = {}) {
+function site({
+  unpublished = new Set<string>(),
+  totalAuthors,
+}: { unpublished?: Set<string>; totalAuthors?: number } = {}) {
   const calls = { authorsList: 0, authorById: [] as string[] };
   const live = () => AUTHORS.filter((author) => !unpublished.has(author.id));
   server.use(
@@ -60,7 +64,14 @@ function site({ unpublished = new Set<string>(), totalAuthors }: { unpublished?:
 function setup(config: WebflowCmsConfig<typeof schema> & { draft?: boolean; build?: boolean } = {}) {
   const cache = createFakeNextCache({ draft: config.draft ?? false, build: config.build ?? false });
   const logger = { warn: vi.fn(), debug: vi.fn() };
-  const cms = createWebflowCms({ schema, token: TEST_TOKEN, fetch: cache.fetch, cache: cache.adapter, logger, ...config });
+  const cms = createWebflowCms({
+    schema,
+    token: TEST_TOKEN,
+    fetch: cache.fetch,
+    cache: cache.adapter,
+    logger,
+    ...config,
+  });
   return { cms, cache, logger };
 }
 
@@ -78,7 +89,10 @@ describe("include (whole referenced collection, under maxIncludeItems)", () => {
     expect(names(future?.fieldData.coAuthors ?? [])).toEqual(["Grace Hopper", "Alan Turing"]);
     expect(calls.authorsList).toBe(1);
     expect(calls.authorById).toEqual([]);
-    expect(cache.calls.find((call) => call.url.startsWith(AUTHORS_LIVE))?.tags).toEqual(["webflow", collectionTag(AUTHORS_ID)]);
+    expect(cache.calls.find((call) => call.url.startsWith(AUTHORS_LIVE))?.tags).toEqual([
+      "webflow",
+      collectionTag(AUTHORS_ID),
+    ]);
   });
 
   it("gives null / [] for empty references", async () => {
@@ -129,7 +143,9 @@ describe("include (whole referenced collection, under maxIncludeItems)", () => {
     const { cms } = setup();
     const future = post("cms-future-10");
     expect((await cms.getItem("posts", future.id, { include: ["author"] }))?.fieldData.author?.id).toBe(ADA.id);
-    expect((await cms.getItemBySlug("posts", "cms-future-10", { include: ["author"] }))?.fieldData.author?.id).toBe(ADA.id);
+    expect((await cms.getItemBySlug("posts", "cms-future-10", { include: ["author"] }))?.fieldData.author?.id).toBe(
+      ADA.id,
+    );
   });
 });
 
@@ -142,7 +158,10 @@ describe("include (by ID, over maxIncludeItems)", () => {
 
     expect(item?.fieldData.author?.fieldData.name).toBe("Ada Lovelace");
     expect(calls.authorById).toEqual([ADA.id]);
-    expect(cache.calls.find((call) => call.url.endsWith(`/items/${ADA.id}/live`))?.tags).toEqual(["webflow", itemTag(ADA.id)]);
+    expect(cache.calls.find((call) => call.url.endsWith(`/items/${ADA.id}/live`))?.tags).toEqual([
+      "webflow",
+      itemTag(ADA.id),
+    ]);
   });
 
   it("drops an unpublished co-author, keeps its item tag, and brings it back when republished", async () => {
@@ -153,7 +172,10 @@ describe("include (by ID, over maxIncludeItems)", () => {
 
     expect(await render()).toEqual(["Alan Turing"]);
     // The 404 for Grace still carried her item tag, so the page depends on it.
-    expect(cache.calls.find((call) => call.url.endsWith(`/items/${GRACE.id}/live`))?.tags).toEqual(["webflow", itemTag(GRACE.id)]);
+    expect(cache.calls.find((call) => call.url.endsWith(`/items/${GRACE.id}/live`))?.tags).toEqual([
+      "webflow",
+      itemTag(GRACE.id),
+    ]);
 
     unpublished.delete(GRACE.id);
     cache.revalidateTag(itemTag(GRACE.id));
@@ -189,7 +211,9 @@ describe("build-time slug lookups (next build)", () => {
     site();
     const { cms, cache } = setup({ build: true });
 
-    const pages = await Promise.all(["cms-future-10", "cms-trends-2023-5", "nope"].map((slug) => cms.getItemBySlug("posts", slug)));
+    const pages = await Promise.all(
+      ["cms-future-10", "cms-trends-2023-5", "nope"].map((slug) => cms.getItemBySlug("posts", slug)),
+    );
     await cms.getItemBySlug("posts", "cms-customization-7");
 
     expect(pages.map((page) => page?.fieldData.slug ?? null)).toEqual(["cms-future-10", "cms-trends-2023-5", null]);
@@ -218,7 +242,9 @@ describe("build-time slug lookups (next build)", () => {
     await cms.getItemBySlug("posts", "cms-future-10");
     await cms.getItemBySlug("posts", "cms-trends-2023-5");
     expect(logger.warn).toHaveBeenCalledOnce();
-    expect(logger.warn.mock.calls[0]?.[0]).toMatch(/maxBuildListItems.*generateStaticParams.*dynamicParams.*buildSlugLookups: "request"/s);
+    expect(logger.warn.mock.calls[0]?.[0]).toMatch(
+      /maxBuildListItems.*generateStaticParams.*dynamicParams.*buildSlugLookups: "request"/s,
+    );
     expect(cache.requests.some((request) => request.url.includes("slug="))).toBe(false);
   });
 

@@ -130,7 +130,8 @@ export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps
     }
 
     const items = event.items.map(
-      (item) => `${item.id} isDraft=${item.isDraft} lastPublished=${item.lastPublished} lastUpdated=${item.lastUpdated}`,
+      (item) =>
+        `${item.id} isDraft=${item.isDraft} lastPublished=${item.lastPublished} lastUpdated=${item.lastUpdated}`,
     );
     logger.info?.(
       `[next-webflow] ${event.triggerType}: revalidated ${tags.length ? tags.join(", ") : "nothing"}` +

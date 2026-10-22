@@ -25,9 +25,7 @@ describe("typed API errors", () => {
     [418, "teapot", WebflowApiError],
   ] as const)("maps %i to %s", async (status, code, ErrorClass) => {
     server.use(
-      http.get(`${DATA_API}/sites/s1`, () =>
-        HttpResponse.json(webflowError(code, "Something went wrong"), { status }),
-      ),
+      http.get(`${DATA_API}/sites/s1`, () => HttpResponse.json(webflowError(code, "Something went wrong"), { status })),
     );
 
     const { client } = createTestClient({ retry: false });
@@ -48,8 +46,9 @@ describe("typed API errors", () => {
 
   it("falls back to the status text for non-JSON error bodies", async () => {
     server.use(
-      http.get(`${DATA_API}/sites/s1`, () =>
-        new HttpResponse("<html>Bad gateway</html>", { status: 502, statusText: "Bad Gateway" }),
+      http.get(
+        `${DATA_API}/sites/s1`,
+        () => new HttpResponse("<html>Bad gateway</html>", { status: 502, statusText: "Bad Gateway" }),
       ),
     );
 

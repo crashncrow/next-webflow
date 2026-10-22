@@ -24,7 +24,12 @@ const time = () => new Date().toISOString().slice(11, 23);
 const log = (kind, message) => console.log(`${time()}  ${kind.padEnd(8)} ${message}`);
 
 const decode = (html) =>
-  html.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  html
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
 
 /** The JSON the /library page renders in <h2>Result</h2><pre>…</pre>. */
 async function libraryResult(query = "") {
@@ -67,7 +72,8 @@ async function pollList() {
 async function pollSlugs() {
   for (const slug of values.slug) {
     const summary = summarize(await libraryResult(`?slug=${encodeURIComponent(slug)}`));
-    if (slugState.get(slug) !== summary) log("SLUG", `${slug}: ${slugState.has(slug) ? `${slugState.get(slug)} → ` : ""}${summary}`);
+    if (slugState.get(slug) !== summary)
+      log("SLUG", `${slug}: ${slugState.has(slug) ? `${slugState.get(slug)} → ` : ""}${summary}`);
     slugState.set(slug, summary);
   }
 }
@@ -81,7 +87,9 @@ function describeWebhook(row) {
   }
   const payload = body.payload ?? {};
   const items = Array.isArray(payload.items) ? payload.items : payload.id ? [payload] : [];
-  const flagKeys = [...new Set(items.flatMap((item) => Object.keys(item).filter((key) => /archived|draft/i.test(key))))];
+  const flagKeys = [
+    ...new Set(items.flatMap((item) => Object.keys(item).filter((key) => /archived|draft/i.test(key)))),
+  ];
   const ids = items.map((item) => `${item.id}${item.fieldData?.slug ? `(${item.fieldData.slug})` : ""}`).join(", ");
   const shape = Array.isArray(payload.items) ? "items[]" : payload.id ? "flat" : Object.keys(payload).join(",");
   let revalidated = "";

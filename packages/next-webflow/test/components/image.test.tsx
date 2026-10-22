@@ -45,7 +45,9 @@ describe("WebflowImage", () => {
   });
 
   it("passes unoptimized through (Webflow Cloud: skips a srcSet that repeats the original)", () => {
-    expect(render({ image: { ...image, alt: "x" }, width: 1, height: 1, unoptimized: true })).toContain('data-unoptimized=""');
+    expect(render({ image: { ...image, alt: "x" }, width: 1, height: 1, unoptimized: true })).toContain(
+      'data-unoptimized=""',
+    );
   });
 
   it("never renders Webflow's inherit-alt placeholder (raw items), with a specific warning", () => {

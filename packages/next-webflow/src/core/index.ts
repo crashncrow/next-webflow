@@ -66,15 +66,7 @@ export type {
   WebflowVideo,
   WebflowVideoMetadata,
 } from "./schema";
-export {
-  SITE_TAG,
-  collectionTag,
-  itemTag,
-  itemTags,
-  listTags,
-  slugLookupTags,
-  slugTag,
-} from "./tags";
+export { SITE_TAG, collectionTag, itemTag, itemTags, listTags, slugLookupTags, slugTag } from "./tags";
 export {
   CMS_WEBHOOK_EVENTS,
   DEFAULT_TIMESTAMP_TOLERANCE_MS,

@@ -23,7 +23,9 @@ export function ProbeClient() {
     if (!polling) return;
     const timer = setInterval(async () => {
       for (const route of ["api/probe", "api/probe-node"] as const) {
-        const result = (await fetch(url(`${route}?tag=spike-probe`), { cache: "no-store" }).then((r) => r.json())) as ProbeResult;
+        const result = (await fetch(url(`${route}?tag=spike-probe`), { cache: "no-store" }).then((r) =>
+          r.json(),
+        )) as ProbeResult;
         const since = revalidatedAt.current === null ? null : Date.now() - revalidatedAt.current;
         setRows((previous) => [{ ...result, route, sinceRevalidateMs: since }, ...previous].slice(0, 60));
       }
@@ -39,14 +41,22 @@ export function ProbeClient() {
     });
     revalidatedAt.current = Date.now();
     const body: unknown = await response.json();
-    setLog((previous) => [`${new Date().toISOString()} ${route} → ${response.status} ${JSON.stringify(body)}`, ...previous]);
+    setLog((previous) => [
+      `${new Date().toISOString()} ${route} → ${response.status} ${JSON.stringify(body)}`,
+      ...previous,
+    ]);
   }
 
   return (
     <section>
       <h2>Polling (every 2 s, both runtimes)</h2>
       <button onClick={() => setPolling((value) => !value)}>{polling ? "Stop" : "Start"} polling</button>{" "}
-      <input placeholder="SPIKE_SECRET" type="password" value={secret} onChange={(event) => setSecret(event.target.value)} />{" "}
+      <input
+        placeholder="SPIKE_SECRET"
+        type="password"
+        value={secret}
+        onChange={(event) => setSecret(event.target.value)}
+      />{" "}
       <button onClick={() => revalidate("api/revalidate")}>revalidateTag (edge route)</button>{" "}
       <button onClick={() => revalidate("api/revalidate-node")}>revalidateTag (node route)</button>
       <pre>{log.join("\n")}</pre>

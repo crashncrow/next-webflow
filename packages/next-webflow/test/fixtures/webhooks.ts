@@ -41,7 +41,12 @@ export const real = {
 type ItemPayload = Omit<typeof changedLiveApi.payload, "isDraft" | "isArchived"> & Record<string, unknown>;
 
 /** SYNTHETIC: a real item payload with another ID/slug/collection, and optionally the docs' `archived`/`draft` spelling. */
-export function itemPayload(id: string, slug: string, collectionId = POSTS_ID, flags: "is" | "plain" = "is"): ItemPayload {
+export function itemPayload(
+  id: string,
+  slug: string,
+  collectionId = POSTS_ID,
+  flags: "is" | "plain" = "is",
+): ItemPayload {
   const { isArchived, isDraft, ...rest } = changedLiveApi.payload;
   return {
     ...rest,

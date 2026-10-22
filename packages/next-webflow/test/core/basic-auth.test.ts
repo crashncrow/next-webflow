@@ -11,8 +11,12 @@ describe("requireBasicAuth", () => {
   });
 
   it("checks the username when given, and handles UTF-8 and colons in passwords", async () => {
-    await expect(requireBasicAuth(request(header("editor:pä:ss")), { username: "editor", password: "pä:ss" })).resolves.toBeUndefined();
-    expect((await requireBasicAuth(request(header("other:pä:ss")), { username: "editor", password: "pä:ss" }))?.status).toBe(401);
+    await expect(
+      requireBasicAuth(request(header("editor:pä:ss")), { username: "editor", password: "pä:ss" }),
+    ).resolves.toBeUndefined();
+    expect(
+      (await requireBasicAuth(request(header("other:pä:ss")), { username: "editor", password: "pä:ss" }))?.status,
+    ).toBe(401);
   });
 
   it.each([
@@ -35,6 +39,8 @@ describe("requireBasicAuth", () => {
   });
 
   it("accepts Headers too (await headers() in a page)", async () => {
-    await expect(requireBasicAuth(new Headers({ authorization: header("x:s3cret") }), { password: "s3cret" })).resolves.toBeUndefined();
+    await expect(
+      requireBasicAuth(new Headers({ authorization: header("x:s3cret") }), { password: "s3cret" }),
+    ).resolves.toBeUndefined();
   });
 });

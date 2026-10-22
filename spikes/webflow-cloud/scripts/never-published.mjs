@@ -8,7 +8,8 @@ const SLUG = "never-published";
 const PLAN_ITEM_LIMIT = Number(process.env.LOAD_TEST_ITEM_LIMIT ?? 50);
 
 if (!token || !siteId) throw new Error("Set WEBFLOW_WRITE_TOKEN (seed.env) and WEBFLOW_SITE_ID (local.env)");
-if (confirm !== siteId) throw new Error("Refusing to write: SEED_CONFIRM_SITE_ID must equal WEBFLOW_SITE_ID (test site only).");
+if (confirm !== siteId)
+  throw new Error("Refusing to write: SEED_CONFIRM_SITE_ID must equal WEBFLOW_SITE_ID (test site only).");
 
 async function api(path, init = {}) {
   const response = await fetch(`${API}${path}`, {
@@ -23,7 +24,8 @@ async function api(path, init = {}) {
 const { collections } = await api(`/sites/${siteId}/collections`);
 if (collections.some((collection) => collection.slug === SLUG)) throw new Error(`"${SLUG}" already exists.`);
 let total = 0;
-for (const collection of collections) total += (await api(`/collections/${collection.id}/items?limit=1`)).pagination.total;
+for (const collection of collections)
+  total += (await api(`/collections/${collection.id}/items?limit=1`)).pagination.total;
 if (total + 1 > PLAN_ITEM_LIMIT) throw new Error(`Site has ${total} items; the plan limit is ${PLAN_ITEM_LIMIT}.`);
 
 const collection = await api(`/sites/${siteId}/collections`, {
@@ -34,5 +36,9 @@ await api(`/collections/${collection.id}/items/insert`, {
   method: "POST",
   body: JSON.stringify({ items: [{ isDraft: false, fieldData: { name: "First item", slug: "first-item" } }] }),
 });
-const live = await fetch(`${API}/collections/${collection.id}/items/live`, { headers: { authorization: `Bearer ${token}` } });
-console.log(`Created "${SLUG}" (${collection.id}) with 1 queued item; /items/live → ${live.status}. Site total: ${total + 1}.`);
+const live = await fetch(`${API}/collections/${collection.id}/items/live`, {
+  headers: { authorization: `Bearer ${token}` },
+});
+console.log(
+  `Created "${SLUG}" (${collection.id}) with 1 queued item; /items/live → ${live.status}. Site total: ${total + 1}.`,
+);

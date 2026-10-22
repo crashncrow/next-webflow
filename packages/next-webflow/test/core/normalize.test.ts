@@ -134,9 +134,18 @@ describe("Webflow's inherit-alt placeholder", () => {
   const inherit = (url: string) => ({ fileId: "f", url, alt: "__wf_reserved_inherit" });
 
   it("becomes alt: null in Image, MultiImage and File fields, never a string to render", () => {
-    expect(fields({ "main-image": inherit("a.jpg"), gallery: [inherit("b.jpg"), { fileId: "g", url: "c.jpg", alt: "C" }], attachment: inherit("d.pdf") })).toMatchObject({
+    expect(
+      fields({
+        "main-image": inherit("a.jpg"),
+        gallery: [inherit("b.jpg"), { fileId: "g", url: "c.jpg", alt: "C" }],
+        attachment: inherit("d.pdf"),
+      }),
+    ).toMatchObject({
       mainImage: { fileId: "f", url: "a.jpg", alt: null },
-      gallery: [{ url: "b.jpg", alt: null }, { url: "c.jpg", alt: "C" }],
+      gallery: [
+        { url: "b.jpg", alt: null },
+        { url: "c.jpg", alt: "C" },
+      ],
       attachment: { url: "d.pdf", alt: null },
     });
   });

@@ -18,12 +18,16 @@ describe("WebflowRichText", () => {
   it("renders nothing for empty values, and supports a custom wrapper or none", () => {
     expect(html({ html: null })).toBe("");
     expect(html({ html: "" })).toBe("");
-    expect(html({ html: "<p>x</p>", as: "article", className: "prose" })).toBe('<article class="prose"><p>x</p></article>');
+    expect(html({ html: "<p>x</p>", as: "article", className: "prose" })).toBe(
+      '<article class="prose"><p>x</p></article>',
+    );
     expect(html({ html: "<p>x</p>", as: null })).toBe("<p>x</p>");
   });
 
   it("uses next/link for same-site links and plain <a> for the rest", () => {
-    const out = html({ html: '<p><a href="/blog/x" title="t">in</a> <a href="https://example.com">out</a> <a href="//evil.com">pr</a></p>' });
+    const out = html({
+      html: '<p><a href="/blog/x" title="t">in</a> <a href="https://example.com">out</a> <a href="//evil.com">pr</a></p>',
+    });
     expect(out).toContain('<a title="t" href="/blog/x">in</a>');
     expect(out).toContain('<a href="https://example.com">out</a>');
     expect(out).toContain('<a href="//evil.com">pr</a>');
@@ -33,9 +37,9 @@ describe("WebflowRichText", () => {
     const Quote = ({ children, cite }: { children?: React.ReactNode; cite?: unknown }) => (
       <figure data-cite={String(cite)}>{children}</figure>
     );
-    expect(html({ html: '<blockquote cite="/s">Q <strong>x</strong></blockquote>', components: { blockquote: Quote } })).toBe(
-      '<div class="w-richtext"><figure data-cite="/s">Q <strong>x</strong></figure></div>',
-    );
+    expect(
+      html({ html: '<blockquote cite="/s">Q <strong>x</strong></blockquote>', components: { blockquote: Quote } }),
+    ).toBe('<div class="w-richtext"><figure data-cite="/s">Q <strong>x</strong></figure></div>');
   });
 
   // A real post written in Webflow's editor (staged): links, images with and without alt, a caption,
@@ -71,7 +75,9 @@ describe("WebflowRichText", () => {
       expect(out).toContain(
         '<figure class="w-richtext-figure-type-video w-richtext-align-center" style="aspect-ratio:854/480" data-rt-type="video"',
       );
-      expect(out).toContain('<figure class="w-richtext-figure-type-video w-richtext-align-center" style="aspect-ratio:500/281"');
+      expect(out).toContain(
+        '<figure class="w-richtext-figure-type-video w-richtext-align-center" style="aspect-ratio:500/281"',
+      );
       expect(out).toContain('<div style="height:100%"><iframe src="https://www.youtube.com/embed/3mC_QUbGCUw"');
       expect(out).toContain('src="//cdn.embedly.com/widgets/media.html?');
       expect(out.match(/style="display:block;width:100%;height:100%"/g)).toHaveLength(2);
@@ -82,16 +88,30 @@ describe("WebflowRichText", () => {
         'style="padding-bottom:50%"',
       );
       expect(
-        html({ html: '<figure data-rt-type="video" data-rt-dimensions="16:9" style="padding-bottom:50%;max-width:600px"><div></div></figure>' }),
+        html({
+          html: '<figure data-rt-type="video" data-rt-dimensions="16:9" style="padding-bottom:50%;max-width:600px"><div></div></figure>',
+        }),
       ).toContain('style="max-width:600px;aspect-ratio:16/9"');
     });
 
     it("gives a figure override the adjusted style and Webflow's classes", () => {
-      const Figure = ({ className, style, children }: { className?: string; style?: object; children?: React.ReactNode }) => (
-        <section data-class={className} data-style={JSON.stringify(style)}>{children}</section>
+      const Figure = ({
+        className,
+        style,
+        children,
+      }: {
+        className?: string;
+        style?: object;
+        children?: React.ReactNode;
+      }) => (
+        <section data-class={className} data-style={JSON.stringify(style)}>
+          {children}
+        </section>
       );
       const out = html({ html: body, components: { figure: Figure as never } });
-      expect(out).toContain('data-class="w-richtext-figure-type-video w-richtext-align-center" data-style="{&quot;aspectRatio&quot;:&quot;854/480&quot;}"');
+      expect(out).toContain(
+        'data-class="w-richtext-figure-type-video w-richtext-align-center" data-style="{&quot;aspectRatio&quot;:&quot;854/480&quot;}"',
+      );
     });
   });
 
@@ -146,7 +166,11 @@ describe("WebflowRichText", () => {
       ["vbscript", '<a href="vbscript:msgbox(1)">x</a>', "<a>x</a>"],
       ["data: image src", '<img src="data:image/svg+xml,&lt;svg onload=alert(1)&gt;"/>', "<img/>"],
       ["srcset entry", '<img src="/a.jpg" srcset="/a.jpg 1x, javascript:alert(1) 2x"/>', '<img src="/a.jpg"/>'],
-      ["SVG animate to javascript:", '<svg><animate attributeName="href" values="0;javascript:alert(1)"></animate></svg>', '<svg><animate attributeName="href"></animate></svg>'],
+      [
+        "SVG animate to javascript:",
+        '<svg><animate attributeName="href" values="0;javascript:alert(1)"></animate></svg>',
+        '<svg><animate attributeName="href"></animate></svg>',
+      ],
       ["meta refresh", '<meta http-equiv="refresh" content="0;url=javascript:alert(1)"/><p>x</p>', "<p>x</p>"],
       ["base href", '<base href="https://evil.com/"/><p>x</p>', "<p>x</p>"],
       ["style expression", '<p style="width:expression(alert(1))">x</p>', "<p>x</p>"],
@@ -156,14 +180,18 @@ describe("WebflowRichText", () => {
     });
 
     it("keeps safe embeds: iframes with https src, styles, data attributes", () => {
-      const embed = '<div class="w-embed"><iframe src="https://player.vimeo.com/video/1" allowfullscreen=""></iframe></div><p style="color:red" data-x="1">y</p>';
+      const embed =
+        '<div class="w-embed"><iframe src="https://player.vimeo.com/video/1" allowfullscreen=""></iframe></div><p style="color:red" data-x="1">y</p>';
       expect(html({ html: embed })).toBe(
         '<div class="w-richtext"><div class="w-embed"><iframe src="https://player.vimeo.com/video/1" allowFullScreen=""></iframe></div><p style="color:red" data-x="1">y</p></div>',
       );
     });
 
     it("keeps everything with allowScripts (explicit opt-in)", () => {
-      const out = html({ html: stored.script + stored.jsHref + stored.iframeSrcdoc + stored.objectEmbed, allowScripts: true });
+      const out = html({
+        html: stored.script + stored.jsHref + stored.iframeSrcdoc + stored.objectEmbed,
+        allowScripts: true,
+      });
       expect(out).toContain("<script>alert(1)</script>");
       // React 19 itself neutralizes javascript: URLs in href, even when we keep them.
       expect(out).toContain("React has blocked a javascript: URL");

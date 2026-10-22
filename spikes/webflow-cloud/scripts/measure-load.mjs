@@ -13,9 +13,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const RUNS = [
   { mode: "library", source: "data" },
   { mode: "library", source: "cdn" },
-  ...[35, 10, 5, 1].flatMap((pageSize) =>
-    ["data", "cdn"].map((source) => ({ mode: "pages", source, pageSize })),
-  ),
+  ...[35, 10, 5, 1].flatMap((pageSize) => ["data", "cdn"].map((source) => ({ mode: "pages", source, pageSize }))),
   { mode: "pages", source: "data", pageSize: 1, c: 6 },
   { mode: "pages", source: "data", pageSize: 1, c: 12 },
 ];
@@ -28,11 +26,21 @@ for (const run of RUNS) {
     body: JSON.stringify({ secret: SECRET, tag: `webflow:collection:${COLLECTION_ID}` }),
   });
   await sleep(2000);
-  const query = new URLSearchParams({ collection: "load-test", mode: run.mode, source: run.source, ...(run.pageSize && { pageSize: String(run.pageSize) }), c: String(run.c ?? 4) });
-  const result = await (await fetch(`${BASE}/api/measure-items?${query}`, { headers: { "x-spike-secret": SECRET } })).json();
+  const query = new URLSearchParams({
+    collection: "load-test",
+    mode: run.mode,
+    source: run.source,
+    ...(run.pageSize && { pageSize: String(run.pageSize) }),
+    c: String(run.c ?? 4),
+  });
+  const result = await (
+    await fetch(`${BASE}/api/measure-items?${query}`, { headers: { "x-spike-secret": SECRET } })
+  ).json();
   results.push({ run, result });
   const requests = result.requests ?? [];
-  const remaining = requests.filter((request) => request.rateLimitRemaining !== null).map((request) => Number(request.rateLimitRemaining));
+  const remaining = requests
+    .filter((request) => request.rateLimitRemaining !== null)
+    .map((request) => Number(request.rateLimitRemaining));
   const ms = requests.map((request) => request.ms).sort((a, b) => a - b);
   console.log(
     `${run.mode.padEnd(7)} ${run.source.padEnd(4)} page ${String(run.pageSize ?? 100).padStart(3)} c=${run.c ?? 4}` +
@@ -44,4 +52,7 @@ for (const run of RUNS) {
   );
 }
 mkdirSync(new URL("../e2e-output/", import.meta.url), { recursive: true });
-writeFileSync(new URL(`../e2e-output/measure-load-${Date.now()}.json`, import.meta.url), JSON.stringify(results, null, 2));
+writeFileSync(
+  new URL(`../e2e-output/measure-load-${Date.now()}.json`, import.meta.url),
+  JSON.stringify(results, null, 2),
+);

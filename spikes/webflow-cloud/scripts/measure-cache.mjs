@@ -41,7 +41,9 @@ const hits = warm.slice(1).filter((result) => fingerprint(result) === first).len
 const isolates = new Set(warm.map((result) => result.isolate));
 console.log("1. Cache persistence");
 for (const result of warm) {
-  console.log(`   isolate ${result.isolate}  fetchedAt ${result.fetchedAt}  remaining ${result.rateLimitRemaining}  ${result.durationMs} ms${result.error ? `  ${result.error}` : ""}`);
+  console.log(
+    `   isolate ${result.isolate}  fetchedAt ${result.fetchedAt}  remaining ${result.rateLimitRemaining}  ${result.durationMs} ms${result.error ? `  ${result.error}` : ""}`,
+  );
 }
 console.log(`   → ${hits}/${warm.length - 1} later requests returned the first response; ${isolates.size} isolates\n`);
 
@@ -62,7 +64,9 @@ while (Date.now() - revalidatedAt < 120_000) {
   }
   await sleep(250);
 }
-console.log(`   → fresh data after ${freshAfterMs === null ? "NEVER (120 s timeout)" : `${freshAfterMs} ms`} (${polls.length} polls)\n`);
+console.log(
+  `   → fresh data after ${freshAfterMs === null ? "NEVER (120 s timeout)" : `${freshAfterMs} ms`} (${polls.length} polls)\n`,
+);
 
 // 3. After the first fresh response, do requests keep agreeing, or does the old entry come back?
 const fresh = polls.at(-1)?.fingerprint;

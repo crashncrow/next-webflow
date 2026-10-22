@@ -36,7 +36,8 @@ const authors = collections.find((candidate) => candidate.slug === "authors");
 
 // Plan headroom: every staged item of every collection counts.
 let total = 0;
-for (const candidate of collections) total += (await api(`/collections/${candidate.id}/items?limit=1`)).pagination.total;
+for (const candidate of collections)
+  total += (await api(`/collections/${candidate.id}/items?limit=1`)).pagination.total;
 if (total + count > PLAN_ITEM_LIMIT) {
   throw new Error(`Site has ${total} items; ${count} more would exceed the plan limit of ${PLAN_ITEM_LIMIT}.`);
 }
@@ -53,8 +54,15 @@ if (!collection) {
         { type: "RichText", displayName: "Body", slug: "body" },
         { type: "PlainText", displayName: "Summary", slug: "summary" },
         { type: "Number", displayName: "Rank", slug: "rank" },
-        { type: "Option", displayName: "Tier", slug: "tier", metadata: { options: [{ name: "Gold" }, { name: "Silver" }, { name: "Bronze" }] } },
-        ...(authors ? [{ type: "Reference", displayName: "Author", slug: "author", metadata: { collectionId: authors.id } }] : []),
+        {
+          type: "Option",
+          displayName: "Tier",
+          slug: "tier",
+          metadata: { options: [{ name: "Gold" }, { name: "Silver" }, { name: "Bronze" }] },
+        },
+        ...(authors
+          ? [{ type: "Reference", displayName: "Author", slug: "author", metadata: { collectionId: authors.id } }]
+          : []),
       ],
     }),
   });
@@ -67,7 +75,9 @@ if (!collection) {
 const tiers = collection.fields.find((field) => field.slug === "tier")?.validations?.options ?? [];
 const authorIds = authors ? (await api(`/collections/${authors.id}/items/live`)).items.map((item) => item.id) : [];
 const start = (await api(`/collections/${collection.id}/items?limit=1`)).pagination.total;
-console.log(`Site has ${total} items (limit ${PLAN_ITEM_LIMIT}); "${COLLECTION_SLUG}" has ${start}; creating ${count}…`);
+console.log(
+  `Site has ${total} items (limit ${PLAN_ITEM_LIMIT}); "${COLLECTION_SLUG}" has ${start}; creating ${count}…`,
+);
 
 // ~2 KB of rich text per item, close to the "posts" bodies.
 const paragraph = "Load test content for pagination and payload size measurements. ".repeat(6);
@@ -90,8 +100,11 @@ for (let offset = 0; offset < count; offset += 100) {
       },
     };
   });
-  const response = await api(`/collections/${collection.id}/items/insert`, { method: "POST", body: JSON.stringify({ items }) });
+  const response = await api(`/collections/${collection.id}/items/insert`, {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  });
   created += (response.items ?? []).length;
   console.log(`created ${created}/${count}`);
 }
-console.log('Done. Publish the site to make them live (isDraft: false queues them).');
+console.log("Done. Publish the site to make them live (isDraft: false queues them).");

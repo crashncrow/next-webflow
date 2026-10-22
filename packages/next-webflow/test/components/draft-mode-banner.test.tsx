@@ -20,7 +20,9 @@ describe("DraftModeBanner", () => {
     draft.isEnabled = true;
     const out = await render();
     expect(out).toContain('role="status"');
-    expect(out).toContain('<a href="/api/webflow/draft?disable=1&amp;path=%2Fblog%2Fhello%20world" rel="nofollow">Exit preview</a>');
+    expect(out).toContain(
+      '<a href="/api/webflow/draft?disable=1&amp;path=%2Fblog%2Fhello%20world" rel="nofollow">Exit preview</a>',
+    );
   });
 
   it("prefixes the base path (option, then NEXT_PUBLIC_BASE_PATH)", async () => {

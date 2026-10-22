@@ -73,7 +73,11 @@ export function WebflowRichText({
 
       const Override = components[tag];
       if (Override) {
-        return <Override {...attributesToProps(domNode.attribs, tag)} node={domNode}>{children()}</Override>;
+        return (
+          <Override {...attributesToProps(domNode.attribs, tag)} node={domNode}>
+            {children()}
+          </Override>
+        );
       }
       if (tag === "a" && isInternalHref(domNode.attribs.href)) {
         const { href, ...rest } = attributesToProps(domNode.attribs, tag) as Record<string, unknown> & { href: string };
@@ -113,7 +117,16 @@ function renderWebflowComponent(
   }
   const Component = webflowComponents[name];
   if (Component) {
-    return <Component name={name} componentId={element.attribs["component-id"]} props={props} slots={slots} slotIds={slotIds} node={element} />;
+    return (
+      <Component
+        name={name}
+        componentId={element.attribs["component-id"]}
+        props={props}
+        slots={slots}
+        slotIds={slotIds}
+        node={element}
+      />
+    );
   }
   warnOnceInDev(
     `component:${name}`,

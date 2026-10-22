@@ -7,7 +7,11 @@ const clone = <T>(value: T): T => structuredClone(value);
 
 describe("contract drift detection", () => {
   it("ignores empty fields and which item holds a value", () => {
-    const empty = { ...clone(fullRawPost), id: "other", fieldData: Object.fromEntries(Object.keys(fullRawPost.fieldData).map((key) => [key, null])) };
+    const empty = {
+      ...clone(fullRawPost),
+      id: "other",
+      fieldData: Object.fromEntries(Object.keys(fullRawPost.fieldData).map((key) => [key, null])),
+    };
     expect(driftLines({ live: diffItemShapes(fullRawPost, [empty, clone(fullRawPost)]) })).toEqual([]);
   });
 

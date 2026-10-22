@@ -67,7 +67,9 @@ describe("webhook handler", () => {
   describe("rejections", () => {
     it("rejects unsigned requests by default, explaining the register command", async () => {
       const { handler, revalidated, logger } = setup();
-      const [status, body] = await readJson(await handler(webhookRequest(webhookBodies.site_publish, { signed: false })));
+      const [status, body] = await readJson(
+        await handler(webhookRequest(webhookBodies.site_publish, { signed: false })),
+      );
 
       expect(status).toBe(401);
       expect(body.error).toBe(UNSIGNED_WEBHOOK_MESSAGE);

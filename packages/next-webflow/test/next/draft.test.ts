@@ -17,7 +17,12 @@ describe("next-webflow/draft", () => {
       resolvePath: (collection, item) => `/${collection}/${item.fieldData.slug}`,
     });
 
-    const url = await createPreviewUrl({ url: "https://example.com/api/webflow/draft", collection: "posts", itemId: draftRawPost.id, secret: "s" });
+    const url = await createPreviewUrl({
+      url: "https://example.com/api/webflow/draft",
+      collection: "posts",
+      itemId: draftRawPost.id,
+      secret: "s",
+    });
     expect((await GET(new Request(url))).status).toBe(307);
     expect(draft.enable).toHaveBeenCalledOnce();
 
@@ -29,7 +34,9 @@ describe("next-webflow/draft", () => {
     const exitTo = async (options: { basePath?: string } = {}) => {
       const { createDraftHandler } = await import("../../src/draft");
       const { GET } = createDraftHandler({ resolvePath: () => "/", ...options });
-      return (await GET(new Request("https://example.com/api/webflow/draft?disable=1&path=/blog"))).headers.get("location");
+      return (await GET(new Request("https://example.com/api/webflow/draft?disable=1&path=/blog"))).headers.get(
+        "location",
+      );
     };
 
     it("prefers the explicit option", async () => {

@@ -49,7 +49,10 @@ describe("429 handling", () => {
   });
 
   it("throws a rate limit error with limit info once retries are exhausted", async () => {
-    const state = sequence("/sites", Array.from({ length: 10 }, () => () => rateLimited({ "retry-after": "1" })));
+    const state = sequence(
+      "/sites",
+      Array.from({ length: 10 }, () => () => rateLimited({ "retry-after": "1" })),
+    );
 
     const { client, sleeps } = createTestClient({ retry: { maxRetries: 2 } });
     const error = await client.request("/sites").catch((caught: unknown) => caught);
@@ -87,8 +90,7 @@ describe("429 handling", () => {
 });
 
 describe("5xx and network errors", () => {
-  const serverError = () =>
-    HttpResponse.json(webflowError("internal_error", "Internal"), { status: 503 });
+  const serverError = () => HttpResponse.json(webflowError("internal_error", "Internal"), { status: 503 });
 
   it("retries GET requests on 5xx", async () => {
     const state = sequence("/sites", [serverError, serverError]);
@@ -103,9 +105,9 @@ describe("5xx and network errors", () => {
     const state = sequence("/sites/s1/webhooks", [serverError], "post");
 
     const { client } = createTestClient();
-    await expect(
-      client.request("/sites/s1/webhooks", { method: "POST", body: {} }),
-    ).rejects.toBeInstanceOf(WebflowServerError);
+    await expect(client.request("/sites/s1/webhooks", { method: "POST", body: {} })).rejects.toBeInstanceOf(
+      WebflowServerError,
+    );
     expect(state.calls).toBe(1);
   });
 

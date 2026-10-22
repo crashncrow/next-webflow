@@ -4,7 +4,9 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     // Same as tsconfig paths: the client entry from source (it's imported by its package name).
-    alias: { "next-webflow/components/client": new URL("./src/components/exit-preview-link.tsx", import.meta.url).pathname },
+    alias: {
+      "next-webflow/components/client": new URL("./src/components/exit-preview-link.tsx", import.meta.url).pathname,
+    },
   },
   test: {
     projects: [

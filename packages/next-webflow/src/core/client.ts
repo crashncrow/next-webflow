@@ -10,13 +10,7 @@ import {
 } from "./errors";
 import { createLimiter } from "./limiter";
 import { toSearchParams, type QueryParams } from "./query";
-import {
-  backoffDelay,
-  parseRetryAfter,
-  resolveRetryOptions,
-  sleep as defaultSleep,
-  type RetryOptions,
-} from "./retry";
+import { backoffDelay, parseRetryAfter, resolveRetryOptions, sleep as defaultSleep, type RetryOptions } from "./retry";
 
 /** `data` = Data API (`api.webflow.com`), `cdn` = Content Delivery API (`api-cdn.webflow.com`, live items only). */
 export type WebflowHost = "data" | "cdn";
@@ -112,10 +106,7 @@ export interface ClientInternals {
 
 const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set(["GET", "PUT", "DELETE"]);
 
-export function createWebflowClient(
-  config: WebflowClientConfig = {},
-  internals: ClientInternals = {},
-): WebflowClient {
+export function createWebflowClient(config: WebflowClientConfig = {}, internals: ClientInternals = {}): WebflowClient {
   const retry = resolveRetryOptions(config.retry);
   const limiter = createLimiter(config.concurrency ?? DEFAULT_CONCURRENCY);
   const baseUrls = { ...DEFAULT_BASE_URLS, ...config.baseUrls };
@@ -186,8 +177,7 @@ export function createWebflowClient(
       config.onResponse?.({ method, url, status: response.status, bytes: bodyText.length, init: options.init });
       if (response.ok) return parseBody<T>(bodyText, method, url);
 
-      const retryAfterMs =
-        response.status === 429 ? parseRetryAfter(response.headers.get("retry-after")) : undefined;
+      const retryAfterMs = response.status === 429 ? parseRetryAfter(response.headers.get("retry-after")) : undefined;
       const error = createApiError(response, bodyText, { method, url }, retryAfterMs);
       const delay = canRetry ? retryDelay(error, method, attempt) : undefined;
       if (delay === undefined) throw error;
@@ -240,9 +230,7 @@ export function createWebflowClient(
         : controller.signal;
       try {
         pages = (
-          await Promise.all(
-            rest.map(([pageOffset, pageLimit]) => fetchPage(pageOffset, pageLimit, signal)),
-          )
+          await Promise.all(rest.map(([pageOffset, pageLimit]) => fetchPage(pageOffset, pageLimit, signal)))
         ).map((page) => page.items);
       } catch (error) {
         controller.abort();

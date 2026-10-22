@@ -7,7 +7,8 @@ const [slug, name] = process.argv.slice(2);
 
 if (!slug || !name) throw new Error('Usage: npm run api-create-live -- <slug> "<name>"');
 if (!token || !siteId) throw new Error("Set WEBFLOW_WRITE_TOKEN (seed.env) and WEBFLOW_SITE_ID (local.env)");
-if (confirm !== siteId) throw new Error("Refusing to write: SEED_CONFIRM_SITE_ID must equal WEBFLOW_SITE_ID (test site only).");
+if (confirm !== siteId)
+  throw new Error("Refusing to write: SEED_CONFIRM_SITE_ID must equal WEBFLOW_SITE_ID (test site only).");
 
 async function api(path, init = {}) {
   const response = await fetch(`${API}${path}`, {

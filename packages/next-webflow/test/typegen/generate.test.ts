@@ -27,7 +27,12 @@ const events2024: ApiCollection = {
       slug: "kind",
       type: "Option",
       isRequired: false,
-      validations: { options: [{ id: "opt-1", name: 'Talk "live"' }, { id: "opt-2", name: "Workshop" }] },
+      validations: {
+        options: [
+          { id: "opt-1", name: 'Talk "live"' },
+          { id: "opt-2", name: "Workshop" },
+        ],
+      },
     },
   ],
 };
@@ -48,9 +53,16 @@ describe("generateSchemaFile", () => {
 
   it("emits the runtime schema the library expects, from real API responses", () => {
     expect(golden.schema.authors).toEqual(expectedSchema.authors);
-    expect(golden.schema.posts.fields.category).toMatchObject({ ...expectedSchema.posts.fields.category, options: expect.any(Array) });
+    expect(golden.schema.posts.fields.category).toMatchObject({
+      ...expectedSchema.posts.fields.category,
+      options: expect.any(Array),
+    });
     // The live site gained a "Tutorials" option after the fixture schema was written.
-    expect(golden.schema.posts.fields.category.options.map((option) => option.name)).toEqual(["News", "Guides", "Tutorials"]);
+    expect(golden.schema.posts.fields.category.options.map((option) => option.name)).toEqual([
+      "News",
+      "Guides",
+      "Tutorials",
+    ]);
     expect(Object.keys(golden.schema.posts.fields)).toEqual(Object.keys(expectedSchema.posts.fields));
   });
 

@@ -39,7 +39,10 @@ export function typeNameForCollection(slug: string): string {
 }
 
 /** Builds `schema.ts` from `GET /collections/{id}` responses. Output is deterministic (collections sorted by slug). */
-export function generateSchemaFile(collections: readonly ApiCollection[], options: GenerateOptions = {}): GeneratedSchema {
+export function generateSchemaFile(
+  collections: readonly ApiCollection[],
+  options: GenerateOptions = {},
+): GeneratedSchema {
   const warnings: string[] = [];
   const schemas = collections
     .map((collection) => {
@@ -71,9 +74,14 @@ export function generateSchemaFile(collections: readonly ApiCollection[], option
   }
 
   const importFrom = options.importFrom ?? "next-webflow";
-  const body = schemas.map((collection) => `  ${propertyKey(collection.slug)}: ${printCollection(collection)},`).join("\n");
+  const body = schemas
+    .map((collection) => `  ${propertyKey(collection.slug)}: ${printCollection(collection)},`)
+    .join("\n");
   const types = schemas
-    .map((collection) => `export type ${typeNameForCollection(collection.slug)} = ItemOf<typeof schema, ${JSON.stringify(collection.slug)}>;`)
+    .map(
+      (collection) =>
+        `export type ${typeNameForCollection(collection.slug)} = ItemOf<typeof schema, ${JSON.stringify(collection.slug)}>;`,
+    )
     .join("\n");
 
   const content = [
@@ -103,7 +111,11 @@ export function generateIndexFile(options: GenerateOptions = {}): string {
 
 /** The hash recorded in a generated `schema.ts`, if any. */
 export function readSchemaHash(source: string): string | undefined {
-  return source.split("\n").find((line) => line.startsWith(HASH_PREFIX))?.slice(HASH_PREFIX.length).trim();
+  return source
+    .split("\n")
+    .find((line) => line.startsWith(HASH_PREFIX))
+    ?.slice(HASH_PREFIX.length)
+    .trim();
 }
 
 /** FNV-1a (64-bit): change detection, not security. */
@@ -158,7 +170,9 @@ function printField(field: FieldSchema): string {
     `required: ${field.required}`,
   ];
   if (field.options) {
-    const options = field.options.map((option) => `{ id: ${JSON.stringify(option.id)}, name: ${JSON.stringify(option.name)} }`);
+    const options = field.options.map(
+      (option) => `{ id: ${JSON.stringify(option.id)}, name: ${JSON.stringify(option.name)} }`,
+    );
     parts.push(`options: [${options.join(", ")}]`);
   }
   if (field.collectionId) parts.push(`collectionId: ${JSON.stringify(field.collectionId)}`);

@@ -43,23 +43,36 @@ const REQUIRED_SCOPES =
   "--token-env at the variable that holds it (or pass --token).";
 
 export function requireHttpsUrl(url: string | undefined): string {
-  if (!url) throw new WebflowConfigError("Missing --url (the https URL of your webhook route, e.g. https://example.com/api/webflow).");
+  if (!url)
+    throw new WebflowConfigError(
+      "Missing --url (the https URL of your webhook route, e.g. https://example.com/api/webflow).",
+    );
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
     throw new WebflowConfigError(`--url is not a valid URL: ${url}`);
   }
-  if (parsed.protocol !== "https:") throw new WebflowConfigError(`--url must use https (Webflow only delivers to https): ${url}`);
+  if (parsed.protocol !== "https:")
+    throw new WebflowConfigError(`--url must use https (Webflow only delivers to https): ${url}`);
   return parsed.toString();
 }
 
 export function parseEvents(value: string | undefined): string[] {
   if (!value) return [...DEFAULT_WEBHOOK_EVENTS];
-  const events = [...new Set(value.split(",").map((event) => event.trim()).filter(Boolean))];
+  const events = [
+    ...new Set(
+      value
+        .split(",")
+        .map((event) => event.trim())
+        .filter(Boolean),
+    ),
+  ];
   const unknown = events.filter((event) => !(CMS_WEBHOOK_EVENTS as readonly string[]).includes(event));
   if (unknown.length > 0) {
-    throw new WebflowConfigError(`Unknown event(s): ${unknown.join(", ")}. Supported: ${CMS_WEBHOOK_EVENTS.join(", ")}.`);
+    throw new WebflowConfigError(
+      `Unknown event(s): ${unknown.join(", ")}. Supported: ${CMS_WEBHOOK_EVENTS.join(", ")}.`,
+    );
   }
   return events;
 }
@@ -116,7 +129,9 @@ export async function registerWebhooks(context: CommandContext, options: Registe
   const existing = await fetchWebhooks(context);
   if (events.some((event) => event.startsWith("collection_item_"))) {
     // Collection events need cms:read on the token; check it before creating anything.
-    await withScopeHint(context, "read CMS collections", () => context.client.request(`/sites/${context.siteId}/collections`));
+    await withScopeHint(context, "read CMS collections", () =>
+      context.client.request(`/sites/${context.siteId}/collections`),
+    );
   }
 
   const toCreate: string[] = [];
@@ -164,7 +179,8 @@ export async function registerWebhooks(context: CommandContext, options: Registe
   if (created.length > 0 && secrets.length < created.length) {
     io.warn(
       "Webflow didn't return a signing secret for every webhook. Webhooks created with an OAuth app are " +
-        "signed with the app's client secret: put that in " + `${ENV.webhookSecret} instead.`,
+        "signed with the app's client secret: put that in " +
+        `${ENV.webhookSecret} instead.`,
     );
   }
 
@@ -209,13 +225,16 @@ export async function unregisterWebhooks(context: CommandContext, options: Unreg
     return [];
   }
   for (const webhook of matching) context.io.log(`${webhook.id}  ${webhook.triggerType}`);
-  const confirmed = options.yes || (await context.io.confirm(`Delete these ${matching.length} webhook(s) pointing at ${url}?`));
+  const confirmed =
+    options.yes || (await context.io.confirm(`Delete these ${matching.length} webhook(s) pointing at ${url}?`));
   if (!confirmed) {
     context.io.log("Nothing deleted.");
     return [];
   }
   for (const webhook of matching) {
-    await withScopeHint(context, "delete webhooks", () => context.client.request(`/webhooks/${webhook.id}`, { method: "DELETE" }));
+    await withScopeHint(context, "delete webhooks", () =>
+      context.client.request(`/webhooks/${webhook.id}`, { method: "DELETE" }),
+    );
     context.io.log(`Deleted ${webhook.triggerType} (${webhook.id})`);
   }
   context.io.warn(`Their secrets are still in ${ENV.webhookSecret}; remove them if you no longer need them.`);

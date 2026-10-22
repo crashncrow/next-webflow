@@ -28,10 +28,7 @@ export default defineConfig(
           ],
         },
       ],
-      "no-restricted-globals": [
-        "error",
-        { name: "Buffer", message: "Runtime code must be edge-compatible." },
-      ],
+      "no-restricted-globals": ["error", { name: "Buffer", message: "Runtime code must be edge-compatible." }],
     },
   },
 );

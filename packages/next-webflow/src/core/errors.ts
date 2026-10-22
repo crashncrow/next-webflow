@@ -125,8 +125,7 @@ export function createApiError(
         : response.statusText || `HTTP ${response.status}`,
     code: typeof body.code === "string" ? body.code : undefined,
     details: Array.isArray(body.details) ? body.details : undefined,
-    externalReference:
-      typeof body.externalReference === "string" ? body.externalReference : null,
+    externalReference: typeof body.externalReference === "string" ? body.externalReference : null,
     method: request.method,
     url: request.url,
   };

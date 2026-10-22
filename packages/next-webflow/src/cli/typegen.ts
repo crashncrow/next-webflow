@@ -103,8 +103,14 @@ function describeDiff(before: string, after: string, max = 20): string {
   const beforeLines = new Set(before.split("\n"));
   const afterLines = new Set(after.split("\n"));
   const lines = [
-    ...before.split("\n").filter((line) => !afterLines.has(line)).map((line) => `- ${line.trim()}`),
-    ...after.split("\n").filter((line) => !beforeLines.has(line)).map((line) => `+ ${line.trim()}`),
+    ...before
+      .split("\n")
+      .filter((line) => !afterLines.has(line))
+      .map((line) => `- ${line.trim()}`),
+    ...after
+      .split("\n")
+      .filter((line) => !beforeLines.has(line))
+      .map((line) => `+ ${line.trim()}`),
   ];
   const shown = lines.slice(0, max).map((line) => `  ${line}`);
   if (lines.length > max) shown.push(`  … ${lines.length - max} more`);

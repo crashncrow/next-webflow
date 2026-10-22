@@ -4,15 +4,26 @@ import { createPreviewUrl, safeRelativePath, verifyPreviewParams } from "../../s
 const NOW = Date.UTC(2026, 9, 21, 12);
 const SECRET = "preview-secret";
 const link = (overrides: Partial<Parameters<typeof createPreviewUrl>[0]> = {}) =>
-  createPreviewUrl({ url: "https://example.com/api/webflow/draft", collection: "posts", itemId: "item-1", secret: SECRET, now: NOW, ...overrides });
+  createPreviewUrl({
+    url: "https://example.com/api/webflow/draft",
+    collection: "posts",
+    itemId: "item-1",
+    secret: SECRET,
+    now: NOW,
+    ...overrides,
+  });
 const params = async (url: Promise<string> | string) => new URL(await url, "https://example.com").searchParams;
-const verify = async (url: Promise<string> | string, options: Partial<Parameters<typeof verifyPreviewParams>[1]> = {}) =>
-  verifyPreviewParams(await params(url), { secrets: [SECRET], now: NOW, ...options });
+const verify = async (
+  url: Promise<string> | string,
+  options: Partial<Parameters<typeof verifyPreviewParams>[1]> = {},
+) => verifyPreviewParams(await params(url), { secrets: [SECRET], now: NOW, ...options });
 
 describe("createPreviewUrl", () => {
   it("signs collection, item and expiry; the secret never appears in the link", async () => {
     const url = await link();
-    expect(url).toMatch(/^https:\/\/example\.com\/api\/webflow\/draft\?collection=posts&item=item-1&expires=\d+&sig=[0-9a-f]{64}$/);
+    expect(url).toMatch(
+      /^https:\/\/example\.com\/api\/webflow\/draft\?collection=posts&item=item-1&expires=\d+&sig=[0-9a-f]{64}$/,
+    );
     expect(url).not.toContain(SECRET);
     expect((await params(url)).get("expires")).toBe(String(NOW / 1000 + 3600));
   });
@@ -36,11 +47,18 @@ describe("createPreviewUrl", () => {
 
 describe("verifyPreviewParams", () => {
   it("accepts a valid link", async () => {
-    await expect(verify(link())).resolves.toEqual({ ok: true, collection: "posts", itemId: "item-1", expires: NOW / 1000 + 3600 });
+    await expect(verify(link())).resolves.toEqual({
+      ok: true,
+      collection: "posts",
+      itemId: "item-1",
+      expires: NOW / 1000 + 3600,
+    });
   });
 
   it("accepts any of several secrets (rotation)", async () => {
-    await expect(verify(link({ secret: "older" }), { secrets: [SECRET, "older"] })).resolves.toMatchObject({ ok: true });
+    await expect(verify(link({ secret: "older" }), { secrets: [SECRET, "older"] })).resolves.toMatchObject({
+      ok: true,
+    });
   });
 
   it.each([
@@ -50,7 +68,10 @@ describe("verifyPreviewParams", () => {
   ])("rejects a tampered %s", async (name, value) => {
     const tampered = await params(link());
     tampered.set(name, value);
-    await expect(verifyPreviewParams(tampered, { secrets: [SECRET], now: NOW })).resolves.toEqual({ ok: false, reason: "invalid" });
+    await expect(verifyPreviewParams(tampered, { secrets: [SECRET], now: NOW })).resolves.toEqual({
+      ok: false,
+      reason: "invalid",
+    });
   });
 
   it("rejects another secret's signature", async () => {
@@ -58,19 +79,27 @@ describe("verifyPreviewParams", () => {
   });
 
   it("rejects expired links and links that live longer than the maximum", async () => {
-    await expect(verify(link({ expiresIn: 60 }), { now: NOW + 61_000 })).resolves.toEqual({ ok: false, reason: "expired" });
-    await expect(verify(link({ expiresIn: 3600 }), { maxLifetimeSeconds: 600 })).resolves.toEqual({ ok: false, reason: "expired" });
+    await expect(verify(link({ expiresIn: 60 }), { now: NOW + 61_000 })).resolves.toEqual({
+      ok: false,
+      reason: "expired",
+    });
+    await expect(verify(link({ expiresIn: 3600 }), { maxLifetimeSeconds: 600 })).resolves.toEqual({
+      ok: false,
+      reason: "expired",
+    });
   });
 
-  it.each(["", "?collection=posts&item=i", "?collection=posts&item=i&expires=x&sig=" + "0".repeat(64), "?collection=posts&item=i&expires=1&sig=zz"])(
-    "rejects malformed links (%s)",
-    async (query) => {
-      await expect(verifyPreviewParams(new URLSearchParams(query), { secrets: [SECRET], now: NOW })).resolves.toEqual({
-        ok: false,
-        reason: "malformed",
-      });
-    },
-  );
+  it.each([
+    "",
+    "?collection=posts&item=i",
+    "?collection=posts&item=i&expires=x&sig=" + "0".repeat(64),
+    "?collection=posts&item=i&expires=1&sig=zz",
+  ])("rejects malformed links (%s)", async (query) => {
+    await expect(verifyPreviewParams(new URLSearchParams(query), { secrets: [SECRET], now: NOW })).resolves.toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
 });
 
 describe("safeRelativePath", () => {

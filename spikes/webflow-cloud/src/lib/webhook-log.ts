@@ -2,7 +2,9 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 /** Minimal D1 surface used here (avoids depending on workers-types). */
 interface D1 {
-  prepare(query: string): { bind(...values: unknown[]): { run(): Promise<unknown>; all<T>(): Promise<{ results: T[] }> } };
+  prepare(query: string): {
+    bind(...values: unknown[]): { run(): Promise<unknown>; all<T>(): Promise<{ results: T[] }> };
+  };
 }
 
 // Same D1 database as the OpenNext tag cache (migrations/0002_webhook_log.sql).
@@ -37,7 +39,15 @@ export async function logWebhook(entry: {
     .prepare(
       "INSERT INTO webhook_log (received_at, status, trigger_type, signed, response, raw_body, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(entry.receivedAt, entry.status, entry.triggerType, entry.signed ? 1 : 0, entry.response, entry.rawBody, entry.durationMs)
+    .bind(
+      entry.receivedAt,
+      entry.status,
+      entry.triggerType,
+      entry.signed ? 1 : 0,
+      entry.response,
+      entry.rawBody,
+      entry.durationMs,
+    )
     .run();
 }
 

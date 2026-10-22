@@ -71,7 +71,14 @@ export async function verifyPreviewParams(
   const itemId = params.get(PREVIEW_PARAMS.item);
   const expiresText = params.get(PREVIEW_PARAMS.expires);
   const signature = params.get(PREVIEW_PARAMS.signature);
-  if (!collection || !itemId || !expiresText || !/^\d{1,12}$/.test(expiresText) || !signature || !/^[0-9a-f]{64}$/i.test(signature)) {
+  if (
+    !collection ||
+    !itemId ||
+    !expiresText ||
+    !/^\d{1,12}$/.test(expiresText) ||
+    !signature ||
+    !/^[0-9a-f]{64}$/i.test(signature)
+  ) {
     return { ok: false, reason: "malformed" };
   }
   const expires = Number(expiresText);

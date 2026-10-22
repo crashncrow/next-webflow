@@ -23,8 +23,18 @@ function setup(options: Partial<DraftHandlerOptions<typeof schema>> = {}) {
   return { handler, controls, logger, resolvePath };
 }
 
-const previewRequest = async (overrides: Partial<Parameters<typeof createPreviewUrl>[0]> = {}, init?: { basePath?: string | undefined }) => {
-  const url = await createPreviewUrl({ url: ROUTE, collection: "posts", itemId: draftRawPost.id, secret: SECRET, now: NOW, ...overrides });
+const previewRequest = async (
+  overrides: Partial<Parameters<typeof createPreviewUrl>[0]> = {},
+  init?: { basePath?: string | undefined },
+) => {
+  const url = await createPreviewUrl({
+    url: ROUTE,
+    collection: "posts",
+    itemId: draftRawPost.id,
+    secret: SECRET,
+    now: NOW,
+    ...overrides,
+  });
   const request = new Request(url);
   if (init?.basePath !== undefined) Object.assign(request, { nextUrl: { basePath: init.basePath } });
   return request;
@@ -35,7 +45,9 @@ function stagedItem(item = draftRawPost) {
   server.use(
     http.get(STAGED, ({ request, params }) => {
       requests.push({ url: request.url, cache: request.cache });
-      return params.id === item.id ? HttpResponse.json(item) : HttpResponse.json(webflowError("resource_not_found", "Not found"), { status: 404 });
+      return params.id === item.id
+        ? HttpResponse.json(item)
+        : HttpResponse.json(webflowError("resource_not_found", "Not found"), { status: 404 });
     }),
   );
   return requests;
@@ -43,7 +55,10 @@ function stagedItem(item = draftRawPost) {
 
 describe("draft route: entering preview", () => {
   it("verifies the link, reads the STAGED item, enables draft mode and redirects to its current path", async () => {
-    const requests = stagedItem({ ...draftRawPost, fieldData: { ...draftRawPost.fieldData, slug: "renamed-in-draft" } });
+    const requests = stagedItem({
+      ...draftRawPost,
+      fieldData: { ...draftRawPost.fieldData, slug: "renamed-in-draft" },
+    });
     const { handler, controls, resolvePath } = setup();
 
     const response = await handler.GET(await previewRequest());
@@ -63,7 +78,9 @@ describe("draft route: entering preview", () => {
     const location = async (handler: ReturnType<typeof createDraftRequestHandler>, basePath?: string) =>
       (await handler.GET(await previewRequest({}, { basePath }))).headers.get("location");
 
-    expect(await location(createDraftRequestHandler({ ...base, basePath: "/opt/" }, controls, { now: () => NOW }))).toBe("/opt/x");
+    expect(
+      await location(createDraftRequestHandler({ ...base, basePath: "/opt/" }, controls, { now: () => NOW })),
+    ).toBe("/opt/x");
     expect(await location(createDraftRequestHandler(base, controls, { now: () => NOW }), "/req")).toBe("/cloud/x");
     expect(await location(setup({ resolvePath: () => "/x" }).handler, "/req")).toBe("/req/x");
     expect(await location(setup({ resolvePath: () => "/x" }).handler)).toBe("/x");
@@ -120,7 +137,10 @@ describe("draft route: entering preview", () => {
     vi.stubEnv("WEBFLOW_PREVIEW_SECRET", "");
     const noSecret = setup({ secret: undefined });
     const missing = await noSecret.handler.GET(await previewRequest());
-    expect([missing.status, (await missing.json()).error]).toEqual([500, expect.stringMatching(/WEBFLOW_PREVIEW_SECRET/)]);
+    expect([missing.status, (await missing.json()).error]).toEqual([
+      500,
+      expect.stringMatching(/WEBFLOW_PREVIEW_SECRET/),
+    ]);
   });
 
   it("refuses a resolvePath that points off-site", async () => {

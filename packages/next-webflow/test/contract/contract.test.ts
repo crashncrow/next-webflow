@@ -34,8 +34,23 @@ const COLLECTION_SLUG = env.WEBFLOW_CONTRACT_COLLECTION ?? "posts";
 const OUTPUT_DIR = fileURLToPath(new URL("./output/", import.meta.url));
 
 const ALL_FIELD_TYPES = [
-  "PlainText", "RichText", "Image", "MultiImage", "VideoLink", "Link", "Email", "Phone", "Number",
-  "DateTime", "Switch", "Color", "Option", "File", "Reference", "MultiReference", "ExtFileRef",
+  "PlainText",
+  "RichText",
+  "Image",
+  "MultiImage",
+  "VideoLink",
+  "Link",
+  "Email",
+  "Phone",
+  "Number",
+  "DateTime",
+  "Switch",
+  "Color",
+  "Option",
+  "File",
+  "Reference",
+  "MultiReference",
+  "ExtFileRef",
 ] as const satisfies ReadonlyArray<keyof FieldValueMap>;
 
 interface ApiField {
@@ -77,10 +92,17 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     collection = await client.request(`/collections/${match.id}`);
     save("collection", collection);
     // Every collection with its fields: typegen's input.
-    save("collections", await Promise.all(sites.collections.map((candidate) => client.request(`/collections/${candidate.id}`))));
+    save(
+      "collections",
+      await Promise.all(sites.collections.map((candidate) => client.request(`/collections/${candidate.id}`))),
+    );
     // Referenced items (posts.author / co-authors): include's input.
     const authors = sites.collections.find((candidate) => candidate.slug === "authors");
-    if (authors) save("authors-items-live", await client.request(`/collections/${authors.id}/items/live`, { query: { limit: 100 } }));
+    if (authors)
+      save(
+        "authors-items-live",
+        await client.request(`/collections/${authors.id}/items/live`, { query: { limit: 100 } }),
+      );
     diffs.collection = diffShapes(realPostsCollection, collection);
 
     live = await client.request(`/collections/${match.id}/items/live`, { query: { limit: 100 } });
@@ -102,7 +124,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     }
     console.log(`\nContract output written to ${OUTPUT_DIR}`);
     for (const [name, list] of Object.entries(diffs)) {
-      const relevant = list.filter((difference) => difference.type !== "extra" || !difference.path.includes("fieldData"));
+      const relevant = list.filter(
+        (difference) => difference.type !== "extra" || !difference.path.includes("fieldData"),
+      );
       if (relevant.length > 0) console.log(`\n[${name}]`, relevant);
     }
     console.log("\n[report]", JSON.stringify(report, null, 2));
@@ -111,7 +135,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
   it("real responses keep the shape of our fixtures (API drift)", () => {
     const drift = driftLines(diffs);
     const extra = Object.entries(diffs).flatMap(([name, list]) =>
-      list.filter((difference) => difference.type === "extra").map((difference) => `${name}: ${difference.path} (${difference.real})`),
+      list
+        .filter((difference) => difference.type === "extra")
+        .map((difference) => `${name}: ${difference.path} (${difference.real})`),
     );
     if (env.GITHUB_STEP_SUMMARY) {
       appendFileSync(
@@ -125,7 +151,10 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
         ].join("\n"),
       );
     }
-    expect(drift, "The real Webflow API no longer matches test/fixtures/api (see test/contract/output/diff.json)").toEqual([]);
+    expect(
+      drift,
+      "The real Webflow API no longer matches test/fixtures/api (see test/contract/output/diff.json)",
+    ).toEqual([]);
   });
 
   it("the test site covers every field type", () => {
@@ -137,7 +166,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
   });
 
   it("settles where Reference fields keep the target collection ID", () => {
-    const references = collection.fields.filter((field) => field.type === "Reference" || field.type === "MultiReference");
+    const references = collection.fields.filter(
+      (field) => field.type === "Reference" || field.type === "MultiReference",
+    );
     expect(references.length).toBeGreaterThan(0);
 
     report.referenceCollectionId = references.map((field) => ({
@@ -148,7 +179,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     }));
     const schema = schemaFromApi(collection);
     for (const field of references) {
-      expect(Object.values(schema.fields).find((entry) => entry.slug === field.slug)?.collectionId).toBeTypeOf("string");
+      expect(Object.values(schema.fields).find((entry) => entry.slug === field.slug)?.collectionId).toBeTypeOf(
+        "string",
+      );
     }
   });
 
@@ -177,7 +210,13 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
   });
 
   it("items have the top-level fields we read", () => {
-    const expected = { id: "string", lastUpdated: "string", createdOn: "string", isArchived: "boolean", isDraft: "boolean" };
+    const expected = {
+      id: "string",
+      lastUpdated: "string",
+      createdOn: "string",
+      isArchived: "boolean",
+      isDraft: "boolean",
+    };
     const problems = [...live.items, ...staged.items].flatMap((item, index) => {
       const wrong = Object.entries(expected)
         .filter(([key, type]) => typeof (item as unknown as Record<string, unknown>)[key] !== type)
@@ -208,7 +247,9 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     const results = live.items.map((item) => normalizeItem(item, schema));
     expect(results.map((result) => result.mismatch).filter(Boolean)).toEqual([]);
 
-    const videoKeys = Object.entries(schema.fields).filter(([, field]) => field.type === "VideoLink").map(([key]) => key);
+    const videoKeys = Object.entries(schema.fields)
+      .filter(([, field]) => field.type === "VideoLink")
+      .map(([key]) => key);
     for (const { item } of results) {
       for (const key of videoKeys) {
         const video = item.fieldData[key];
@@ -236,7 +277,10 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
       `/collections/${collection.id}/items`,
       { query: { slug } },
     );
-    for (const [name, response] of [["live", bySlugLive], ["staged", bySlugStaged]] as const) {
+    for (const [name, response] of [
+      ["live", bySlugLive],
+      ["staged", bySlugStaged],
+    ] as const) {
       expect(response.items.length, `?slug= (${name}) item count`).toBe(1);
       expect(response.items[0]?.id === target.id, `?slug= (${name}) returned another item`).toBe(true);
     }
@@ -252,9 +296,10 @@ describe.skipIf(!enabled)(`contract: real API vs fixtures (collection "${COLLECT
     const draftOnly = staged.items.find((item) => !liveIds.has(item.id));
     report.hasDraftOnlyItem = Boolean(draftOnly);
     if (draftOnly) {
-      const status = await client
-        .request(`/collections/${collection.id}/items/${draftOnly.id}/live`)
-        .then(() => 200, (error: { status?: number }) => error.status);
+      const status = await client.request(`/collections/${collection.id}/items/${draftOnly.id}/live`).then(
+        () => 200,
+        (error: { status?: number }) => error.status,
+      );
       expect(status, "a staged-only item on /items/{id}/live").toBe(404);
       const stagedOne = await client.request<WebflowRawItem>(`/collections/${collection.id}/items/${draftOnly.id}`);
       expect(stagedOne.id === draftOnly.id, "by-ID (staged) returned another item").toBe(true);

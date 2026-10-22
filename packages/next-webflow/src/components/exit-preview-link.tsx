@@ -4,7 +4,15 @@
 import { usePathname } from "next/navigation.js";
 import type { ReactNode } from "react";
 
-export function ExitPreviewLink({ href, children, className }: { href: string; children: ReactNode; className?: string | undefined }) {
+export function ExitPreviewLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string | undefined;
+}) {
   const pathname = usePathname() ?? "/";
   const separator = href.includes("?") ? "&" : "?";
   return (

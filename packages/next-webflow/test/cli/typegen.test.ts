@@ -21,7 +21,9 @@ function fakeSite({ forbid = false, list = collections } = {}) {
         ? HttpResponse.json(webflowError("missing_scopes", "Missing scopes"), { status: 403 })
         : HttpResponse.json({ collections: list.map(({ id, slug }) => ({ id, slug })) }),
     ),
-    http.get(`${DATA_API}/collections/:id`, ({ params }) => HttpResponse.json(list.find((item) => item.id === params.id))),
+    http.get(`${DATA_API}/collections/:id`, ({ params }) =>
+      HttpResponse.json(list.find((item) => item.id === params.id)),
+    ),
   );
 }
 
@@ -37,7 +39,12 @@ function setup(files: Record<string, string> = {}) {
     }),
     confirm: async () => false,
   };
-  const context: CommandContext = { client: createTestClient().client, siteId: SITE, io, tokenEnv: "WEBFLOW_CMS_TOKEN" };
+  const context: CommandContext = {
+    client: createTestClient().client,
+    siteId: SITE,
+    io,
+    tokenEnv: "WEBFLOW_CMS_TOKEN",
+  };
   return { context, io, files, output: () => output.join("\n"), warnings: () => warnings.join("\n") };
 }
 
@@ -58,7 +65,8 @@ describe("typegen", () => {
 
   it("regenerates schema.ts but leaves a customized index.ts untouched", async () => {
     fakeSite();
-    const custom = 'import { createWebflow } from "next-webflow";\nimport { schema } from "./schema";\n// source: "cdn"\n';
+    const custom =
+      'import { createWebflow } from "next-webflow";\nimport { schema } from "./schema";\n// source: "cdn"\n';
     const { context, files, output, warnings } = setup({ [SCHEMA]: "// old", [INDEX]: custom });
 
     await runTypegen(context);
@@ -79,7 +87,7 @@ describe("typegen", () => {
 
   it("warns when index.ts doesn't import ./schema", async () => {
     fakeSite();
-    const { context, warnings } = setup({ [INDEX]: 'export const getItems = () => [];\n' });
+    const { context, warnings } = setup({ [INDEX]: "export const getItems = () => [];\n" });
     await runTypegen(context);
     expect(warnings()).toMatch(/webflow\/index\.ts doesn't import "\.\/schema"/);
   });
@@ -133,7 +141,10 @@ describe("typegen", () => {
 
     it("fails with the changed lines when the site's schema changed", async () => {
       const [authors, posts] = collections as [ApiCollection, ApiCollection];
-      const withSubtitle = { ...posts, fields: [...(posts.fields ?? []), { slug: "subtitle", type: "PlainText", isRequired: false }] };
+      const withSubtitle = {
+        ...posts,
+        fields: [...(posts.fields ?? []), { slug: "subtitle", type: "PlainText", isRequired: false }],
+      };
       fakeSite({ list: [authors, withSubtitle] });
       const { context, io, warnings } = setup({ [SCHEMA]: expected() });
 

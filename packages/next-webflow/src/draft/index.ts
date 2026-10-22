@@ -1,13 +1,8 @@
 // `.js` extension: `next` has no `exports` map (see src/next/cache.ts).
 import { draftMode } from "next/headers.js";
-import {
-  createDraftRequestHandler,
-  type DraftHandlerOptions,
-  type DraftRouteHandlers,
-} from "../core/draft-handler";
+import { createDraftRequestHandler, type DraftHandlerOptions, type DraftRouteHandlers } from "../core/draft-handler";
 import type { WebflowSchema } from "../core/schema";
 import { nextBasePath } from "../next/base-path";
-
 
 /**
  * Draft mode route for Next.js: a signed preview link (see `createPreviewUrl`) enables draft

@@ -111,15 +111,15 @@ const post = await getItemBySlug("posts", "hello-world"); // or null
 const byId = await getItem("posts", itemId); // by item ID (e.g. from a webhook or a reference), or null
 ```
 
-| Option | Applies to | |
-| --- | --- | --- |
-| `filter` | `getItems` | Keyed by field (camelCase or API slug). Operators: `eq ne gt gte lt lte in nin contains ncontains exists`. Webflow filters on its side. |
-| `sortBy`, `sortOrder` | `getItems` | Only Webflow's sortable properties (above), not custom fields: sort those yourself. |
-| `limit`, `offset` | `getItems` | Without `limit`, every item (parallel pages of 100). |
-| `include` | all | Replace Reference fields with the referenced items. See [References](#references-include). |
-| `cmsLocaleId` | all | Read a secondary locale (default: the primary one). |
-| `raw: true` | all | The API's item untouched: slug keys, Option IDs, `null` for empty fields. |
-| `signal` | all | An `AbortSignal`. |
+| Option                | Applies to |                                                                                                                                         |
+| --------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`              | `getItems` | Keyed by field (camelCase or API slug). Operators: `eq ne gt gte lt lte in nin contains ncontains exists`. Webflow filters on its side. |
+| `sortBy`, `sortOrder` | `getItems` | Only Webflow's sortable properties (above), not custom fields: sort those yourself.                                                     |
+| `limit`, `offset`     | `getItems` | Without `limit`, every item (parallel pages of 100).                                                                                    |
+| `include`             | all        | Replace Reference fields with the referenced items. See [References](#references-include).                                              |
+| `cmsLocaleId`         | all        | Read a secondary locale (default: the primary one).                                                                                     |
+| `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                                               |
+| `signal`              | all        | An `AbortSignal`.                                                                                                                       |
 
 Published content comes from Webflow's Data API (`/items/live`) by default; in [draft mode](#draft-mode-previews) the same calls return staged content. Other options of `createWebflow` (in `webflow/index.ts`): `source: "cdn"` (see [Data API or CDN](#data-api-or-cdn)), `maxIncludeItems`, `maxBuildListItems`, `buildSlugLookups`, `retry` (`maxRetries`, `baseDelayMs`, `maxDelayMs`, `maxRetryAfterMs`), `concurrency` (default 4), `token`, `siteId`, `logger`.
 
@@ -131,20 +131,20 @@ Published content comes from Webflow's Data API (`/items/live`) by default; in [
 
 Items are normalized: `fieldData` keys are camelCase (`main-image` → `mainImage`), empty fields are absent (Webflow sends `null`), and optional fields are typed optional.
 
-| Webflow type | Value | TypeScript |
-| --- | --- | --- |
-| Plain text, Link, Email, Phone, Color | string | `string` |
-| Rich text | HTML string, unsanitized (render with [`WebflowRichText`](#webflowrichtext), which sanitizes it) | `string` |
-| Number | number | `number` |
-| Switch | boolean (`false` is sent, not omitted) | `boolean` |
-| Date/Time | ISO 8601 string | `string` |
-| Option | `{ id, name }` | `{ id: "…"; name: "News" } \| …` per option, plus `{ id; name: undefined }` for an option the schema doesn't know |
-| Image, File | `{ fileId, url, alt }` | `WebflowImage`, `WebflowFile` (`alt` may be `null`) |
-| Multi-image | array of images | `WebflowImage[]` |
-| Video link | `{ url, metadata? }` | `WebflowVideo` |
-| Reference | item ID, or the item with `include` | `string`, or `Item \| null` |
-| Multi-reference | item IDs, or the items with `include` | `string[]`, or `Item[]` |
-| External file reference | as returned | `unknown` (typegen warns) |
+| Webflow type                          | Value                                                                                            | TypeScript                                                                                                        |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Plain text, Link, Email, Phone, Color | string                                                                                           | `string`                                                                                                          |
+| Rich text                             | HTML string, unsanitized (render with [`WebflowRichText`](#webflowrichtext), which sanitizes it) | `string`                                                                                                          |
+| Number                                | number                                                                                           | `number`                                                                                                          |
+| Switch                                | boolean (`false` is sent, not omitted)                                                           | `boolean`                                                                                                         |
+| Date/Time                             | ISO 8601 string                                                                                  | `string`                                                                                                          |
+| Option                                | `{ id, name }`                                                                                   | `{ id: "…"; name: "News" } \| …` per option, plus `{ id; name: undefined }` for an option the schema doesn't know |
+| Image, File                           | `{ fileId, url, alt }`                                                                           | `WebflowImage`, `WebflowFile` (`alt` may be `null`)                                                               |
+| Multi-image                           | array of images                                                                                  | `WebflowImage[]`                                                                                                  |
+| Video link                            | `{ url, metadata? }`                                                                             | `WebflowVideo`                                                                                                    |
+| Reference                             | item ID, or the item with `include`                                                              | `string`, or `Item \| null`                                                                                       |
+| Multi-reference                       | item IDs, or the items with `include`                                                            | `string[]`, or `Item[]`                                                                                           |
+| External file reference               | as returned                                                                                      | `unknown` (typegen warns)                                                                                         |
 
 **Options.** Webflow returns the option's ID; next-webflow adds its name from the schema. Compare by `id` (stable) and display `name` (editors can rename options). `name` is a union of the names in your schema, or `undefined` for an option added after the last typegen that the API schema doesn't resolve either.
 
@@ -166,7 +166,7 @@ post.fieldData.video?.metadata?.aspectRatio; // width / height, computed by next
 
 ```ts
 const posts = await getItems("posts", { include: ["author", "coAuthors"] });
-posts[0].fieldData.author;    // AuthorsItem | null
+posts[0].fieldData.author; // AuthorsItem | null
 posts[0].fieldData.coAuthors; // AuthorsItem[]
 ```
 
@@ -179,11 +179,11 @@ posts[0].fieldData.coAuthors; // AuthorsItem[]
 
 Every read is a `fetch` with `cache: "force-cache"` and cache tags, so pages are static until a tag is invalidated:
 
-| Tag | On | Invalidated by |
-| --- | --- | --- |
-| `webflow` | every read | `site_publish` |
+| Tag                                 | On                                                   | Invalidated by                   |
+| ----------------------------------- | ---------------------------------------------------- | -------------------------------- |
+| `webflow`                           | every read                                           | `site_publish`                   |
 | `webflow:collection:<collectionId>` | lists, slug lookups, `include` of a whole collection | any CMS event in that collection |
-| `webflow:item:<itemId>` | `getItem`, `include` by ID | CMS events for that item |
+| `webflow:item:<itemId>`             | `getItem`, `include` by ID                           | CMS events for that item         |
 
 - Invalidation uses `revalidateTag(tag, { expire: 0 })`: the next request fetches fresh content (people who publish expect to see it). Pass `profile: "max"` (or another profile) to `createWebhookHandler` to serve stale content while revalidating instead.
 - Slug lookups carry the collection tag, so renaming a slug refreshes the old URL too (it then returns `null` → `notFound()`). The trade-off: any change in a collection refreshes all its cached slug lookups, lazily, on their next visit.
@@ -192,12 +192,12 @@ Every read is a `fetch` with `cache: "force-cache"` and cache tags, so pages are
 
 ### Data API or CDN
 
-| | `source: "data"` (default) | `source: "cdn"` |
-| --- | --- | --- |
-| Reads from | Data API, `/items/live` | Content Delivery API (`api-cdn.webflow.com`) |
-| Freshness after publishing | Immediate, with webhooks | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish |
-| Rate limit | Every cache miss counts (60–120 requests/minute by plan) | CDN cache hits don't count |
-| Use it when | You registered webhooks (recommended) | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
+|                            | `source: "data"` (default)                               | `source: "cdn"`                                                                             |
+| -------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Reads from                 | Data API, `/items/live`                                  | Content Delivery API (`api-cdn.webflow.com`)                                                |
+| Freshness after publishing | Immediate, with webhooks                                 | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish                 |
+| Rate limit                 | Every cache miss counts (60–120 requests/minute by plan) | CDN cache hits don't count                                                                  |
+| Use it when                | You registered webhooks (recommended)                    | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
 
 With `cdn` and webhooks together, a webhook can refetch before the CDN has the new content and cache the old version again; prefer `data` with webhooks. Schemas, draft mode and staged reads always use the Data API.
 
@@ -205,11 +205,11 @@ With `cdn` and webhooks together, a webhook can refetch before the CDN has the n
 
 `npx next-webflow webhooks register --url https://your-site.com/api/webflow` subscribes to every CMS event and `site_publish`. The handler invalidates:
 
-| Event | Invalidates |
-| --- | --- |
-| `collection_item_published` / `_unpublished` / `_deleted` | the item and its collection |
-| `collection_item_created` / `_changed` | the item and its collection, **except** staged edits (`isDraft: true`). Writes to live items through the API (`/items/live`) fire only these events. |
-| `site_publish` | everything |
+| Event                                                     | Invalidates                                                                                                                                          |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collection_item_published` / `_unpublished` / `_deleted` | the item and its collection                                                                                                                          |
+| `collection_item_created` / `_changed`                    | the item and its collection, **except** staged edits (`isDraft: true`). Writes to live items through the API (`/items/live`) fire only these events. |
+| `site_publish`                                            | everything                                                                                                                                           |
 
 If a payload has no `isDraft`, the handler invalidates: a wrong guess costs a refetch, never stale content.
 
@@ -334,9 +334,9 @@ import { WebflowRichText } from "next-webflow/components";
 
 <WebflowRichText
   html={post.fieldData.body}
-  components={{ blockquote: MyQuote }}             // replace elements by tag
-  webflowComponents={{ Callout: MyCallout }}       // <wf-component name="Callout"> → your component
-/>
+  components={{ blockquote: MyQuote }} // replace elements by tag
+  webflowComponents={{ Callout: MyCallout }} // <wf-component name="Callout"> → your component
+/>;
 ```
 
 - Same-site links (`/…`) render with `next/link` (base path included); others stay `<a>`.
@@ -386,6 +386,7 @@ import { WebflowImage } from "next-webflow/components";
   ```ts
   images: { remotePatterns: [{ protocol: "https", hostname: "cdn.prod.website-files.com" }] },
   ```
+
 - **Webflow's CDN doesn't resize images** (verified: `width`, `w`, `q`, `format` parameters are ignored, no `-p-500` variants for CMS images, no `/cdn-cgi/image/`), so next-webflow has no custom loader. On Vercel or `next start`, Next.js' optimizer resizes and re-encodes them.
 - **On Webflow Cloud, CMS images are always served at their original size.** Neither Webflow's CDN nor `next/image` resizes them: the Cloud builder installs its own image loader, which returns absolute URLs unchanged, so every `srcSet` entry is the original file. This is by design, not a bug: Webflow's loader skips absolute URLs on purpose, so that resizing images already hosted on Webflow's CDN isn't billed as bandwidth twice (once for the original, once for the resized copy). **Upload pre-optimized images**: resized to the largest size you display (e.g. 2× the layout width) and compressed (WebP or AVIF, or a well-compressed JPEG).
 - On Webflow Cloud, pass `unoptimized` to skip the `srcSet` that repeats the same file (the browser downloads it once either way, so this only trims HTML). For every image at once, set `images: { unoptimized: true }` in `next.config.ts`; the Cloud builder keeps your `images` settings, but this also turns off resizing for local images in `public/`, which Cloud's loader sends through its image resizer.
@@ -407,14 +408,14 @@ Renders only in draft mode: a fixed bar with "Exit preview", linking to the draf
 
 ## Tokens and scopes
 
-next-webflow reads **`WEBFLOW_CMS_TOKEN`**, a site token (Site settings → Apps & integrations → API access). It never reads `WEBFLOW_API_TOKEN`: that's the Webflow CLI's variable and holds a *workspace* token. If only `WEBFLOW_API_TOKEN` is set, the error message says so.
+next-webflow reads **`WEBFLOW_CMS_TOKEN`**, a site token (Site settings → Apps & integrations → API access). It never reads `WEBFLOW_API_TOKEN`: that's the Webflow CLI's variable and holds a _workspace_ token. If only `WEBFLOW_API_TOKEN` is set, the error message says so.
 
-| Used by | Token | Scopes |
-| --- | --- | --- |
-| Your app at runtime (`getItems`, …) and builds | `WEBFLOW_CMS_TOKEN` | CMS: Read (read-only) |
-| `npx next-webflow typegen` | same token | CMS: Read |
+| Used by                                                  | Token                                                                                                   | Scopes                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Your app at runtime (`getItems`, …) and builds           | `WEBFLOW_CMS_TOKEN`                                                                                     | CMS: Read (read-only)             |
+| `npx next-webflow typegen`                               | same token                                                                                              | CMS: Read                         |
 | `npx next-webflow webhooks register / list / unregister` | a separate site token, e.g. `WEBFLOW_ADMIN_TOKEN`, via `--token-env WEBFLOW_ADMIN_TOKEN` (or `--token`) | Sites: Read and write + CMS: Read |
-| `webflow apps deploy` (Webflow CLI, Cloud) | `WEBFLOW_API_TOKEN` | workspace token (Webflow's docs) |
+| `webflow apps deploy` (Webflow CLI, Cloud)               | `WEBFLOW_API_TOKEN`                                                                                     | workspace token (Webflow's docs)  |
 
 Keep the runtime token read-only. `--token <value>` works on every CLI command, but `--token-env` keeps the token out of your shell history.
 
@@ -478,7 +479,14 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
   // wrangler.json
   {
     "kv_namespaces": [{ "binding": "NEXT_INC_CACHE_KV", "id": "local" }],
-    "d1_databases": [{ "binding": "NEXT_TAG_CACHE_D1", "database_name": "next-tag-cache", "database_id": "0", "migrations_dir": "migrations" }]
+    "d1_databases": [
+      {
+        "binding": "NEXT_TAG_CACHE_D1",
+        "database_name": "next-tag-cache",
+        "database_id": "0",
+        "migrations_dir": "migrations",
+      },
+    ],
   }
   ```
 
@@ -488,6 +496,7 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
   ```
 
   With it, cached reads hit across isolates and a webhook's invalidation is visible about 1 s later. **`webflow apps deploy` deletes `open-next.config.ts` from your working copy after deploying** (the deploy itself used it): restore it with `git checkout -- open-next.config.ts` before the next local deploy (CI checkouts are unaffected).
+
 - **Set `NEXT_PUBLIC_BASE_PATH` to the app's mount path** (e.g. `/app`), as Webflow's docs recommend. Route handlers on Cloud don't see the mount path in the request URL, so the draft route uses this variable for its redirects (`basePath` in `createDraftHandler` overrides it). `next/link` adds the base path by itself; plain `<a>`, `<img>` and `fetch` URLs to your own app need it.
 - **Don't add `export const runtime = "edge"` to route handlers.** Webflow's docs say API routes need the edge runtime, but in our tests every edge route returned `500 Internal Server Error`, while the same handlers on the default Node.js runtime worked. next-webflow's route handlers (webhook, draft) don't export `runtime`.
 - **Upload secrets with `webflow apps env-vars import <file> --secret`, and keep them out of every `.env*` file before deploying.** That means files of any mode (`.env`, `.env.local`, `.env.production`, `.env.development.local`, `.env.test`…), in the app directory and, if the app is part of a monorepo, at its root (the nearest parent folder with a lockfile). Keep local values in a file not named `.env*` (e.g. `local.env`).

@@ -25,7 +25,11 @@ function existingWebhook(triggerType: string, url = ENDPOINT, id = `wh-${trigger
 
 /** A fake Webflow site: webhook list, creation (returns `secretKey`), deletion, collections. */
 function fakeSite({ existing = [] as Webhook[], secretField = "secretKey", forbid = "" } = {}) {
-  const state = { webhooks: [...existing], created: [] as Array<{ triggerType: string; url: string }>, deleted: [] as string[] };
+  const state = {
+    webhooks: [...existing],
+    created: [] as Array<{ triggerType: string; url: string }>,
+    deleted: [] as string[],
+  };
   let counter = 0;
   const forbidden = () => HttpResponse.json(webflowError("missing_scopes", "Missing scopes"), { status: 403 });
   server.use(
@@ -37,7 +41,10 @@ function fakeSite({ existing = [] as Webhook[], secretField = "secretKey", forbi
       if (forbid === "create") return forbidden();
       const body = (await request.json()) as { triggerType: string; url: string };
       state.created.push(body);
-      const webhook = { ...existingWebhook(body.triggerType, body.url, `wh-new-${++counter}`), [secretField]: `whsec_new_${counter}` };
+      const webhook = {
+        ...existingWebhook(body.triggerType, body.url, `wh-new-${++counter}`),
+        [secretField]: `whsec_new_${counter}`,
+      };
       state.webhooks.push(webhook);
       return HttpResponse.json(webhook, { status: 201 });
     }),
@@ -61,7 +68,12 @@ function setup(files: Record<string, string> = {}, confirmAnswer = true) {
     },
     confirm: vi.fn(async () => confirmAnswer),
   };
-  const context: CommandContext = { client: createTestClient().client, siteId: SITE, io, tokenEnv: "WEBFLOW_CMS_TOKEN" };
+  const context: CommandContext = {
+    client: createTestClient().client,
+    siteId: SITE,
+    io,
+    tokenEnv: "WEBFLOW_CMS_TOKEN",
+  };
   return { context, io, files, output, warnings };
 }
 
@@ -73,7 +85,14 @@ describe("webhooks register", () => {
     const result = await registerWebhooks(context, { url: ENDPOINT, envFile: ENV_FILE });
 
     expect(site.created).toEqual(CMS_WEBHOOK_EVENTS.map((triggerType) => ({ triggerType, url: ENDPOINT })));
-    expect(result.secrets).toEqual(["whsec_new_1", "whsec_new_2", "whsec_new_3", "whsec_new_4", "whsec_new_5", "whsec_new_6"]);
+    expect(result.secrets).toEqual([
+      "whsec_new_1",
+      "whsec_new_2",
+      "whsec_new_3",
+      "whsec_new_4",
+      "whsec_new_5",
+      "whsec_new_6",
+    ]);
     expect(parseEnvFile(files[ENV_FILE] ?? "")).toEqual({
       WEBFLOW_API_TOKEN: "keep-me",
       WEBFLOW_SITE_ID: "site",
@@ -90,7 +109,9 @@ describe("webhooks register", () => {
   });
 
   it("doesn't create duplicates for the same URL and event, and keeps existing secrets", async () => {
-    const site = fakeSite({ existing: [existingWebhook("site_publish"), existingWebhook("site_publish", "https://other.example/hook")] });
+    const site = fakeSite({
+      existing: [existingWebhook("site_publish"), existingWebhook("site_publish", "https://other.example/hook")],
+    });
     const { context, files, warnings } = setup({ [ENV_FILE]: "WEBFLOW_WEBHOOK_SECRET=whsec_old\n" });
 
     const result = await registerWebhooks(context, { url: `${ENDPOINT}`, envFile: ENV_FILE });
@@ -109,12 +130,16 @@ describe("webhooks register", () => {
     const site = fakeSite();
     const { context } = setup();
 
-    await registerWebhooks(context, { url: ENDPOINT, events: "collection_item_changed, site_publish", envFile: ENV_FILE });
+    await registerWebhooks(context, {
+      url: ENDPOINT,
+      events: "collection_item_changed, site_publish",
+      envFile: ENV_FILE,
+    });
     expect(site.created.map((webhook) => webhook.triggerType)).toEqual(["collection_item_changed", "site_publish"]);
 
-    await expect(registerWebhooks(context, { url: ENDPOINT, events: "form_submission", envFile: ENV_FILE })).rejects.toThrow(
-      /Unknown event\(s\): form_submission/,
-    );
+    await expect(
+      registerWebhooks(context, { url: ENDPOINT, events: "form_submission", envFile: ENV_FILE }),
+    ).rejects.toThrow(/Unknown event\(s\): form_submission/);
   });
 
   it("prints the secrets with --print instead of writing them", async () => {
@@ -142,7 +167,9 @@ describe("webhooks register", () => {
   ])("explains the required scopes when %s is forbidden", async (forbid, action) => {
     fakeSite({ forbid });
     const { context } = setup();
-    const error = await registerWebhooks(context, { url: ENDPOINT, envFile: ENV_FILE }).catch((caught: unknown) => caught);
+    const error = await registerWebhooks(context, { url: ENDPOINT, envFile: ENV_FILE }).catch(
+      (caught: unknown) => caught,
+    );
     expect(error).toBeInstanceOf(WebflowConfigError);
     expect((error as Error).message).toContain(action);
     expect((error as Error).message).toMatch(/Sites: Read and write.*CMS: Read/s);
@@ -151,7 +178,9 @@ describe("webhooks register", () => {
   it("doesn't need CMS access when only site_publish is registered", async () => {
     fakeSite({ forbid: "cms" });
     const { context } = setup();
-    await expect(registerWebhooks(context, { url: ENDPOINT, events: "site_publish", envFile: ENV_FILE })).resolves.toMatchObject({
+    await expect(
+      registerWebhooks(context, { url: ENDPOINT, events: "site_publish", envFile: ENV_FILE }),
+    ).resolves.toMatchObject({
       created: [expect.objectContaining({ triggerType: "site_publish" })],
     });
   });
@@ -219,7 +248,7 @@ describe("webhooks unregister", () => {
 
 describe("env file merging", () => {
   it("appends to an existing value without duplicates and keeps other lines and comments", () => {
-    const before = "# secrets\nWEBFLOW_API_TOKEN=abc\nWEBFLOW_WEBHOOK_SECRET=\"whsec_a, whsec_b\"\nOTHER=1";
+    const before = '# secrets\nWEBFLOW_API_TOKEN=abc\nWEBFLOW_WEBHOOK_SECRET="whsec_a, whsec_b"\nOTHER=1';
     expect(mergeEnvList(before, "WEBFLOW_WEBHOOK_SECRET", ["whsec_b", "whsec_c"])).toBe(
       "# secrets\nWEBFLOW_API_TOKEN=abc\nWEBFLOW_WEBHOOK_SECRET=whsec_a,whsec_b,whsec_c\nOTHER=1",
     );

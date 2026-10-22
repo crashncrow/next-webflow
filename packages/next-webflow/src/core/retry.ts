@@ -70,7 +70,5 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 function stripUndefined<T extends object>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as Partial<T>;
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
 }

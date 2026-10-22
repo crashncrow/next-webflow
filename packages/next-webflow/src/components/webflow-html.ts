@@ -12,13 +12,19 @@ export function prepareWebflowNodes(nodes: ChildNode[], inImageFigure = false): 
     if (node.name === "img") {
       if (isInheritedAlt(node.attribs.alt)) {
         node.attribs.alt = "";
-        warnInheritedAlt(node.attribs.src ?? "(no src)", "select the image in the Rich Text field and set its alt text");
+        warnInheritedAlt(
+          node.attribs.src ?? "(no src)",
+          "select the image in the Rich Text field and set its alt text",
+        );
       }
       if (inImageFigure) fitImage(node);
     } else if (node.name === "figure" && node.attribs["data-rt-type"] === "video") {
       sizeVideoFigure(node);
     }
-    prepareWebflowNodes(node.children, inImageFigure || (node.name === "figure" && node.attribs["data-rt-type"] === "image"));
+    prepareWebflowNodes(
+      node.children,
+      inImageFigure || (node.name === "figure" && node.attribs["data-rt-type"] === "image"),
+    );
   }
 }
 
@@ -28,7 +34,9 @@ export function prepareWebflowNodes(nodes: ChildNode[], inImageFigure = false): 
  */
 function fitImage(img: Element): void {
   img.attribs = Object.fromEntries(
-    Object.entries(img.attribs).filter(([name, value]) => !((name === "width" || name === "height") && value === "auto")),
+    Object.entries(img.attribs).filter(
+      ([name, value]) => !((name === "width" || name === "height") && value === "auto"),
+    ),
   );
   img.attribs.style = withStyle(img.attribs.style, "max-width:100%;height:auto");
 }
@@ -46,7 +54,10 @@ function sizeVideoFigure(figure: Element): void {
   const height = Number(match?.[2]);
   if (!(width > 0 && height > 0)) return;
 
-  figure.attribs.style = withStyle(withoutDeclaration(figure.attribs.style, "padding-bottom"), `aspect-ratio:${width}/${height}`);
+  figure.attribs.style = withStyle(
+    withoutDeclaration(figure.attribs.style, "padding-bottom"),
+    `aspect-ratio:${width}/${height}`,
+  );
   for (const wrapper of figure.children) {
     if (!(wrapper instanceof Element) || wrapper.name !== "div") continue;
     wrapper.attribs.style = withStyle(wrapper.attribs.style, "height:100%");

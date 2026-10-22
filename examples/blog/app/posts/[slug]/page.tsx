@@ -35,7 +35,14 @@ export default async function PostPage({ params }: Props) {
       <h1>{name}</h1>
       <p className="meta">{[...byline, formatDate(publishDate)].filter(Boolean).join(" · ")}</p>
       {mainImage && (
-        <WebflowImage image={mainImage} width={1200} height={630} sizes="(min-width: 760px) 728px, 100vw" priority className="hero" />
+        <WebflowImage
+          image={mainImage}
+          width={1200}
+          height={630}
+          sizes="(min-width: 760px) 728px, 100vw"
+          priority
+          className="hero"
+        />
       )}
       <WebflowRichText html={body} components={{ blockquote: Quote }} />
     </article>

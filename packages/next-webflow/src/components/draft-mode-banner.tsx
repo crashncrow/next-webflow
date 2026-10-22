@@ -51,7 +51,12 @@ export async function DraftModeBanner({
   if (!enabled) return null;
   const href = `${(basePath ?? nextBasePath() ?? "").replace(/\/$/, "")}${route}`;
   return (
-    <div role="status" data-next-webflow-draft-banner="" className={className} style={className ? undefined : defaultStyle}>
+    <div
+      role="status"
+      data-next-webflow-draft-banner=""
+      className={className}
+      style={className ? undefined : defaultStyle}
+    >
       <span>{children}</span>
       <ExitPreviewLink href={href} className={exitClassName}>
         {exitLabel}

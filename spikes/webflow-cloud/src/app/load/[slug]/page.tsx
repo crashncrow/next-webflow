@@ -10,7 +10,9 @@ import { schema } from "@/webflow/schema";
 // shell (it doesn't clash with the Webflow CLI, which reads WEBFLOW_API_TOKEN).
 const measured = createMeasuredFetch({
   log: (record) =>
-    console.log(`[measure] ${new Date().toISOString()} ${record.status} ${record.ms}ms ${record.bytes}B rl=${record.rateLimitRemaining} cdn=${record.cdnCache} ${record.path}`),
+    console.log(
+      `[measure] ${new Date().toISOString()} ${record.status} ${record.ms}ms ${record.bytes}B rl=${record.rateLimitRemaining} cdn=${record.cdnCache} ${record.path}`,
+    ),
 });
 const cms = createWebflow({
   schema,

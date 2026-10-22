@@ -88,7 +88,10 @@ export const postsCollectionResponse = {
   fields: [
     ...realPostsCollection.fields.map((field) =>
       field.slug === "category"
-        ? { ...field, validations: { options: [...(field.validations?.options ?? []), { id: TUTORIALS_ID, name: "Tutorials" }] } }
+        ? {
+            ...field,
+            validations: { options: [...(field.validations?.options ?? []), { id: TUTORIALS_ID, name: "Tutorials" }] },
+          }
         : field,
     ),
     {

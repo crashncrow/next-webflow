@@ -138,9 +138,7 @@ type OptionValue<F extends FieldSchema> =
       : WebflowOption)
   | UnknownOption;
 
-export type FieldValue<F extends FieldSchema> = F["type"] extends "Option"
-  ? OptionValue<F>
-  : FieldValueMap[F["type"]];
+export type FieldValue<F extends FieldSchema> = F["type"] extends "Option" ? OptionValue<F> : FieldValueMap[F["type"]];
 
 type RequiredKeys<C extends CollectionSchema> = {
   [K in keyof C["fields"]]: C["fields"][K]["required"] extends true ? K : never;

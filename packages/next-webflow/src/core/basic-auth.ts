@@ -36,7 +36,10 @@ function decodeCredentials(header: string | null): { username: string; password:
  * 401 with a login prompt, or 503 when no password is configured.
  * Accepts a `Request` (proxy / middleware / route handler) or `Headers` (`await headers()` in a page).
  */
-export async function requireBasicAuth(input: Request | Headers, options: BasicAuthOptions): Promise<Response | undefined> {
+export async function requireBasicAuth(
+  input: Request | Headers,
+  options: BasicAuthOptions,
+): Promise<Response | undefined> {
   const noStore = { "cache-control": "private, no-store" };
   if (!options.password) {
     return new Response("This page is disabled: no password is configured.", { status: 503, headers: noStore });
@@ -44,7 +47,8 @@ export async function requireBasicAuth(input: Request | Headers, options: BasicA
   const headers = input instanceof Headers ? input : input.headers;
   const credentials = decodeCredentials(headers.get("authorization"));
   const passwordOk = await sameSecret(credentials?.password ?? "", options.password);
-  const usernameOk = options.username === undefined || (await sameSecret(credentials?.username ?? "", options.username));
+  const usernameOk =
+    options.username === undefined || (await sameSecret(credentials?.username ?? "", options.username));
   if (credentials && passwordOk && usernameOk) return undefined;
   const realm = (options.realm ?? "Restricted").replace(/["\\]/g, "");
   return new Response("Authentication required.", {

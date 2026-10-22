@@ -19,7 +19,7 @@ export function parseEnvFile(content: string): Record<string, string> {
 export function mergeEnvList(content: string, key: string, values: readonly string[]): string {
   const pattern = lineFor(key);
   const lines = content.split(/\r?\n/);
-  const index = lines.findIndex((line) => pattern.test(line));
+  const index = lines.findLastIndex((line) => pattern.test(line));
   const existing = index === -1 ? [] : parseSecrets(unquote(pattern.exec(lines[index] ?? "")?.[1] ?? ""));
   const line = `${key}=${parseSecrets([...existing, ...values]).join(",")}`;
 
@@ -33,6 +33,6 @@ export function mergeEnvList(content: string, key: string, values: readonly stri
 
 function unquote(raw: string): string {
   const value = raw.trim();
-  const quoted = /^(['"])(.*)\1$/.exec(value);
+  const quoted = /^(['"])(.*?)\1(?:\s*#.*)?$/.exec(value);
   return quoted ? (quoted[2] ?? "") : value.replace(/\s+#.*$/, "");
 }

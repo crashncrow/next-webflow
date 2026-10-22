@@ -264,3 +264,47 @@ describe("env file merging", () => {
     expect(parseEnvFile("export A=1\nB='two words'\n# C=3\nD=4 # comment")).toEqual({ A: "1", B: "two words", D: "4" });
   });
 });
+
+it.each([false, true])("preserves received secrets when the second creation fails (print=%s)", async (print) => {
+  fakeSite();
+  let posts = 0;
+  server.use(
+    http.post(WEBHOOKS, () => {
+      if (++posts === 2) return HttpResponse.json({ message: "creation failed" }, { status: 400 });
+      return HttpResponse.json({
+        ...existingWebhook("collection_item_created", ENDPOINT, "created-1"),
+        secretKey: "new-secret",
+      });
+    }),
+  );
+  const { context, files, output } = setup({ [ENV_FILE]: 'WEBFLOW_WEBHOOK_SECRET="old#secret" # keep\n' });
+  await expect(
+    registerWebhooks(context, {
+      url: ENDPOINT,
+      envFile: ENV_FILE,
+      print,
+      events: "collection_item_created,collection_item_changed,site_publish",
+    }),
+  ).rejects.toThrow(/Created: collection_item_created \(created-1\).*creation failed/);
+  expect(posts).toBe(2);
+  if (print) expect(output).toContain("\nWEBFLOW_WEBHOOK_SECRET=new-secret");
+  else expect(parseEnvFile(files[ENV_FILE] ?? "").WEBFLOW_WEBHOOK_SECRET).toBe("old#secret,new-secret");
+});
+
+it.each([
+  ['"value"', "value"],
+  ["'value'", "value"],
+  ['"value" # comment', "value"],
+  ["'value' # comment", "value"],
+  ['"val#ue" # comment', "val#ue"],
+  ["'val#ue' # comment", "val#ue"],
+  ["value # comment", "value"],
+])("parses dotenv value %s", (input, expected) => {
+  expect(parseEnvFile(`KEY=${input}`).KEY).toBe(expected);
+});
+
+it("updates the last duplicate key without removing earlier lines", () => {
+  const merged = mergeEnvList("KEY=first\nOTHER=x\nKEY=last\n", "KEY", ["new"]);
+  expect(merged).toBe("KEY=first\nOTHER=x\nKEY=last,new\n");
+  expect(parseEnvFile(merged).KEY).toBe("last,new");
+});

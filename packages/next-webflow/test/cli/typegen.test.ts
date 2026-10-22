@@ -164,3 +164,23 @@ describe("typegen", () => {
     });
   });
 });
+
+it("warns once with the collection, slug and unknown type, and omits the field", async () => {
+  fakeSite({
+    list: [
+      {
+        id: "future-id",
+        slug: "future",
+        fields: [
+          { slug: "new-field", type: "FutureType" },
+          { slug: "name", type: "PlainText" },
+        ],
+      },
+    ],
+  });
+  const { context, files, warnings } = setup();
+  await expect(runTypegen(context)).resolves.toBe(0);
+  expect(files[SCHEMA]).not.toContain("FutureType");
+  expect(files[SCHEMA]).toContain("name:");
+  expect(warnings().split("\n")).toEqual([expect.stringMatching(/future.*new-field.*FutureType.*report/)]);
+});

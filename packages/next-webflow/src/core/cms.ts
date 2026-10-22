@@ -348,9 +348,9 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
         `The generated schema for "${slug}" is out of date (${describe(mismatch)}). ` +
           "Using the live schema from the API; run `npx next-webflow typegen` to update your types.",
       );
-      stale.add(slug);
       try {
         const fresh = await fetchSchemaById(collection.id);
+        stale.add(slug);
         results = raws.map((raw) => normalizeItem(raw, fresh));
         mismatch = mergeMismatches(results.map((result) => result.mismatch));
       } catch (error) {

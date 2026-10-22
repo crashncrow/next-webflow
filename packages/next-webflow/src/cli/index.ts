@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CLI (Node only): `next-webflow typegen` and `next-webflow webhooks register|list|unregister`.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { writeCliFile } from "./file";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { createWebflowClient } from "../core/client";
@@ -55,10 +55,7 @@ const io: CliIO = {
   log: (message) => console.log(message),
   warn: (message) => console.warn(`⚠ ${message}`),
   readFile: (path) => (existsSync(path) ? readFileSync(path, "utf8") : undefined),
-  writeFile(path, content, options) {
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, content, { mode: options?.secret ? 0o600 : 0o644 });
-  },
+  writeFile: writeCliFile,
   async confirm(question) {
     if (!process.stdin.isTTY) return false;
     const rl = createInterface({ input: process.stdin, output: process.stdout });

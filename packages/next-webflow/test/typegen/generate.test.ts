@@ -140,3 +140,46 @@ describe("index.ts template", () => {
     expect(importsGeneratedSchema(source)).toBe(expected);
   });
 });
+
+it("generates a schema that typechecks when the API adds an unknown field type", async () => {
+  const ts = await import("typescript");
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const dir = mkdtempSync(join(tmpdir(), "webflow-typegen-"));
+  try {
+    const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const { source, warnings } = generateSchemaFile(
+      [
+        {
+          id: "future",
+          slug: "posts",
+          fields: [
+            { slug: "future-field", type: "FutureType" },
+            { slug: "title", type: "PlainText" },
+          ],
+        },
+      ],
+      { importFrom: `${packageRoot}src/index` },
+    );
+    expect(source).not.toContain("future-field");
+    expect(warnings).toEqual([expect.stringMatching(/posts.*future-field.*FutureType.*report/)]);
+    const path = join(dir, "schema.ts");
+    writeFileSync(path, source);
+    const configPath = `${packageRoot}tsconfig.json`;
+    const config = ts.readConfigFile(configPath, ts.sys.readFile);
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, packageRoot);
+    const program = ts.createProgram([path], parsed.options);
+    const diagnostics = ts.getPreEmitDiagnostics(program);
+    expect(
+      ts.formatDiagnostics(diagnostics, {
+        getCurrentDirectory: () => packageRoot,
+        getCanonicalFileName: (name) => name,
+        getNewLine: () => "\n",
+      }),
+    ).toBe("");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}, 15000);

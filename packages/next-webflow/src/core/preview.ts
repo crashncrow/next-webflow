@@ -41,6 +41,11 @@ export async function createPreviewUrl(options: CreatePreviewUrlOptions): Promis
   const [secret] = resolvePreviewSecrets(options.secret);
   if (!secret) throw new Error(`No preview secret: set ${ENV.previewSecret} or pass \`secret\`.`);
   const expiresIn = options.expiresIn ?? DEFAULT_PREVIEW_EXPIRES_IN_SECONDS;
+  if (expiresIn > DEFAULT_MAX_PREVIEW_LIFETIME_SECONDS) {
+    throw new Error(
+      `\`expiresIn\` must not exceed ${DEFAULT_MAX_PREVIEW_LIFETIME_SECONDS} seconds (30 days). The handler can configure maxLifetimeSeconds, but createPreviewUrl enforces this maximum.`,
+    );
+  }
   if (!(expiresIn > 0)) throw new Error("`expiresIn` must be a positive number of seconds.");
   const expires = Math.floor((options.now ?? Date.now()) / 1000) + Math.round(expiresIn);
   const signature = toHex(await hmacSha256(secret, payload(options.collection, options.itemId, expires)));

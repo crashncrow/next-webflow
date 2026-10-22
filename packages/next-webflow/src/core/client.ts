@@ -176,7 +176,11 @@ export function createWebflowClient(config: WebflowClientConfig = {}, internals:
         throw new WebflowNetworkError(`Request failed: ${method} ${url}`, { cause });
       }
 
-      config.onResponse?.({ method, url, status: response.status, bytes: bodyText.length, init: options.init });
+      try {
+        config.onResponse?.({ method, url, status: response.status, bytes: bodyText.length, init: options.init });
+      } catch {
+        // Observability callbacks must not change the response or interrupt pagination.
+      }
       if (response.ok) return parseBody<T>(bodyText, method, url);
 
       const retryAfterMs = response.status === 429 ? parseRetryAfter(response.headers.get("retry-after")) : undefined;

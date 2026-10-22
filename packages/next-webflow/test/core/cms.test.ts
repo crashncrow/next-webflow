@@ -396,3 +396,23 @@ describe("never-published collection (live list answers 404)", () => {
     await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowNotFoundError);
   });
 });
+
+it("retries a failed schema refresh on later reads and adopts the successful schema", async () => {
+  let attempts = 0;
+  server.use(
+    http.get(`${DATA_API}/collections/${POSTS_ID}`, () =>
+      ++attempts <= 2
+        ? HttpResponse.json({ message: "temporarily unavailable" }, { status: 400 })
+        : HttpResponse.json(postsCollectionResponse),
+    ),
+    http.get(LIVE, () => list([rawPost({ fieldData: { category: TUTORIALS_ID } })])),
+  );
+  const { cms, logger } = setup();
+  for (let i = 0; i < 2; i++) {
+    expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: undefined });
+  }
+  expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: "Tutorials" });
+  expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: "Tutorials" });
+  expect(attempts).toBe(3);
+  expect(logger.warn.mock.calls.filter(([message]) => String(message).includes("Could not fetch"))).toHaveLength(1);
+});

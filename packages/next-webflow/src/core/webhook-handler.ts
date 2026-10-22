@@ -60,6 +60,21 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
 /** Builds a `(request) => Response` webhook endpoint: verify, invalidate, answer 200. */
 export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps: WebhookHandlerDeps) {
   const logger: WebhookLogger = options.logger ?? { warn: console.warn, error: console.error };
+  let loggerErrorReported = false;
+  const log = (level: keyof WebhookLogger, message: string) => {
+    try {
+      logger[level]?.(message);
+    } catch (error) {
+      if (loggerErrorReported) return;
+      loggerErrorReported = true;
+      try {
+        const report = level === "error" ? logger.warn : (logger.error ?? logger.warn);
+        report.call(logger, `[next-webflow] Logger ${level} failed: ${String(error)}`);
+      } catch {
+        // A broken logger must not change webhook delivery semantics.
+      }
+    }
+  };
   const profile = options.profile ?? { expire: 0 };
 
   return async function handleWebhook(request: Request): Promise<Response> {
@@ -71,16 +86,16 @@ export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps
 
     if (!signature && !timestamp) {
       if (!options.allowUnsigned) {
-        logger.warn(`[next-webflow] ${UNSIGNED_WEBHOOK_MESSAGE}`);
+        log("warn", `[next-webflow] ${UNSIGNED_WEBHOOK_MESSAGE}`);
         return json(401, { ok: false, error: UNSIGNED_WEBHOOK_MESSAGE });
       }
-      logger.warn("[next-webflow] Accepting an unsigned webhook because allowUnsigned is true (insecure).");
+      log("warn", "[next-webflow] Accepting an unsigned webhook because allowUnsigned is true (insecure).");
     } else {
       if (secrets.length === 0) {
         const message =
           `No webhook secret configured. Set ${ENV.webhookSecret} (comma-separated, one per webhook) ` +
           "with the secrets printed by `npx next-webflow webhooks register`.";
-        logger.error?.(`[next-webflow] ${message}`);
+        log("error", `[next-webflow] ${message}`);
         return json(500, { ok: false, error: message });
       }
       const result = await verifyWebflowSignature({
@@ -99,7 +114,7 @@ export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps
           expired: "Webhook timestamp is too old (or in the future); possible replay.",
           invalid: `Invalid signature: no secret in ${ENV.webhookSecret} matches.`,
         }[result.reason];
-        logger.warn(`[next-webflow] Webhook rejected: ${message}`);
+        log("warn", `[next-webflow] Webhook rejected: ${message}`);
         return json(status, { ok: false, error: message });
       }
     }
@@ -125,7 +140,7 @@ export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps
       await options.onEvent?.(event, tags);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error?.(`[next-webflow] Webhook ${event.triggerType} failed: ${message}`);
+      log("error", `[next-webflow] Webhook ${event.triggerType} failed: ${message}`);
       return json(500, { ok: false, error: message });
     }
 
@@ -133,7 +148,8 @@ export function createWebhookRequestHandler(options: WebhookHandlerOptions, deps
       (item) =>
         `${item.id} isDraft=${item.isDraft} lastPublished=${item.lastPublished} lastUpdated=${item.lastUpdated}`,
     );
-    logger.info?.(
+    log(
+      "info",
       `[next-webflow] ${event.triggerType}: revalidated ${tags.length ? tags.join(", ") : "nothing"}` +
         (items.length ? ` (${items.join("; ")})` : ""),
     );

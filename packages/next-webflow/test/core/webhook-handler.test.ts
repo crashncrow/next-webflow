@@ -202,3 +202,22 @@ describe("webhook handler", () => {
     });
   });
 });
+
+it.each([false, true])(
+  "still revalidates and answers 200 with a throwing logger (reporter throws=%s)",
+  async (brokenReporter) => {
+    const logger = {
+      info: vi.fn(() => {
+        throw new Error("info failed");
+      }),
+      warn: vi.fn(),
+      error: vi.fn(() => {
+        if (brokenReporter) throw new Error("error failed");
+      }),
+    };
+    const { handler, revalidated } = setup({ logger });
+    for (let i = 0; i < 2; i++) expect((await handler(webhookRequest(webhookBodies.site_publish))).status).toBe(200);
+    expect(revalidated).toHaveLength(2);
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("info failed"));
+  },
+);

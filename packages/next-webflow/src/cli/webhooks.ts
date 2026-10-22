@@ -152,50 +152,58 @@ export async function registerWebhooks(context: CommandContext, options: Registe
   }
 
   const created: Webhook[] = [];
-  for (const event of toCreate) {
-    const webhook = await withScopeHint(context, `create a "${event}" webhook`, () =>
-      context.client.request<Webhook>(`/sites/${context.siteId}/webhooks`, {
-        method: "POST",
-        body: { triggerType: event, url },
-      }),
-    );
-    created.push(webhook);
-    io.log(`Created ${event} → ${url} (${webhook.id})`);
-  }
-  for (const webhook of skipped) {
-    io.log(`Skipped ${webhook.triggerType}: already registered for this URL (${webhook.id}).`);
-  }
-  if (skipped.length > 0) {
-    io.warn(
-      "Existing webhooks keep their old secrets, which Webflow can't show again. If you lost them, " +
-        "run `next-webflow webhooks unregister --url …` and register again.",
-    );
-  }
-
-  const secrets = created.flatMap((webhook) => {
-    const secret = webhook.secretKey ?? webhook.secret;
-    return typeof secret === "string" && secret ? [secret] : [];
-  });
-  if (created.length > 0 && secrets.length < created.length) {
-    io.warn(
-      "Webflow didn't return a signing secret for every webhook. Webhooks created with an OAuth app are " +
-        "signed with the app's client secret: put that in " +
-        `${ENV.webhookSecret} instead.`,
-    );
-  }
-
-  if (secrets.length > 0) {
-    if (options.print) {
-      io.log(`\n${ENV.webhookSecret}=${secrets.join(",")}`);
-      io.warn(`Add these to ${ENV.webhookSecret} (append to existing values, comma-separated).`);
-    } else {
-      const current = io.readFile(options.envFile) ?? "";
-      io.writeFile(options.envFile, mergeEnvList(current, ENV.webhookSecret, secrets), { secret: true });
-      io.log(`Saved ${secrets.length} secret(s) to ${ENV.webhookSecret} in ${options.envFile}.`);
+  let secrets: string[];
+  try {
+    for (const event of toCreate) {
+      const webhook = await withScopeHint(context, `create a "${event}" webhook`, () =>
+        context.client.request<Webhook>(`/sites/${context.siteId}/webhooks`, {
+          method: "POST",
+          body: { triggerType: event, url },
+        }),
+      );
+      created.push(webhook);
+      io.log(`Created ${event} → ${url} (${webhook.id})`);
     }
-    io.warn("Webflow shows webhook secrets only once: keep them safe; they can't be retrieved later.");
-  }
+  } catch (error) {
+    throw new WebflowConfigError(
+      `Webhook registration failed. Created: ${created.map((webhook) => `${webhook.triggerType} (${webhook.id})`).join(", ") || "none"}. ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  } finally {
+    for (const webhook of skipped) {
+      io.log(`Skipped ${webhook.triggerType}: already registered for this URL (${webhook.id}).`);
+    }
+    if (skipped.length > 0) {
+      io.warn(
+        "Existing webhooks keep their old secrets, which Webflow can't show again. If you lost them, " +
+          "run `next-webflow webhooks unregister --url …` and register again.",
+      );
+    }
 
+    secrets = created.flatMap((webhook) => {
+      const secret = webhook.secretKey ?? webhook.secret;
+      return typeof secret === "string" && secret ? [secret] : [];
+    });
+    if (created.length > 0 && secrets.length < created.length) {
+      io.warn(
+        "Webflow didn't return a signing secret for every webhook. Webhooks created with an OAuth app are " +
+          "signed with the app's client secret: put that in " +
+          `${ENV.webhookSecret} instead.`,
+      );
+    }
+
+    if (secrets.length > 0) {
+      if (options.print) {
+        io.log(`\n${ENV.webhookSecret}=${secrets.join(",")}`);
+        io.warn(`Add these to ${ENV.webhookSecret} (append to existing values, comma-separated).`);
+      } else {
+        const current = io.readFile(options.envFile) ?? "";
+        io.writeFile(options.envFile, mergeEnvList(current, ENV.webhookSecret, secrets), { secret: true });
+        io.log(`Saved ${secrets.length} secret(s) to ${ENV.webhookSecret} in ${options.envFile}.`);
+      }
+      io.warn("Webflow shows webhook secrets only once: keep them safe; they can't be retrieved later.");
+    }
+  }
   return { created, skipped, secrets };
 }
 

@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -70,4 +70,21 @@ describe.skipIf(!existsSync(dist))("built package in plain Node ESM", () => {
     const output = execFileSync(process.execPath, [cli, "--help"], { cwd: packageRoot, encoding: "utf8" });
     expect(output).toMatch(/next-webflow webhooks <command>/);
   });
+});
+
+// Exercise the built command as users invoke it, including its exit status.
+it.skipIf(!existsSync(dist))("preview-url rejects lifetimes over the handler maximum", () => {
+  const cli = fileURLToPath(new URL("../dist/cli.mjs", import.meta.url));
+  const args = [cli, "preview-url", "--url", "/api/draft", "--collection", "posts", "--item", "item", "--expires"];
+  const options = {
+    cwd: packageRoot,
+    encoding: "utf8" as const,
+    env: { ...process.env, WEBFLOW_PREVIEW_SECRET: "test-preview-secret" },
+  };
+  const valid = spawnSync(process.execPath, [...args, "2592000"], options);
+  expect(valid.status).toBe(0);
+  expect(valid.stdout).toContain("/api/draft?collection=posts");
+  const invalid = spawnSync(process.execPath, [...args, "2592001"], options);
+  expect(invalid.status).toBe(1);
+  expect(invalid.stderr).toMatch(/2592000.*30 days.*maxLifetimeSeconds/);
 });

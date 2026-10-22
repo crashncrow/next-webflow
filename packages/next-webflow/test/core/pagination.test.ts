@@ -178,3 +178,17 @@ describe("paginate", () => {
     await expect(client.paginate(ITEMS_PATH, { offset: 1.5 })).rejects.toThrow(RangeError);
   });
 });
+
+it("returns every page when onResponse throws", async () => {
+  collection(250);
+  let calls = 0;
+  const { client } = createTestClient({
+    onResponse: () => {
+      calls++;
+      throw new Error("metrics failed");
+    },
+  });
+  const result = await client.paginate<{ id: string }>(ITEMS_PATH);
+  expect(ids(result.items)).toEqual(range(0, 250));
+  expect(calls).toBe(3);
+});

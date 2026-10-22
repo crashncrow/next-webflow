@@ -1,7 +1,8 @@
 // Signed, expiring preview links for draft mode. The secret never travels in the URL: links carry
 // `collection`, `item`, `expires` and an HMAC-SHA256 of them (crypto.subtle, constant-time compare).
 import { ENV, readEnv } from "./env";
-import { constantTimeEqual, hexToBytes, hmacSha256, parseSecrets } from "./webhook";
+import { constantTimeEqual, hexToBytes, hmacSha256 } from "./crypto";
+import { parseSecrets } from "./webhook";
 
 /** Default lifetime of a preview link. */
 export const DEFAULT_PREVIEW_EXPIRES_IN_SECONDS = 60 * 60;
@@ -30,13 +31,14 @@ const payload = (collection: string, itemId: string, expires: number) =>
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
-function resolveSecrets(secret: string | readonly string[] | undefined): string[] {
+/** `secret`, or `WEBFLOW_PREVIEW_SECRET` (comma-separated). */
+export function resolvePreviewSecrets(secret: string | readonly string[] | undefined): string[] {
   return parseSecrets(secret ?? readEnv(ENV.previewSecret));
 }
 
 /** Builds a signed preview link for one item. Server-side only (it needs the secret). */
 export async function createPreviewUrl(options: CreatePreviewUrlOptions): Promise<string> {
-  const [secret] = resolveSecrets(options.secret);
+  const [secret] = resolvePreviewSecrets(options.secret);
   if (!secret) throw new Error(`No preview secret: set ${ENV.previewSecret} or pass \`secret\`.`);
   const expiresIn = options.expiresIn ?? DEFAULT_PREVIEW_EXPIRES_IN_SECONDS;
   if (!(expiresIn > 0)) throw new Error("`expiresIn` must be a positive number of seconds.");

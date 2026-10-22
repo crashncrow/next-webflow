@@ -1,9 +1,7 @@
 import {
   createWebflowClient,
-  MAX_PAGE_SIZE,
   type FetchInit,
   type ResponseInfo,
-  type WebflowClient,
   type WebflowClientConfig,
   type WebflowHost,
   type WebflowListResponse,
@@ -63,6 +61,10 @@ export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefine
    * invalidate. `cdn`: Content Delivery API, cached up to 300 s by Webflow, no rate limit on hits.
    */
   source?: ContentSource | undefined;
+  /**
+   * How reads are cached and whether they're drafts. `createWebflow` passes the Next.js data cache
+   * (with draft mode). Without it, `createWebflowCms` reads uncached and never in draft mode.
+   */
   cache?: CacheAdapter | undefined;
   /** `warn` for problems (stale schema…); optional `debug` for one-time notes (never-published collections). */
   logger?: (Pick<Console, "warn"> & Partial<Pick<Console, "debug">>) | undefined;
@@ -83,7 +85,8 @@ export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefine
 
 export type SortBy = "createdOn" | "lastPublished" | "lastUpdated" | "name" | "slug";
 
-export interface FilterOperators {
+/** A type alias (not an interface) so it's assignable to the query serializer's index signature. */
+export type FilterOperators = {
   eq?: QueryValue;
   ne?: QueryValue;
   gt?: QueryValue;
@@ -95,7 +98,7 @@ export interface FilterOperators {
   contains?: string;
   ncontains?: string;
   exists?: boolean;
-}
+};
 
 export interface ReadOptions {
   /** Locale to read; defaults to the primary locale. */
@@ -203,17 +206,14 @@ interface ReadContext {
 
 export function createWebflowCms<S extends WebflowSchema | undefined = undefined>(
   config: WebflowCmsConfig<S> = {},
-  providedClient?: WebflowClient,
 ): WebflowCms<S> {
-  const client =
-    providedClient ??
-    createWebflowClient({
-      ...config,
-      onResponse: (info) => {
-        config.onResponse?.(info);
-        watchResponseSize(info);
-      },
-    });
+  const client = createWebflowClient({
+    ...config,
+    onResponse: (info) => {
+      config.onResponse?.(info);
+      watchResponseSize(info);
+    },
+  });
   const generated: WebflowSchema | undefined = config.schema;
   const maxIncludeItems = config.maxIncludeItems ?? DEFAULT_MAX_INCLUDE_ITEMS;
   const maxBuildListItems = config.maxBuildListItems ?? DEFAULT_MAX_BUILD_LIST_ITEMS;
@@ -372,22 +372,13 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     return results.map((result) => result.item);
   }
 
+  /** Filter keys may be camelCase field names or API slugs. `toSearchParams` skips `undefined` and empty filters. */
   function buildQuery(collection: CollectionSchema, options: GetItemsOptions): QueryParams {
-    const filter: Record<string, QueryValue> = {};
+    const filter: Record<string, FilterOperators | undefined> = {};
     for (const [key, operators] of Object.entries(options.filter ?? {})) {
-      if (!operators) continue;
-      const slug = collection.fields[key]?.slug ?? key;
-      filter[slug] = Object.fromEntries(Object.entries(operators).filter(([, value]) => value !== undefined)) as Record<
-        string,
-        QueryValue
-      >;
+      filter[collection.fields[key]?.slug ?? key] = operators;
     }
-    return {
-      sortBy: options.sortBy,
-      sortOrder: options.sortOrder,
-      cmsLocaleId: options.cmsLocaleId,
-      ...(Object.keys(filter).length > 0 && { filter }),
-    };
+    return { sortBy: options.sortBy, sortOrder: options.sortOrder, cmsLocaleId: options.cmsLocaleId, filter };
   }
 
   const itemsPath = (collectionId: string, draft: boolean) =>
@@ -407,6 +398,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
       limit?: number | undefined;
       offset?: number | undefined;
       signal?: AbortSignal | undefined;
+      stopIfTotalOver?: number | undefined;
     },
   ) {
     return readLive(
@@ -419,6 +411,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
           limit: options.limit,
           offset: options.offset,
           signal: options.signal,
+          stopIfTotalOver: options.stopIfTotalOver,
           init: ctx.init(listTags(collection.id)),
         }),
       { items: [] as WebflowRawItem[], total: 0 },
@@ -479,16 +472,23 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
       );
       raw = items.find((item) => item.fieldData.slug === itemSlug);
     }
-    if (!raw) return null;
-    if (options.raw) return raw;
-    const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw]), options);
-    return item ?? null;
+    return finishOne(slug, collection, ctx, raw, options);
   }
 
   async function getItem(slug: string, itemId: string, options: ReadOptions & { raw?: boolean } = {}) {
     assertIncludeAllowed(options);
     const [collection, ctx] = await Promise.all([resolveCollection(slug), context()]);
-    const raw = await fetchItemById(collection.id, itemId, ctx, options);
+    return finishOne(slug, collection, ctx, await fetchItemById(collection.id, itemId, ctx, options), options);
+  }
+
+  /** A single raw item → `null`, the raw item, or the normalized item with its includes. */
+  async function finishOne(
+    slug: string,
+    collection: CollectionSchema,
+    ctx: ReadContext,
+    raw: WebflowRawItem | null | undefined,
+    options: ReadOptions & { raw?: boolean },
+  ) {
     if (!raw) return null;
     if (options.raw) return raw;
     const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw]), options);
@@ -534,38 +534,20 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     if (ctx.draft) {
       raws = await byId();
     } else {
-      const query = { cmsLocaleId: options.cmsLocaleId };
-      const first = await readLive(
-        schema,
-        ctx,
-        () =>
-          client.request<WebflowListResponse<WebflowRawItem>>(itemsPath(collectionId, false), {
-            host: ctx.host,
-            query: { ...query, offset: 0, limit: MAX_PAGE_SIZE },
-            signal: options.signal,
-            init: ctx.init(listTags(collectionId)),
-          }),
-        emptyList(),
-      );
-      const total = first.pagination.total;
-      if (total <= maxIncludeItems) {
-        const rest =
-          total > first.items.length
-            ? (
-                await client.paginate<WebflowRawItem>(itemsPath(collectionId, false), {
-                  host: ctx.host,
-                  query,
-                  offset: MAX_PAGE_SIZE,
-                  signal: options.signal,
-                  init: ctx.init(listTags(collectionId)),
-                })
-              ).items
-            : [];
-        raws = [...first.items, ...rest];
+      // The first page tells the total; the rest is only fetched when the collection is small enough.
+      const list = await listAll(schema, ctx, {
+        query: buildQuery(schema, { cmsLocaleId: options.cmsLocaleId }),
+        signal: options.signal,
+        stopIfTotalOver: maxIncludeItems,
+      });
+      if (list.total <= maxIncludeItems) {
+        // Normalize only what's referenced, not the whole collection.
+        const wanted = new Set(ids);
+        raws = list.items.filter((raw) => wanted.has(raw.id));
       } else {
         debugOnce(
           `by-id:${collectionId}`,
-          `"${slug}" has ${total} items (over maxIncludeItems, ${maxIncludeItems}): include reads only the referenced items, by ID.`,
+          `"${slug}" has ${list.total} items (over maxIncludeItems, ${maxIncludeItems}): include reads only the referenced items, by ID.`,
         );
         raws = await byId();
       }

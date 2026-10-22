@@ -12,6 +12,12 @@ import { NOW, SECRET, sign } from "../webhook-helpers";
 
 const body = JSON.stringify(webhookBodies.site_publish);
 
+/** Parses a webhook body, then maps it to tags (what the handler does). */
+const tagsFor = (body: unknown, options?: Parameters<typeof tagsForEvent>[1]) => {
+  const event = parseWebhookEvent(body);
+  return event ? tagsForEvent(event, options) : [];
+};
+
 describe("verifyWebflowSignature", () => {
   const verify = (overrides: Partial<Parameters<typeof verifyWebflowSignature>[0]> = {}) =>
     verifyWebflowSignature({
@@ -173,11 +179,11 @@ describe("tagsForEvent (default mapping)", () => {
   const posts = `webflow:collection:${POSTS_ID}`;
 
   it("site_publish → the site tag", () => {
-    expect(tagsForEvent(webhookBodies.site_publish)).toEqual(["webflow"]);
+    expect(tagsFor(webhookBodies.site_publish)).toEqual(["webflow"]);
   });
 
   it("collection_item_published → item and collection tags for every item", () => {
-    expect(tagsForEvent(webhookBodies.collection_item_published)).toEqual([
+    expect(tagsFor(webhookBodies.collection_item_published)).toEqual([
       posts,
       post,
       `webflow:item:${IDS.POST_B}`,
@@ -187,66 +193,61 @@ describe("tagsForEvent (default mapping)", () => {
   });
 
   it("real published / unpublished / deleted → item and collection", () => {
-    expect(tagsForEvent(real.published)).toEqual([posts, post]);
-    expect(tagsForEvent(real.unpublished)).toEqual([posts, `webflow:item:${IDS.UNPUBLISHED}`]);
-    expect(tagsForEvent(real.deleted)).toEqual([posts, `webflow:item:${IDS.DELETED}`]);
+    expect(tagsFor(real.published)).toEqual([posts, post]);
+    expect(tagsFor(real.unpublished)).toEqual([posts, `webflow:item:${IDS.UNPUBLISHED}`]);
+    expect(tagsFor(real.deleted)).toEqual([posts, `webflow:item:${IDS.DELETED}`]);
   });
 
   describe("collection_item_changed: skip only isDraft === true (fail-safe)", () => {
     it("staged edit (isDraft: true) → nothing; item + collection when opted in", () => {
-      expect(tagsForEvent(real.changedStaged)).toEqual([]);
-      expect(tagsForEvent(real.changedStaged, { invalidateOnStagedChanges: true })).toEqual([posts, post]);
+      expect(tagsFor(real.changedStaged)).toEqual([]);
+      expect(tagsFor(real.changedStaged, { invalidateOnStagedChanges: true })).toEqual([posts, post]);
     });
 
     it("the changed that accompanies a publish (isDraft: false) → item and collection", () => {
-      expect(tagsForEvent(real.changedOnPublish)).toEqual([posts, post]);
+      expect(tagsFor(real.changedOnPublish)).toEqual([posts, post]);
     });
 
     it("API write to a live item (isDraft: false, the only event it fires) → item and collection", () => {
-      expect(tagsForEvent(real.changedLiveApi)).toEqual([posts, post]);
+      expect(tagsFor(real.changedLiveApi)).toEqual([posts, post]);
     });
 
     it("no isDraft in the payload → item and collection", () => {
       const payload: Partial<typeof real.changedLiveApi.payload> = { ...real.changedLiveApi.payload };
       delete payload.isDraft;
-      expect(tagsForEvent({ triggerType: "collection_item_changed", payload })).toEqual([posts, post]);
+      expect(tagsFor({ triggerType: "collection_item_changed", payload })).toEqual([posts, post]);
     });
 
     it("ignores the timestamps: isDraft: true with equal lastPublished/lastUpdated → nothing", () => {
       const payload = { ...real.changedLiveApi.payload, isDraft: true };
-      expect(tagsForEvent({ triggerType: "collection_item_changed", payload })).toEqual([]);
+      expect(tagsFor({ triggerType: "collection_item_changed", payload })).toEqual([]);
     });
 
     it("reads the docs' `draft` spelling too", () => {
       const payload = { ...itemPayload(IDS.POST_A, "x", POSTS_ID, "plain"), draft: true };
-      expect(tagsForEvent({ triggerType: "collection_item_changed", payload })).toEqual([]);
+      expect(tagsFor({ triggerType: "collection_item_changed", payload })).toEqual([]);
     });
   });
 
   it("collection_item_created follows the same rule", () => {
-    expect(tagsForEvent(real.createdDesigner)).toEqual([]);
-    expect(tagsForEvent(real.createdDesigner, { invalidateOnStagedChanges: true })).toEqual([
+    expect(tagsFor(real.createdDesigner)).toEqual([]);
+    expect(tagsFor(real.createdDesigner, { invalidateOnStagedChanges: true })).toEqual([
       posts,
       `webflow:item:${real.createdDesigner.payload.id}`,
     ]);
-    expect(tagsForEvent(real.createdLiveApi)).toEqual([posts, `webflow:item:${real.createdLiveApi.payload.id}`]);
-  });
-
-  it("accepts an already parsed event", () => {
-    const parsed = parseWebhookEvent(real.changedLiveApi);
-    expect(tagsForEvent(parsed)).toEqual([posts, post]);
+    expect(tagsFor(real.createdLiveApi)).toEqual([posts, `webflow:item:${real.createdLiveApi.payload.id}`]);
   });
 
   it("ignores unrelated and malformed events", () => {
-    expect(tagsForEvent({ triggerType: "form_submission", payload: {} })).toEqual([]);
-    expect(tagsForEvent({ triggerType: "collection_item_deleted", payload: null })).toEqual([]);
-    expect(tagsForEvent({ triggerType: "collection_item_published", payload: { items: "nope" } })).toEqual([]);
-    expect(tagsForEvent({})).toEqual([]);
+    expect(tagsFor({ triggerType: "form_submission", payload: {} })).toEqual([]);
+    expect(tagsFor({ triggerType: "collection_item_deleted", payload: null })).toEqual([]);
+    expect(tagsFor({ triggerType: "collection_item_published", payload: { items: "nope" } })).toEqual([]);
+    expect(tagsFor({})).toEqual([]);
   });
 
   it("still invalidates the item when the collection ID is missing", () => {
     const payload: Partial<ReturnType<typeof itemPayload>> = itemPayload(IDS.POST_A, "x");
     delete payload.collectionId;
-    expect(tagsForEvent({ triggerType: "collection_item_deleted", payload })).toEqual([post]);
+    expect(tagsFor({ triggerType: "collection_item_deleted", payload })).toEqual([post]);
   });
 });

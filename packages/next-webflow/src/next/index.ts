@@ -13,7 +13,8 @@ import { nextCache } from "./cache";
 export function createWebflow<const S extends WebflowSchema | undefined = undefined>(
   config: WebflowCmsConfig<S> = {},
 ): WebflowCms<S> {
-  return createWebflowCms<S>({ cache: nextCache, ...config });
+  // `??`, not a spread default: an explicit `cache: undefined` must not disable caching.
+  return createWebflowCms<S>({ ...config, cache: config.cache ?? nextCache });
 }
 
 export { nextCache };

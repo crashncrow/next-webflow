@@ -1,6 +1,6 @@
 // HTTP Basic auth for internal pages (e.g. the drafts list), edge-compatible: crypto.subtle digests
 // compared in constant time. Fails closed: no configured password → nobody gets in.
-import { constantTimeEqual } from "./webhook";
+import { constantTimeEqual } from "./crypto";
 
 export interface BasicAuthOptions {
   /** Required. `undefined` or empty (e.g. an unset env var) denies everyone with 503. */

@@ -57,14 +57,14 @@ export type {
   UnknownFields,
   UnknownOption,
   WebflowFieldType,
-  WebflowFile,
-  WebflowImage,
+  WebflowFileValue,
+  WebflowImageValue,
   WebflowItem,
   WebflowOption,
   WebflowRawItem,
   WebflowSchema,
-  WebflowVideo,
   WebflowVideoMetadata,
+  WebflowVideoValue,
 } from "./schema";
 export { SITE_TAG, collectionTag, itemTag, itemTags, listTags, slugLookupTags, slugTag } from "./tags";
 export {
@@ -73,7 +73,6 @@ export {
   DEFAULT_WEBHOOK_EVENTS,
   SIGNATURE_HEADER,
   TIMESTAMP_HEADER,
-  constantTimeEqual,
   parseSecrets,
   parseWebhookEvent,
   tagsForEvent,
@@ -107,5 +106,6 @@ export {
   WebflowServerError,
   WebflowUnauthorizedError,
 } from "./errors";
+export { constantTimeEqual } from "./crypto";
 export { toSearchParams, type QueryParams, type QueryValue } from "./query";
 export { DEFAULT_RETRY, parseRetryAfter, type RetryOptions } from "./retry";

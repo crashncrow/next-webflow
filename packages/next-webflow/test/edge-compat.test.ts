@@ -11,12 +11,26 @@ const RUNTIME_ENTRIES: Array<{ file: string; smoke: string; expected: unknown }>
   {
     file: "src/index.ts",
     smoke: `
-      globalThis.__result = NextWebflow.createWebflowClient({
+      const item = { id: "a", fieldData: { name: "A", slug: "a", "post-body": "<p>x</p>" } };
+      globalThis.__result = NextWebflow.createWebflowCms({
+        schema: {
+          posts: {
+            id: "c1",
+            slug: "posts",
+            fields: {
+              name: { slug: "name", type: "PlainText", required: true },
+              slug: { slug: "slug", type: "PlainText", required: true },
+              postBody: { slug: "post-body", type: "RichText", required: false },
+            },
+          },
+        },
         token: "test-token",
-        fetch: async () => Response.json({ items: [{ id: "a" }], pagination: { limit: 100, offset: 0, total: 1 } }),
-      }).paginate("/collections/c1/items/live");
+        fetch: async () => Response.json({ items: [item], pagination: { limit: 100, offset: 0, total: 1 } }),
+      })
+        .getItems("posts")
+        .then((items) => ({ total: items.length, body: items[0].fieldData.postBody }));
     `,
-    expected: { total: 1 },
+    expected: { total: 1, body: "<p>x</p>" },
   },
   {
     // HMAC with crypto.subtle; the timestamp is now, the signature is wrong on purpose.

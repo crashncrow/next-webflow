@@ -1,3 +1,4 @@
+import { constantTimeEqual, hexToBytes, hmacSha256 } from "./crypto";
 import { SITE_TAG, collectionTag, itemTag, validTags } from "./tags";
 
 /** Webflow rejects nothing older than this itself; we refuse older (or future) timestamps to stop replays. */
@@ -58,34 +59,6 @@ export async function verifyWebflowSignature(input: VerifySignatureInput): Promi
     if (constantTimeEqual(actual, expected)) return { ok: true, secretIndex: index };
   }
   return { ok: false, reason: "invalid" };
-}
-
-/** HMAC-SHA256 with `crypto.subtle` (edge-compatible). Shared with preview links. */
-export async function hmacSha256(secret: string, message: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  return new Uint8Array(await crypto.subtle.sign("HMAC", key, message));
-}
-
-export function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let index = 0; index < bytes.length; index++) {
-    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
-  }
-  return bytes;
-}
-
-/** Compares every byte regardless of where the first difference is (no early exit). */
-export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  let difference = a.length ^ b.length;
-  const length = Math.max(a.length, b.length);
-  for (let index = 0; index < length; index++) difference |= (a[index] ?? 0) ^ (b[index] ?? 0);
-  return difference === 0;
 }
 
 /** Webhook events next-webflow handles. Others are accepted and ignored. */
@@ -196,24 +169,18 @@ export interface EventTagsOptions {
  *   so a wrong guess over-invalidates instead of serving stale content. API writes to live items
  *   fire only these events (with `isDraft: false`).
  */
-export function tagsForEvent(event: unknown, options: EventTagsOptions = {}): string[] {
-  const parsed = isWebhookEvent(event) ? event : parseWebhookEvent(event);
-  if (!parsed) return [];
-  if (parsed.triggerType === "site_publish") return [SITE_TAG];
+export function tagsForEvent(event: WebflowWebhookEvent, options: EventTagsOptions = {}): string[] {
+  if (event.triggerType === "site_publish") return [SITE_TAG];
 
   let items: WebhookItem[];
-  if (LIVE_ITEM_EVENTS.has(parsed.triggerType)) items = parsed.items;
-  else if (EDIT_EVENTS.has(parsed.triggerType)) {
-    items = options.invalidateOnStagedChanges ? parsed.items : parsed.items.filter((item) => item.isDraft !== true);
+  if (LIVE_ITEM_EVENTS.has(event.triggerType)) items = event.items;
+  else if (EDIT_EVENTS.has(event.triggerType)) {
+    items = options.invalidateOnStagedChanges ? event.items : event.items.filter((item) => item.isDraft !== true);
   } else return [];
 
   return validTags(
     items.flatMap((item) => [...(item.collectionId ? [collectionTag(item.collectionId)] : []), itemTag(item.id)]),
   );
-}
-
-function isWebhookEvent(value: unknown): value is WebflowWebhookEvent {
-  return isRecord(value) && typeof value.triggerType === "string" && Array.isArray(value.items) && "raw" in value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

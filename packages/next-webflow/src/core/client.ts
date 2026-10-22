@@ -84,6 +84,8 @@ export interface PaginateOptions extends Omit<RequestOptions, "method" | "body">
   limit?: number | undefined;
   /** Number of items to skip. Default `0`. */
   offset?: number | undefined;
+  /** If the first page reports more than this many items in total, return only that page. */
+  stopIfTotalOver?: number | undefined;
 }
 
 export interface PaginateResult<T> {
@@ -199,7 +201,7 @@ export function createWebflowClient(config: WebflowClientConfig = {}, internals:
   }
 
   async function paginate<T>(path: string, options: PaginateOptions = {}): Promise<PaginateResult<T>> {
-    const { limit, offset = 0, ...requestOptions } = options;
+    const { limit, offset = 0, stopIfTotalOver, ...requestOptions } = options;
     assertNonNegativeInteger("offset", offset);
     if (limit !== undefined) assertNonNegativeInteger("limit", limit);
     if (limit === 0) return { items: [], total: 0 };
@@ -214,6 +216,7 @@ export function createWebflowClient(config: WebflowClientConfig = {}, internals:
 
     const first = await fetchPage(offset, pageSize, requestOptions.signal);
     const total = first.pagination.total;
+    if (stopIfTotalOver !== undefined && total > stopIfTotalOver) return { items: first.items, total };
     const end = Math.min(total, limit === undefined ? Infinity : offset + limit);
 
     const rest: Array<[number, number]> = [];

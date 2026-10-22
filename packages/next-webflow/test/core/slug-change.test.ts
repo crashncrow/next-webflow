@@ -1,6 +1,12 @@
 import { http, HttpResponse } from "msw/http";
 import { describe, expect, it } from "vitest";
-import { createWebflowCms, tagsForEvent, type WebflowRawItem } from "../../src/core";
+import { createWebflowCms, parseWebhookEvent, tagsForEvent, type WebflowRawItem } from "../../src/core";
+
+const tagsFor = (body: unknown) => {
+  const event = parseWebhookEvent(body);
+  if (!event) throw new Error("not a webhook body");
+  return tagsForEvent(event);
+};
 import { createFakeNextCache } from "../fake-next-cache";
 import { POSTS_ID, fullRawPost, rawPost, schema } from "../fixtures/schema";
 import { DATA_API, TEST_TOKEN, server } from "../msw";
@@ -33,7 +39,7 @@ describe("slug changes", () => {
 
     // The editor renames the slug and publishes. The webhook only carries the NEW slug.
     site.state.slug = "new-slug";
-    const tags = tagsForEvent({
+    const tags = tagsFor({
       triggerType: "collection_item_published",
       payload: { items: [{ ...site.current(), collectionId: POSTS_ID }] },
     });
@@ -52,7 +58,7 @@ describe("slug changes", () => {
 
     await cms.getItemBySlug("posts", "stable");
     cache.revalidateTag(
-      ...tagsForEvent({
+      ...tagsFor({
         // Another item of the same collection is published.
         triggerType: "collection_item_published",
         payload: { items: [{ id: "item-2", collectionId: POSTS_ID, fieldData: { slug: "other" } }] },

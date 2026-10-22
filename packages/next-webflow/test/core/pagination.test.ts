@@ -158,6 +158,20 @@ describe("paginate", () => {
     expect(received).not.toContain(900);
   });
 
+  it("returns only the first page when the total is over stopIfTotalOver", async () => {
+    const state = collection(250);
+    const { client } = createTestClient();
+
+    const over = await client.paginate<{ id: string }>(ITEMS_PATH, { stopIfTotalOver: 249 });
+    expect(over.total).toBe(250);
+    expect(ids(over.items)).toEqual(range(0, 100));
+    expect(state.requests).toEqual([{ offset: 0, limit: 100 }]);
+
+    const atLimit = await client.paginate<{ id: string }>(ITEMS_PATH, { stopIfTotalOver: 250 });
+    expect(ids(atLimit.items)).toEqual(range(0, 250));
+    expect(state.requests).toHaveLength(4);
+  });
+
   it("validates limit and offset", async () => {
     const { client } = createTestClient();
     await expect(client.paginate(ITEMS_PATH, { limit: -1 })).rejects.toThrow(RangeError);

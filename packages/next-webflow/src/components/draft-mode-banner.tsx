@@ -1,6 +1,6 @@
-import { draftMode } from "next/headers.js";
 import type { CSSProperties, ReactNode } from "react";
 import { nextBasePath } from "../next/base-path";
+import { isDraftModeEnabled } from "../next/cache";
 // Its own entry so the "use client" directive survives bundling (rolldown drops it in shared chunks).
 import { ExitPreviewLink } from "next-webflow/components/client";
 
@@ -42,13 +42,7 @@ export async function DraftModeBanner({
   className,
   exitClassName,
 }: DraftModeBannerProps): Promise<ReactNode> {
-  let enabled = false;
-  try {
-    enabled = (await draftMode()).isEnabled;
-  } catch {
-    // Outside a request (generateStaticParams, scripts): never draft.
-  }
-  if (!enabled) return null;
+  if (!(await isDraftModeEnabled())) return null;
   const href = `${(basePath ?? nextBasePath() ?? "").replace(/\/$/, "")}${route}`;
   return (
     <div

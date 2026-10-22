@@ -95,6 +95,18 @@ describe("include (whole referenced collection, under maxIncludeItems)", () => {
     ]);
   });
 
+  it("normalizes only the referenced items, so unrelated items can't flag the schema as stale", async () => {
+    site();
+    const unrelated = { ...ALAN, id: "unrelated-author", fieldData: { ...ALAN.fieldData, "new-field": "x" } };
+    server.use(http.get(AUTHORS_LIVE, () => list([...AUTHORS, unrelated])));
+    const { cms, logger } = setup();
+
+    const posts = await cms.getItems("posts", { include: ["author"] });
+
+    expect(posts.some((item) => item.fieldData.author !== null)).toBe(true);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
   it("gives null / [] for empty references", async () => {
     site();
     const { cms } = setup();

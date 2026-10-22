@@ -16,15 +16,13 @@ export function validTags(tags: readonly string[]): string[] {
   return [...new Set(tags.filter((tag) => tag.length <= MAX_TAG_LENGTH))];
 }
 
-export type SlugStrategy = "collection";
-
 /**
  * Tags for a slug lookup. Slug lookups also carry the collection tag, so renaming an
  * item's slug (the webhook only carries the new one) invalidates the old slug's page.
  * Cost: any change in the collection invalidates every cached slug lookup in it.
- * A precise two-step strategy may be added later as an opt-in.
+ * The slug tag itself is kept for a possible opt-in precise (two-step) strategy.
  */
-export function slugLookupTags(collectionId: string, slug: string, _strategy: SlugStrategy = "collection"): string[] {
+export function slugLookupTags(collectionId: string, slug: string): string[] {
   return validTags([SITE_TAG, collectionTag(collectionId), slugTag(collectionId, slug)]);
 }
 

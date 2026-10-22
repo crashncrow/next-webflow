@@ -1,10 +1,9 @@
 // Draft mode route logic, Next-free. `src/draft/index.ts` wires Next's `draftMode()`.
 import { createWebflowCms, unsafeStagedCache, type WebflowCms, type WebflowCmsConfig } from "./cms";
-import { ENV, readEnv } from "./env";
+import { ENV } from "./env";
 import { WebflowConfigError, WebflowNotFoundError } from "./errors";
-import { safeRelativePath, verifyPreviewParams } from "./preview";
+import { resolvePreviewSecrets, safeRelativePath, verifyPreviewParams } from "./preview";
 import type { WebflowItem, WebflowSchema } from "./schema";
-import { parseSecrets } from "./webhook";
 
 export interface DraftHandlerOptions<S extends WebflowSchema | undefined = undefined> extends Pick<
   WebflowCmsConfig<S>,
@@ -84,7 +83,7 @@ export function createDraftRequestHandler<S extends WebflowSchema | undefined = 
     const params = new URL(request.url).searchParams;
     if (params.has("disable")) return exit(request, true);
 
-    const secrets = parseSecrets(options.secret ?? readEnv(ENV.previewSecret));
+    const secrets = resolvePreviewSecrets(options.secret);
     if (secrets.length === 0) {
       logger.warn(`[next-webflow] Draft route: no preview secret. Set ${ENV.previewSecret}.`);
       return json(500, { ok: false, error: `Draft mode isn't configured: set ${ENV.previewSecret}.` });

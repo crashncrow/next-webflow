@@ -6,8 +6,8 @@ import {
   type CollectionSchema,
   type ItemOf,
   type UnknownOption,
-  type WebflowImage,
-  type WebflowVideo,
+  type WebflowImageValue,
+  type WebflowVideoValue,
 } from "../../src/core";
 import {
   AUTHORS_ID,
@@ -224,8 +224,8 @@ describe("schemaFromApi (real collection)", () => {
 describe("item types inferred from the schema", () => {
   it("types required fields as present and optional ones as optional", () => {
     expectTypeOf<Post["fieldData"]["body"]>().toEqualTypeOf<string>();
-    expectTypeOf<Post["fieldData"]["mainImage"]>().toEqualTypeOf<WebflowImage | undefined>();
-    expectTypeOf<Post["fieldData"]["video"]>().toEqualTypeOf<WebflowVideo | undefined>();
+    expectTypeOf<Post["fieldData"]["mainImage"]>().toEqualTypeOf<WebflowImageValue | undefined>();
+    expectTypeOf<Post["fieldData"]["video"]>().toEqualTypeOf<WebflowVideoValue | undefined>();
     expectTypeOf<Post["fieldData"]["readingTime"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<Post["fieldData"]["coAuthors"]>().toEqualTypeOf<string[] | undefined>();
   });

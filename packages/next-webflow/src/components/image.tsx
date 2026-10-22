@@ -1,6 +1,6 @@
 import NextImage, { type ImageProps } from "next/image.js";
 import type { ReactNode } from "react";
-import type { WebflowImage as WebflowImageValue } from "../core/schema";
+import type { WebflowImageValue } from "../core/schema";
 import { isInheritedAlt } from "../core/alt";
 import { warnInheritedAlt, warnOnceInDev } from "./dev-warnings";
 

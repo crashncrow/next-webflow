@@ -139,9 +139,9 @@ Items are normalized: `fieldData` keys are camelCase (`main-image` → `mainImag
 | Switch                                | boolean (`false` is sent, not omitted)                                                           | `boolean`                                                                                                         |
 | Date/Time                             | ISO 8601 string                                                                                  | `string`                                                                                                          |
 | Option                                | `{ id, name }`                                                                                   | `{ id: "…"; name: "News" } \| …` per option, plus `{ id; name: undefined }` for an option the schema doesn't know |
-| Image, File                           | `{ fileId, url, alt }`                                                                           | `WebflowImage`, `WebflowFile` (`alt` may be `null`)                                                               |
-| Multi-image                           | array of images                                                                                  | `WebflowImage[]`                                                                                                  |
-| Video link                            | `{ url, metadata? }`                                                                             | `WebflowVideo`                                                                                                    |
+| Image, File                           | `{ fileId, url, alt }`                                                                           | `WebflowImageValue`, `WebflowFileValue` (`alt` may be `null`)                                                     |
+| Multi-image                           | array of images                                                                                  | `WebflowImageValue[]`                                                                                             |
+| Video link                            | `{ url, metadata? }`                                                                             | `WebflowVideoValue`                                                                                               |
 | Reference                             | item ID, or the item with `include`                                                              | `string`, or `Item \| null`                                                                                       |
 | Multi-reference                       | item IDs, or the items with `include`                                                            | `string[]`, or `Item[]`                                                                                           |
 | External file reference               | as returned                                                                                      | `unknown` (typegen warns)                                                                                         |
@@ -321,7 +321,7 @@ export default async function Drafts() {
 }
 ```
 
-`next/link` adds the base path on Webflow Cloud; with a plain `<a>`, add it yourself.
+`next/link` adds the base path on Webflow Cloud; with a plain `<a>`, add it yourself (`nextBasePath()`, see [Webflow Cloud notes](#webflow-cloud-notes-preview)).
 
 ## Components (`next-webflow/components`)
 
@@ -497,7 +497,15 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
 
   With it, cached reads hit across isolates and a webhook's invalidation is visible about 1 s later. **`webflow apps deploy` deletes `open-next.config.ts` from your working copy after deploying** (the deploy itself used it): restore it with `git checkout -- open-next.config.ts` before the next local deploy (CI checkouts are unaffected).
 
-- **Set `NEXT_PUBLIC_BASE_PATH` to the app's mount path** (e.g. `/app`), as Webflow's docs recommend. Route handlers on Cloud don't see the mount path in the request URL, so the draft route uses this variable for its redirects (`basePath` in `createDraftHandler` overrides it). `next/link` adds the base path by itself; plain `<a>`, `<img>` and `fetch` URLs to your own app need it.
+- **Set `NEXT_PUBLIC_BASE_PATH` to the app's mount path** (e.g. `/app`), as Webflow's docs recommend. Route handlers on Cloud don't see the mount path in the request URL, so the draft route uses this variable for its redirects (`basePath` in `createDraftHandler` overrides it). `next/link` adds the base path by itself; plain `<a>`, `<img>` and `fetch` URLs to your own app need it. In server code, `nextBasePath()` from `next-webflow/draft` returns it with the same fallbacks the draft route uses (`NEXT_PUBLIC_BASE_PATH`, then the base path Next.js inlines), or `undefined` when there's none:
+
+  ```tsx
+  import { nextBasePath } from "next-webflow/draft";
+
+  const base = nextBasePath() ?? "";
+  // <img src={`${base}/logo.svg`} alt="" />, fetch(`${origin}${base}/api/…`)
+  ```
+
 - **Don't add `export const runtime = "edge"` to route handlers.** Webflow's docs say API routes need the edge runtime, but in our tests every edge route returned `500 Internal Server Error`, while the same handlers on the default Node.js runtime worked. next-webflow's route handlers (webhook, draft) don't export `runtime`.
 - **Upload secrets with `webflow apps env-vars import <file> --secret`, and keep them out of every `.env*` file before deploying.** `webflow apps deploy` builds on your machine with OpenNext, which reads your `.env*` files and writes their values in plain text into the deployed worker (`.open-next/cloudflare/next-env.mjs`), so that `process.env` behaves as with `next start` (see [`compile-env-files.ts`](https://github.com/opennextjs/opennextjs-cloudflare/blob/%40opennextjs/cloudflare%401.20.12/packages/cloudflare/src/cli/build/open-next/compile-env-files.ts) and [`extract-project-env-vars.ts`](https://github.com/opennextjs/opennextjs-cloudflare/blob/%40opennextjs/cloudflare%401.20.12/packages/cloudflare/src/cli/utils/extract-project-env-vars.ts) in `@opennextjs/cloudflare` 1.20.12). That covers files of every mode (`.env`, `.env.local`, `.env.production`, `.env.development.local`, `.env.test`…), in the app directory and, if the app is part of a monorepo, at its root (the nearest parent folder with a lockfile). The values stay server-side (they don't reach client assets) and variables set in Cloud take precedence at runtime, but a secret in any of those files ships inside your worker code instead of Cloud's encrypted variables. Keep local values in a file not named `.env*` (e.g. `local.env`).
 - **Clear the build's data cache before deploying.** The CLI builds in your working copy and reuses `.next/cache/fetch-cache` from earlier local builds, so prerendered pages can contain data from an old build. Delete `.next/cache/fetch-cache` before `webflow apps deploy` (deploying from CI with a fresh checkout avoids it).

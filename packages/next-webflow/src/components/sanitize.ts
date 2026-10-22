@@ -79,8 +79,9 @@ function isDangerousAttribute(rawName: string, value: string): boolean {
   );
 }
 
+/** Rebuilds `attribs` only when something is removed (most elements have nothing to remove). */
 function sanitizeAttributes(element: Element): void {
-  element.attribs = Object.fromEntries(
-    Object.entries(element.attribs).filter(([name, value]) => !isDangerousAttribute(name, value)),
-  );
+  const entries = Object.entries(element.attribs);
+  const kept = entries.filter(([name, value]) => !isDangerousAttribute(name, value));
+  if (kept.length < entries.length) element.attribs = Object.fromEntries(kept);
 }

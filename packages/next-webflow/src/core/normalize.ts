@@ -5,7 +5,7 @@ import type {
   UnknownFields,
   WebflowItem,
   WebflowRawItem,
-  WebflowVideo,
+  WebflowVideoValue,
   WebflowVideoMetadata,
 } from "./schema";
 
@@ -18,6 +18,18 @@ export function camelCase(slug: string): string {
 export interface SchemaMismatch {
   unknownFields: string[];
   unknownOptions: Array<{ field: string; id: string }>;
+}
+
+/** Field schema by API slug, built once per (immutable) collection schema. */
+const fieldsBySlugCache = new WeakMap<CollectionSchema, Map<string, [string, FieldSchema]>>();
+
+function fieldsBySlug(schema: CollectionSchema): Map<string, [string, FieldSchema]> {
+  let bySlug = fieldsBySlugCache.get(schema);
+  if (!bySlug) {
+    bySlug = new Map(Object.entries(schema.fields).map(([key, field]) => [field.slug, [key, field]]));
+    fieldsBySlugCache.set(schema, bySlug);
+  }
+  return bySlug;
 }
 
 export interface NormalizeResult<Fields> {
@@ -36,9 +48,7 @@ export function normalizeItem<Fields = UnknownFields>(
 ): NormalizeResult<Fields> {
   const fieldData: Record<string, unknown> = {};
   const mismatch: SchemaMismatch = { unknownFields: [], unknownOptions: [] };
-  const bySlug = new Map<string, [string, FieldSchema]>(
-    Object.entries(schema.fields).map(([key, field]) => [field.slug, [key, field]]),
-  );
+  const bySlug = fieldsBySlug(schema);
 
   for (const [slug, value] of Object.entries(raw.fieldData)) {
     if (value === null || value === undefined) continue;
@@ -92,10 +102,10 @@ const withoutInheritedAlt = (value: unknown): unknown =>
   isRecord(value) && isInheritedAlt(value.alt) ? { ...value, alt: null } : value;
 
 /**
- * `{ url, metadata }` (what the API returns) → `WebflowVideo` with camelCase metadata keys. A plain
+ * `{ url, metadata }` (what the API returns) → `WebflowVideoValue` with camelCase metadata keys. A plain
  * URL string (the write format) becomes `{ url }`. Anything else is returned untouched.
  */
-function normalizeVideo(value: unknown): WebflowVideo | unknown {
+function normalizeVideo(value: unknown): WebflowVideoValue | unknown {
   if (typeof value === "string") return { url: value };
   if (!isRecord(value) || typeof value.url !== "string") return value;
   if (!isRecord(value.metadata)) return { url: value.url };

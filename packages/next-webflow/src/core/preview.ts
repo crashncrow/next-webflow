@@ -109,7 +109,12 @@ export function safeRelativePath(path: unknown): string | undefined {
   try {
     // Resolving against a dummy origin must not change the origin (catches odd encodings).
     const resolved = new URL(path, "https://same-site.invalid");
-    if (resolved.origin !== "https://same-site.invalid") return undefined;
+    if (
+      resolved.origin !== "https://same-site.invalid" ||
+      resolved.pathname.startsWith("//") ||
+      resolved.pathname.startsWith("/\\")
+    )
+      return undefined;
     return `${resolved.pathname}${resolved.search}${resolved.hash}`;
   } catch {
     return undefined;

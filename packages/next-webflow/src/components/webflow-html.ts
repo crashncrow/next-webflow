@@ -1,14 +1,15 @@
+import { isElement } from "./dom-node";
 // Adapts Webflow's Rich Text markup so it renders correctly without webflow.css. Runs on the DOM tree
 // before React, sanitized or not. Webflow's classes (`w-richtext-figure-type-*`, `w-richtext-align-*`)
 // are kept so webflow.css or your own styles can still target them.
-import { Element, type ChildNode } from "domhandler";
+import type { Element, ChildNode } from "domhandler";
 import { isInheritedAlt } from "../core/alt";
 import { warnInheritedAlt } from "./dev-warnings";
 
 /** Mutates the tree in place. */
 export function prepareWebflowNodes(nodes: ChildNode[], inImageFigure = false): void {
   for (const node of nodes) {
-    if (!(node instanceof Element)) continue;
+    if (!isElement(node)) continue;
     if (node.name === "img") {
       if (isInheritedAlt(node.attribs.alt)) {
         node.attribs.alt = "";
@@ -59,10 +60,10 @@ function sizeVideoFigure(figure: Element): void {
     `aspect-ratio:${width}/${height}`,
   );
   for (const wrapper of figure.children) {
-    if (!(wrapper instanceof Element) || wrapper.name !== "div") continue;
+    if (!isElement(wrapper) || wrapper.name !== "div") continue;
     wrapper.attribs.style = withStyle(wrapper.attribs.style, "height:100%");
     for (const frame of wrapper.children) {
-      if (frame instanceof Element && frame.name === "iframe") {
+      if (isElement(frame) && frame.name === "iframe") {
         frame.attribs.style = withStyle(frame.attribs.style, "display:block;width:100%;height:100%");
       }
     }

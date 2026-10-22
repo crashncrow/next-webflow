@@ -130,3 +130,27 @@ describe("safeRelativePath", () => {
     expect(safeRelativePath(path)).toBeUndefined();
   });
 });
+
+it.each([
+  "/..//evil.com",
+  "/.//evil.com",
+  "/%2e%2e//evil.com",
+  "/a/..//evil.com",
+  "/\t/evil.com",
+  "/\n/evil.com",
+  "/\\evil.com",
+  "\\/evil.com",
+  "/%5c/evil.com",
+  "/%5C%5Cevil.com",
+  "/%2f%2fevil.com",
+  "/%2F/evil.com",
+  "/a/./../..//evil.com",
+  "https://evil.com",
+  "javascript:alert(1)",
+  "//evil.com",
+  "/posts/my-slug?x=1#top",
+])("redirect stays on site after normalization: %j", (input) => {
+  const path = safeRelativePath(input);
+  expect(new URL(path ?? "/", "https://example.com").origin).toBe("https://example.com");
+  if (input === "/posts/my-slug?x=1#top") expect(path).toBe(input);
+});

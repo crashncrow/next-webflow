@@ -1,6 +1,7 @@
+import { isElement } from "./dom-node";
 // Renders Webflow Rich Text as React elements. Works as a Server Component (no "use client"),
 // so the parser never reaches the browser bundle.
-import { Element, type ChildNode } from "domhandler";
+import type { Element, ChildNode } from "domhandler";
 // The server parser explicitly: html-dom-parser's `browser` export uses DOMParser, and Cloudflare
 // Workers resolve the `browser` condition but have no DOM.
 import htmlToDOM from "html-dom-parser/lib/server/html-to-dom";
@@ -65,7 +66,7 @@ export function WebflowRichText({
 
   const options: HTMLReactParserOptions = {
     replace(domNode) {
-      if (!(domNode instanceof Element)) return undefined;
+      if (!isElement(domNode)) return undefined;
       const children = () => domToReact(domNode.children as DOMNode[], options);
       const tag = domNode.name;
 
@@ -110,7 +111,7 @@ function renderWebflowComponent(
   const slots: Record<string, ReactNode> = {};
   const slotIds: Record<string, string> = {};
   for (const child of element.children) {
-    if (child instanceof Element && child.name === "wf-prop" && child.attribs.name) {
+    if (isElement(child) && child.name === "wf-prop" && child.attribs.name) {
       slots[child.attribs.name] = domToReact(child.children as DOMNode[], options);
       if (child.attribs.label) slotIds[child.attribs.label] = child.attribs.name;
     }

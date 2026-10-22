@@ -1,7 +1,8 @@
+import { isElement } from "./dom-node";
 // Removes script execution vectors from parsed Rich Text. CMS HTML is untrusted input (anyone with
 // write access to the CMS, or a token, can put <script>, on* handlers or javascript: URLs in it) and
 // html-react-parser doesn't sanitize, so this runs on every render unless `allowScripts`.
-import { Element, type ChildNode } from "domhandler";
+import type { Element, ChildNode } from "domhandler";
 
 /** Removed with their content. `base` and `meta` can hijack URLs or refresh to `javascript:`. */
 const BLOCKED_ELEMENTS = new Set(["script", "object", "embed", "applet", "base", "meta"]);
@@ -59,7 +60,7 @@ export function sanitizeNodes<T extends ChildNode>(nodes: T[], options: Sanitize
   if (options.allowScripts) return nodes;
   const kept: T[] = [];
   for (const node of nodes) {
-    if (node instanceof Element) {
+    if (isElement(node)) {
       if (BLOCKED_ELEMENTS.has(node.name.toLowerCase())) continue;
       sanitizeAttributes(node);
       node.children = sanitizeNodes(node.children, options);

@@ -25,6 +25,14 @@ updates:
     # frozen install re-checks the lockfile against it: wait a week so Dependabot PRs pass CI.
     cooldown:
       default-days: 7
+    ignore:
+      # TypeScript majors are their own task (TS 7 is the native compiler: tsdown's .d.ts output,
+      # typescript-eslint and our typecheck need checking first).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # @types/node follows the lowest Node.js in `engines` (22), not the latest release.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # `dependencies` of every workspace package: the library's runtime dependencies
       # (html-react-parser…) and the example app's next/react.

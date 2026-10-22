@@ -17,7 +17,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 ## Quick start
 
-Requirements: Next.js 15 or 16 with the App Router, React 19, Node.js 20.9 or later.
+Requirements: Next.js 15 or 16 with the App Router, React 19, Node.js 22.22 or later (the version CI tests; Node 20 reached end-of-life in April 2026).
 
 **1. Install**
 

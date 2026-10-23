@@ -1,6 +1,6 @@
 {
   "name": "next-webflow",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.1",
   "description": "Use the Webflow CMS as a headless content source in Next.js: types, caching, revalidation, previews, and rendering.",
   "license": "MIT",
   "author": "Diego Gennaro",

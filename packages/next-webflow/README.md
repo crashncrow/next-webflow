@@ -11,7 +11,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 - **Built for limits.** Transparent pagination, `Retry-After` handling, at most 4 concurrent requests, and builds that read one list per collection instead of one request per page.
 - **Edge-compatible runtime** (`fetch` and `crypto.subtle` only). No dependency on `webflow-api`.
 
-> **Status:** v0.1, not published to npm yet. Webflow Cloud works (see [notes](#webflow-cloud-notes-preview)) and becomes formally supported in v0.2.
+> **Pre-release:** not yet published to npm. Target: v0.1. Webflow Cloud works (see [notes](#webflow-cloud-notes-preview)) and becomes formally supported in v0.2.
 
 **Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching and revalidation](#caching-and-revalidation) · [Webhooks](#webhooks) · [Builds](#builds-generatestaticparams) · [Draft mode](#draft-mode-previews) · [Components](#components-next-webflowcomponents) · [Tokens and scopes](#tokens-and-scopes) · [Types](#types-typegen) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-notes-preview) · [Example app](#example-app)
 

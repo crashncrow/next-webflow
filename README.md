@@ -2,6 +2,8 @@
 
 Use the **Webflow CMS as a headless content source in Next.js** (App Router, Next 15 and 16): generated types, caching with on-demand revalidation through webhooks, draft previews, and rendering components.
 
+> **Pre-release:** not yet published to npm.
+
 **Documentation:** [packages/next-webflow/README.md](packages/next-webflow/README.md)
 
 |                                                  |                                                                                     |

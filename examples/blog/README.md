@@ -39,3 +39,13 @@ npx next-webflow webhooks register --url https://<your-app>/api/webflow --token-
 ```
 
 Editors open `/drafts` (HTTP Basic auth, any user name, password `DRAFTS_PASSWORD`) and follow a link to preview a draft.
+
+## License
+
+This project is licensed under the [MIT License](../../LICENSE).
+
+---
+
+<p align="center">
+  <sub>Made with 🧉 by <a href="https://nnaro.dev">nnaro.dev</a></sub>
+</p>

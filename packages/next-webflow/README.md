@@ -2,7 +2,7 @@
 
 Use the **Webflow CMS as a headless content source in Next.js** (App Router, Next 15 and 16): generated types, caching with on-demand revalidation through webhooks, draft previews, and components to render Rich Text and images.
 
-> Your agents publish with the Webflow MCP; next-webflow makes your Next.js site show it instantly.
+> Editors and agents publish in Webflow; signed webhooks invalidate the cache so your Next.js app serves fresh content on the next request.
 
 - **Types from your site.** `npx next-webflow typegen` writes a typed client: `getItems("posts")` knows every field, rejects collection slugs that don't exist, and turns Option IDs into `{ id, name }`.
 - **Fresh content, cached reads.** Reads go through the Next.js data cache with tags per site, collection and item. A signed webhook invalidates exactly what changed, so published content appears on the next request.
@@ -11,7 +11,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 - **Built for limits.** Transparent pagination, `Retry-After` handling, at most 4 concurrent requests, and builds that read one list per collection instead of one request per page.
 - **Edge-compatible runtime** (`fetch` and `crypto.subtle` only). No dependency on `webflow-api`.
 
-> **Pre-release:** not yet published to npm. Target: v0.1. Webflow Cloud works (see [notes](#webflow-cloud-notes-preview)) and becomes formally supported in v0.2.
+> **Pre-release:** `0.1.0-beta.1`, not yet published to npm. [Build and install the beta tarball](../../README.md#try-the-beta) to try it locally. Webflow Cloud integration is a preview; see the [deployment notes](#webflow-cloud-notes-preview).
 
 **Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching and revalidation](#caching-and-revalidation) · [Webhooks](#webhooks) · [Builds](#builds-generatestaticparams) · [Draft mode](#draft-mode-previews) · [Components](#components-next-webflowcomponents) · [Tokens and scopes](#tokens-and-scopes) · [Types](#types-typegen) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-notes-preview) · [Example app](#example-app)
 
@@ -19,10 +19,12 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 Requirements: Next.js 15 or 16 with the App Router, React 19, Node.js 22.12 or later (CI runs the tests on 22.12 and on the latest LTS; Node 20 reached end-of-life in April 2026).
 
-**1. Install**
+**1. Install the beta tarball**
+
+The package is not yet published to npm. [Build and pack it from this repository](../../README.md#try-the-beta), then install the generated tarball in your Next.js app:
 
 ```bash
-npm install next-webflow
+npm install /absolute/path/to/next-webflow/next-webflow-0.1.0-beta.1.tgz
 ```
 
 **2. Add your site's credentials** to `.env.local`: a site token with **CMS: Read** (Site settings → Apps & integrations → API access) and the site ID (Site settings → General).
@@ -519,4 +521,10 @@ Measured on Webflow Cloud on 2026-10-21 (Next.js 16.4, `@opennextjs/cloudflare` 
 
 ## License
 
-MIT © Diego Gennaro
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  <sub>Made with 🧉 by <a href="https://nnaro.dev">nnaro.dev</a></sub>
+</p>

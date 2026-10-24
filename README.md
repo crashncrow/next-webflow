@@ -39,12 +39,22 @@ export default async function Blog() {
 
 ## Why next-webflow?
 
-- **Types from your actual CMS.** Generate collection names, fields, Option values, and item types from your Webflow site.
-- **Cached reads that stay current.** Next.js caches CMS requests; signed webhooks invalidate the affected cache tags when content is published.
-- **Preview before publishing.** Review staged content inside your Next.js app through signed, expiring links, with a draft banner and an exit control.
-- **Content that fits your UI.** Render sanitized Rich Text and CMS images with React components, or override elements with your own design system.
+Every team that puts Webflow content on a Next.js site writes the same glue: a fetch wrapper, hand-written types that drift from the CMS, a cache that's either stale or skipped, a webhook route, a preview workaround. next-webflow is that glue, built once and tested against the real Webflow API.
 
-The client also handles pagination, retries, rate-limit backoff, and reference resolution. See the [API documentation](packages/next-webflow/README.md#reading-content).
+- **Catch CMS changes before your visitors do.** Types come from your actual collections, fields, and Option values. Run `next-webflow typegen --check` in CI, and a field renamed in Webflow fails your build instead of breaking a page in production.
+- **Publish in Webflow, live on the next request.** Reads are cached by Next.js with tags per site, collection, and item. A signed webhook invalidates exactly what changed: no full rebuilds, no waiting for a cache to expire.
+- **Previews your editors can actually use.** Signed, expiring links open staged content inside your app, with a draft banner and an exit control. The secret never appears in a URL.
+- **Data you can render as is.** Option fields arrive as `{ id, name }`, references resolve into full items (`include: ["author"]`), and empty fields are normalized.
+- **Safe Rich Text by default.** The Data API returns Rich Text HTML exactly as stored, scripts and event handlers included. `WebflowRichText` sanitizes it, turns internal links into `next/link`, and lets you swap any element for your own components.
+- **Gentle on rate limits.** Pagination, `Retry-After` handling, a cap on concurrent requests, and builds that read one list per collection instead of making one request per page.
+
+See the [API documentation](packages/next-webflow/README.md#reading-content).
+
+### When to use it
+
+**A good fit** if editors manage content in Webflow and developers build the site in Next.js (App Router): blogs, editorial and marketing sites, company websites, resource libraries, documentation, and content catalogs. It's most useful when you want instant updates on publish, typed content, and previews without building them yourself.
+
+**Look elsewhere** if you need to write to the CMS or manage sites (use the official SDK, below), if your site is built and hosted entirely in Webflow's Designer, or if you use the Pages Router or another framework. Webflow Cloud works today as a preview; full support is planned for the next version.
 
 ## How this relates to the official Webflow SDK
 
@@ -56,6 +66,7 @@ The official [Webflow JavaScript/TypeScript SDK](https://github.com/webflow/js-w
 | ------------------------------------------------------------ | ------------------------------ |
 | General API access, content writes, or publishing automation | The official `webflow-api` SDK |
 | Types generated from your site's collections and fields      | `next-webflow typegen`         |
+| Option names and references resolved into items              | `next-webflow`                 |
 | Next.js cache tags and webhook-driven revalidation           | `next-webflow`                 |
 | Signed draft previews and React rendering components         | `next-webflow`                 |
 
@@ -70,9 +81,7 @@ flowchart LR
   Cache -->|Fresh content on the next request| App
 ```
 
-Editors work in Webflow. Developers control the routes, layouts, and components in Next.js. Draft previews let both teams review changes before publication.
-
-A good fit for blogs, editorial sites, company websites, resource libraries, and content catalogs. CMS writes remain in Webflow or your existing publishing tools.
+Editors work in Webflow. Developers control the routes, layouts, and components in Next.js. Draft previews let both teams review changes before publication. CMS writes remain in Webflow or your existing publishing tools.
 
 ## Try the beta
 

@@ -28,3 +28,6 @@ packages/next-webflow/test/contract/output/
 # The spike installs the library from a committed tarball (Webflow Cloud: npm only).
 !spikes/webflow-cloud/vendor/next-webflow.tgz
 next-env.d.ts
+
+# Written by `next dev` (Next.js agent rules) on every run.
+examples/blog/AGENTS.md

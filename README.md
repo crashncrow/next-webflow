@@ -1,4 +1,4 @@
-# next-webflow
+![Webflow + Next.js](docs/assets/webflow-next-banner.webp)
 
 **Webflow CMS for Next.js.**
 
@@ -7,7 +7,7 @@ Typed content, signed draft previews, and webhook-driven cache revalidation. Let
 [![CI](https://github.com/crashncrow/next-webflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/crashncrow/next-webflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Documentation](packages/next-webflow/README.md) · [Live demo](https://next-webflow-demo.vercel.app) · [Example app](examples/blog) · [Try the beta](#try-the-beta)
+[Documentation](packages/next-webflow/README.md) · [Live demo](https://nextjswebflow.vercel.app/) · [Example app](examples/blog) · [Try the beta](#try-the-beta)
 
 > **Pre-release:** `0.1.0-beta.1`, not yet published to npm. You can try the package locally using the instructions below.
 
@@ -122,7 +122,7 @@ Continue with [webhook setup](packages/next-webflow/README.md#quick-start), [dra
 | Content safety | Rich Text sanitization and signed draft/webhook verification tests       |
 | Webflow API    | Separate contract suite against a real test site                         |
 
-CI checks the supported Node.js matrix and Edge compatibility. The [live demo](https://next-webflow-demo.vercel.app) has also been checked with real Webflow content on Vercel: published reads, staged previews, leaving preview, and webhook-driven updates.
+CI checks the supported Node.js matrix and Edge compatibility. The [live demo](https://nextjswebflow.vercel.app) has also been checked with real Webflow content on Vercel: published reads, staged previews, leaving preview, and webhook-driven updates.
 
 Webflow Cloud integration is documented as a **preview** with measured caching requirements. Read the [deployment notes](packages/next-webflow/README.md#webflow-cloud-notes-preview) and [known limitations](packages/next-webflow/README.md#known-limitations) before choosing your setup.
 

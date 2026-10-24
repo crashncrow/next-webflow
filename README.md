@@ -1,4 +1,4 @@
-![Webflow + Next.js](docs/assets/webflow-next-banner.webp)
+![Webflow + Next.js](examples/blog/public/webflow-next-banner.webp)
 
 **Webflow CMS for Next.js.**
 

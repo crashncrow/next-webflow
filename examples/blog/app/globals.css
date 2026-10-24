@@ -1,155 +1,165 @@
 /*
- * Example styles. The second half documents what Webflow's Rich Text needs when you don't load
+ * Tailwind CSS 4. The last section documents what Webflow's Rich Text needs when you don't load
  * your site's webflow.css: next-webflow keeps Webflow's classes on the elements so you can target
  * them. Video and embed sizing (aspect-ratio) and image max-width are handled by next-webflow.
  */
+@import "tailwindcss";
+
+/* The theme toggle sets `.dark` on <html> (system preference by default). */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: #737373;
+  --font-sans: Arial, Helvetica, sans-serif;
+}
 
 :root {
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --accent: #4353ff;
-  --border: #e5e5ea;
-  --bg: #fff;
-  color-scheme: light dark;
+  color-scheme: light;
+  --background: #fff;
+  --foreground: #171717;
+  --muted: #f4f4f5;
+  --muted-foreground: #666;
+  --border: #e5e5e5;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #f5f5f7;
-    --muted: #a1a1a6;
-    --accent: #8d97ff;
-    --border: #2c2c2e;
-    --bg: #111;
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --border: #3f3f46;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+  a,
+  button {
+    @apply outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+  }
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
   }
 }
 
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  font:
-    17px/1.6 system-ui,
-    sans-serif;
-  color: var(--text);
-  background: var(--bg);
-}
-a {
-  color: var(--accent);
-}
-img {
-  max-width: 100%;
-  height: auto;
-} /* next/image (WebflowImage) included */
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-3xl px-5 sm:px-8;
+  }
+  .badge {
+    @apply relative z-10 inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold no-underline transition-colors hover:bg-foreground/10;
+  }
+  .text-link {
+    @apply inline-flex cursor-pointer items-center gap-2 text-sm font-medium underline underline-offset-4;
+  }
+  .back-link {
+    @apply inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground;
+  }
+  .meta {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground;
+  }
+  .meta > * + *::before {
+    content: "·";
+    margin-right: 0.75rem;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-md bg-foreground/10 motion-reduce:animate-none;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 
-.site-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-}
-.site-header a {
-  color: inherit;
-  text-decoration: none;
-}
-.container {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 16px 16px 96px;
-}
-
-.post-list {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: 32px;
-}
-.post-card {
-  display: grid;
-  gap: 16px;
-}
-@media (min-width: 760px) {
-  .post-card {
-    grid-template-columns: 320px 1fr;
-    align-items: start;
+  /* Rich Text body: the typography Webflow's CSS would otherwise provide. */
+  .article-body {
+    @apply text-base leading-8 break-words;
+  }
+  .article-body p {
+    @apply mb-5;
+  }
+  .article-body :is(h1, h2, h3) {
+    @apply mt-8 mb-4 font-semibold tracking-tight;
+  }
+  .article-body h1 {
+    @apply text-3xl;
+  }
+  .article-body h2 {
+    @apply text-2xl;
+  }
+  .article-body h3 {
+    @apply text-xl;
+  }
+  .article-body ul {
+    @apply mb-5 list-disc pl-6;
+  }
+  .article-body ol {
+    @apply mb-5 list-decimal pl-6;
+  }
+  .article-body li {
+    @apply mb-2 pl-1;
+  }
+  .article-body a {
+    @apply underline underline-offset-4;
+  }
+  .article-body :is(img, video) {
+    @apply rounded-md;
+  }
+  .article-body iframe {
+    @apply rounded-md border-0;
+  }
+  .article-body code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm;
+  }
+  .article-body pre code {
+    @apply rounded-none bg-transparent p-0;
+    font-size: inherit;
   }
 }
-.post-card h2 {
-  margin: 4px 0;
-  font-size: 1.3rem;
-  line-height: 1.3;
-}
-.post-card h2 a {
-  color: inherit;
-  text-decoration: none;
-}
-.post-card img,
-.hero {
-  border-radius: 8px;
-}
-.tag {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-}
-.meta {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0 0 24px;
-}
-.pull-quote {
-  margin: 32px 0;
-  padding-left: 20px;
-  border-left: 4px solid var(--accent);
-  font-size: 1.15rem;
-}
 
-/* ---- Webflow Rich Text (`<WebflowRichText>` renders a div.w-richtext by default) ---- */
+/* ---- Webflow Rich Text (`<WebflowRichText>` renders a div.w-richtext) ---- */
 
 /* Every image and video is a <figure>. Browsers give figures a 40px side margin; Webflow doesn't. */
 .w-richtext figure {
-  margin: 32px 0;
-  max-width: 100%;
+  @apply my-8 mx-0 max-w-full;
 }
 .w-richtext figcaption {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  text-align: center;
+  @apply mt-2 text-center text-xs text-muted-foreground;
 }
 
 /* Image alignment, as set in the editor. Webflow's own CSS does this; without it, all are full width. */
 .w-richtext .w-richtext-align-center {
-  margin-inline: auto;
-  text-align: center;
+  @apply mx-auto text-center;
 }
 .w-richtext .w-richtext-align-fullwidth {
-  width: 100%;
+  @apply w-full;
 }
-@media (min-width: 760px) {
-  .w-richtext .w-richtext-align-floatleft {
-    float: left;
-    max-width: 50%;
-    margin: 8px 24px 16px 0;
-  }
-  .w-richtext .w-richtext-align-floatright {
-    float: right;
-    max-width: 50%;
-    margin: 8px 0 16px 24px;
-  }
+.w-richtext .w-richtext-align-floatleft {
+  @apply sm:float-left sm:mt-2 sm:mr-6 sm:mb-4 sm:max-w-1/2;
 }
-/* Headings and lists after a floated image shouldn't wrap around it. */
-.w-richtext h2,
-.w-richtext h3 {
+.w-richtext .w-richtext-align-floatright {
+  @apply sm:float-right sm:mt-2 sm:mb-4 sm:ml-6 sm:max-w-1/2;
+}
+/* Headings after a floated image shouldn't wrap around it. */
+.w-richtext :is(h2, h3) {
   clear: both;
 }
 
-/* Code blocks: Webflow's API returns them empty (<pre></pre>), so hide the empty box. */
-.w-richtext pre:empty {
-  display: none;
-}
+/*
+ * Code blocks: Webflow's API returns them empty (<pre></pre>). This example keeps the empty box
+ * and explains why above the post; add `.w-richtext pre:empty { display: none }` to hide them.
+ */
 .w-richtext pre {
-  overflow-x: auto;
-  padding: 16px;
-  border-radius: 8px;
-  background: var(--border);
+  @apply my-5 max-w-full overflow-x-auto rounded-md bg-muted p-5 font-mono text-sm leading-6;
 }

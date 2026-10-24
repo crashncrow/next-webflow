@@ -1,0 +1,33 @@
+# next-webflow example
+
+> A public demo of Webflow CMS content rendered in a Next.js application with next-webflow.
+
+## About next-webflow
+
+`next-webflow` is an open-source library for using Webflow CMS content in Next.js. It generates TypeScript types from a Webflow site, provides cached CMS reads with webhook-driven revalidation, supports signed draft previews, and includes React components for rendering sanitized Rich Text and CMS images. The project was created by [nnaro.dev](https://nnaro.dev).
+
+## Pages
+
+- [All posts](https://nextjswebflow.vercel.app/): Browse published CMS posts. Filter categories from the tabs or click a category label.
+- [Featured posts](https://nextjswebflow.vercel.app/featured): Browse posts marked Featured in Webflow.
+- [Example post](https://nextjswebflow.vercel.app/posts/demo-rich-text): Each post shows its CMS content, with image, gallery, video, authors, contact, attachment and Rich Text.
+
+## Features shown
+
+- Category options come from the generated Webflow CMS schema. The listing filters by option ID.
+- The Featured listing filters the Webflow Switch field.
+- Post pages render sanitized Webflow Rich Text and every field type, including a video player built from the Video link URL.
+- Webhooks revalidate published CMS content in the deployed app.
+- Draft previews use signed, expiring links from a password-protected page; they are not public.
+- Rich Text native Code Blocks are not currently returned by Webflow's Data API; see the [Webflow field values reference](https://developers.webflow.com/data/reference/field-types-item-values#rich-text).
+
+## Repositories
+
+- [Example source](https://github.com/crashncrow/next-webflow/tree/main/examples/blog)
+- [next-webflow library](https://github.com/crashncrow/next-webflow)
+- [Library documentation](https://github.com/crashncrow/next-webflow/blob/main/packages/next-webflow/README.md)
+
+## Notes
+
+- Content is managed in Webflow and may change independently of this file.
+- This demo is for browsing. It does not provide CMS editing access.

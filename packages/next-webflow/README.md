@@ -94,7 +94,7 @@ export { POST } from "next-webflow/webhook";
 npx next-webflow webhooks register --url https://your-site.com/api/webflow --token-env WEBFLOW_ADMIN_TOKEN
 ```
 
-The command creates signed webhooks for every CMS event and site publishes, and writes their secrets to `WEBFLOW_WEBHOOK_SECRET` in `.env.local` (add that variable to your host too: Webflow shows each secret only once). It needs a separate token with more scopes; see [Tokens and scopes](#tokens-and-scopes).
+The command creates signed webhooks for every CMS event and site publishes, and writes their secrets to `WEBFLOW_WEBHOOK_SECRET` in `.env.local` (add that variable to your host too: Webflow shows each secret only once). Use `--env <path>` to read config from and write secrets to another file (it doesn't need to exist yet), or `--print` to only print them. It needs a separate token with more scopes; see [Tokens and scopes](#tokens-and-scopes).
 
 **6. Optional:** [draft previews](#draft-mode-previews), [components](#components-next-webflowcomponents). [`examples/blog`](https://github.com/crashncrow/next-webflow/tree/main/examples/blog) puts all of it together.
 
@@ -427,7 +427,7 @@ Keep the runtime token read-only. `--token <value>` works on every CLI command, 
 ## Types (`typegen`)
 
 ```bash
-npx next-webflow typegen          # reads WEBFLOW_CMS_TOKEN + WEBFLOW_SITE_ID (env or .env.local); CMS: Read is enough
+npx next-webflow typegen          # reads WEBFLOW_CMS_TOKEN + WEBFLOW_SITE_ID (env or .env.local; --env <path> for another file); CMS: Read is enough
 npx next-webflow typegen --check  # CI: exit 1 if webflow/schema.ts no longer matches the site
 ```
 

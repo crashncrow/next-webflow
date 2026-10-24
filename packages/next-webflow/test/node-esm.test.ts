@@ -1,5 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -87,4 +89,28 @@ it.skipIf(!existsSync(dist))("preview-url rejects lifetimes over the handler max
   const invalid = spawnSync(process.execPath, [...args, "2592001"], options);
   expect(invalid.status).toBe(1);
   expect(invalid.stderr).toMatch(/2592000.*30 days.*maxLifetimeSeconds/);
+});
+
+// Node.js reads `--env-file` itself, even after the script name: it aborts when the file is missing.
+it.skipIf(!existsSync(dist))("reads config from --env (a missing file is fine) and explains the old --env-file", () => {
+  const cli = fileURLToPath(new URL("../dist/cli.mjs", import.meta.url));
+  const args = [cli, "preview-url", "--url", "/api/draft", "--collection", "posts", "--item", "item"];
+  const dir = mkdtempSync(join(tmpdir(), "next-webflow-cli-"));
+  const envPath = join(dir, "preview.env");
+  writeFileSync(envPath, "WEBFLOW_PREVIEW_SECRET=test-preview-secret\n");
+  const options = { cwd: packageRoot, encoding: "utf8" as const, env: { ...process.env, WEBFLOW_PREVIEW_SECRET: "" } };
+  try {
+    const fromFile = spawnSync(process.execPath, [...args, "--env", envPath], options);
+    expect(fromFile.status).toBe(0);
+    expect(fromFile.stdout).toContain("/api/draft?collection=posts");
+
+    const missing = spawnSync(process.execPath, [...args, "--env", join(dir, "missing.env")], options);
+    expect(missing.stderr).not.toMatch(/node: .*not found/); // the CLI ran (and reports the missing secret)
+
+    const old = spawnSync(process.execPath, [...args, "--env-file", envPath], options);
+    expect(old.status).toBe(1);
+    expect(old.stderr).toMatch(/--env-file was renamed to --env/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

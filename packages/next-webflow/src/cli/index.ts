@@ -40,8 +40,8 @@ preview-url options (prints a signed draft-mode link; reads WEBFLOW_PREVIEW_SECR
   --expires <seconds>   Link lifetime (default: 3600)
 
 Common options:
-  --env-file <path>     Read config from it (default: .env.local); webhooks register appends
-                        secrets to it. On Webflow Cloud use a file NOT named .env* (it would be bundled).
+  --env <path>          Read config from it (default: .env.local); webhooks register appends
+                        secrets to it. On Webflow Cloud use a file NOT named .env* for secrets.
   --token-env <name>    Env var holding the site token (default: ${ENV.cmsToken}).
                         typegen: CMS: Read. webhooks: Sites: Read and write + CMS: Read,
                         so point it at a separate variable (e.g. WEBFLOW_ADMIN_TOKEN).
@@ -74,7 +74,9 @@ async function main(argv: string[]): Promise<number> {
     options: {
       url: { type: "string" },
       events: { type: "string" },
-      "env-file": { type: "string", default: ".env.local" },
+      env: { type: "string", default: ".env.local" },
+      // Old name, kept only to explain the rename (Node.js reads it before the CLI runs).
+      "env-file": { type: "string" },
       print: { type: "boolean", default: false },
       "token-env": { type: "string", default: ENV.cmsToken },
       token: { type: "string" },
@@ -96,7 +98,15 @@ async function main(argv: string[]): Promise<number> {
     return values.help ? 0 : 1;
   }
 
-  const envFile = values["env-file"];
+  if (values["env-file"] !== undefined) {
+    // Node.js treats `--env-file` as its own option even after the script name: it aborts when the
+    // file doesn't exist and loads it into process.env when it does, before this code runs.
+    throw new WebflowError(
+      "--env-file was renamed to --env (Node.js reads --env-file itself). " +
+        `Use: next-webflow ${positionals.join(" ")} --env ${values["env-file"]}`,
+    );
+  }
+  const envFile = values.env;
   // process.env wins over the file, like Next.js.
   const fileEnv = { ...parseEnvFile(io.readFile(".env") ?? ""), ...parseEnvFile(io.readFile(envFile) ?? "") };
   const env = (name: string) => process.env[name] || fileEnv[name] || undefined;

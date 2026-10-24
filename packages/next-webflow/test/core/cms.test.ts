@@ -19,6 +19,7 @@ import {
   fullRawPost,
   postsCollectionResponse,
   rawPost,
+  realPostsCollection,
   schema,
   sitesCollectionsResponse,
 } from "../fixtures/schema";
@@ -140,8 +141,13 @@ describe("getItemBySlug", () => {
 
     expect(slug).toBe(POST.fieldData.slug);
     expect(post?.fieldData.name).toBe(POST.fieldData.name);
-    expect(cache.requests).toHaveLength(1);
-    expect(cache.requests[0]?.init.next?.tags).toEqual([
+    // One item request, plus the collection schema for live Option names (the post has a category).
+    const itemRequests = cache.requests.filter((request) => request.url.includes("/items"));
+    expect(itemRequests).toHaveLength(1);
+    expect(cache.requests.map((request) => request.url).filter((url) => !url.includes("/items"))).toEqual([
+      `${DATA_API}/collections/${POSTS_ID}`,
+    ]);
+    expect(itemRequests[0]?.init.next?.tags).toEqual([
       "webflow",
       `webflow:collection:${POSTS_ID}`,
       `webflow:collection:${POSTS_ID}:slug:${POST.fieldData.slug}`,
@@ -288,9 +294,10 @@ describe("schema fallback", () => {
     expect(post?.fieldData).toMatchObject({ subtitle: "new field" });
     expect(post?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: undefined });
     const warnings = logger.warn.mock.calls.map(([message]) => String(message));
+    // The live Option names read fails first; the stale-schema refresh shares its warning.
     expect(warnings).toEqual([
-      expect.stringMatching(/out of date/),
       expect.stringMatching(/Could not fetch the live schema for "posts" \(boom/),
+      expect.stringMatching(/out of date/),
       expect.stringMatching(/Unknown Option IDs in "posts" .*name: undefined/),
     ]);
   });
@@ -407,7 +414,8 @@ it("retries a failed schema refresh on later reads and adopts the successful sch
     ),
     http.get(LIVE, () => list([rawPost({ fieldData: { category: TUTORIALS_ID } })])),
   );
-  const { cms, logger } = setup();
+  // Only the stale-schema refresh here: live Option names would make their own schema requests.
+  const { cms, logger } = setup({ optionNames: "generated" });
   for (let i = 0; i < 2; i++) {
     expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: undefined });
   }
@@ -415,4 +423,96 @@ it("retries a failed schema refresh on later reads and adopts the successful sch
   expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: TUTORIALS_ID, name: "Tutorials" });
   expect(attempts).toBe(3);
   expect(logger.warn.mock.calls.filter(([message]) => String(message).includes("Could not fetch"))).toHaveLength(1);
+});
+
+describe("live Option names (optionNames)", () => {
+  const SCHEMA_URL = `${DATA_API}/collections/${POSTS_ID}`;
+  /** The real posts collection with the News option renamed in Webflow (same ID). */
+  const withNewsNamed = (name: string) => ({
+    ...realPostsCollection,
+    fields: realPostsCollection.fields.map((field) =>
+      field.slug === "category"
+        ? {
+            ...field,
+            validations: {
+              options: (field.validations?.options ?? []).map((option) =>
+                option.id === OPTIONS.news.id ? { ...option, name } : option,
+              ),
+            },
+          }
+        : field,
+    ),
+  });
+  const newsPost = () => rawPost({ fieldData: { category: OPTIONS.news.id } });
+
+  it("shows an option renamed in Webflow without rerunning typegen, and warns once to update the types", async () => {
+    server.use(
+      http.get(SCHEMA_URL, () => HttpResponse.json(withNewsNamed("Noticias"))),
+      http.get(LIVE, () => list([newsPost()])),
+    );
+    const { cms, cache, logger } = setup();
+
+    const [first] = await cms.getItems("posts");
+    const [second] = await cms.getItems("posts");
+
+    expect(first?.fieldData.category).toEqual({ id: OPTIONS.news.id, name: "Noticias" });
+    expect(second?.fieldData.category).toEqual({ id: OPTIONS.news.id, name: "Noticias" });
+    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(logger.warn.mock.calls[0]?.[0]).toMatch(/renamed.*category: "News" → "Noticias".*typegen/);
+    const schemaRequest = cache.requests.find((request) => request.url === SCHEMA_URL);
+    expect(schemaRequest?.init.next?.tags).toEqual(["webflow", `webflow:collection:${POSTS_ID}`]);
+  });
+
+  it("picks up a later rename once the collection is invalidated (no in-memory copy outlives it)", async () => {
+    let name = "News";
+    server.use(
+      http.get(SCHEMA_URL, () => HttpResponse.json(withNewsNamed(name))),
+      http.get(LIVE, () => list([newsPost()])),
+    );
+    const { cms, cache } = setup();
+
+    expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual(OPTIONS.news);
+    name = "Noticias";
+    expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual(OPTIONS.news); // still cached
+    cache.revalidateTag("webflow"); // site_publish
+    expect((await cms.getItems("posts"))[0]?.fieldData.category).toEqual({ id: OPTIONS.news.id, name: "Noticias" });
+  });
+
+  it("reads the schema only when the items have Option values", async () => {
+    server.use(http.get(LIVE, () => list([rawPost({ fieldData: { category: null } })])));
+    const { cms, cache } = setup();
+
+    await cms.getItems("posts");
+
+    expect(cache.requests.map((request) => request.url)).toEqual([`${LIVE}?offset=0&limit=100`]);
+  });
+
+  it('optionNames: "generated" uses only the generated names, with no schema request', async () => {
+    server.use(
+      http.get(SCHEMA_URL, () => HttpResponse.json(withNewsNamed("Noticias"))),
+      http.get(LIVE, () => list([newsPost()])),
+    );
+    const { cms, cache, logger } = setup({ optionNames: "generated" });
+
+    const [post] = await cms.getItems("posts");
+
+    expect(post?.fieldData.category).toEqual(OPTIONS.news);
+    expect(cache.requests.some((request) => request.url === SCHEMA_URL)).toBe(false);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the generated names, with one warning, if the schema can't be read", async () => {
+    server.use(
+      http.get(SCHEMA_URL, () => HttpResponse.json({ message: "boom" }, { status: 400 })),
+      http.get(LIVE, () => list([newsPost()])),
+    );
+    const { cms, logger } = setup();
+
+    const [post] = await cms.getItems("posts");
+    await cms.getItems("posts");
+
+    expect(post?.fieldData.category).toEqual(OPTIONS.news);
+    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(logger.warn.mock.calls[0]?.[0]).toMatch(/Could not fetch the live schema for "posts".*generated schema/);
+  });
 });

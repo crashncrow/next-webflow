@@ -123,11 +123,11 @@ const byId = await getItem("posts", itemId); // by item ID (e.g. from a webhook 
 | `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                                               |
 | `signal`              | all        | An `AbortSignal`.                                                                                                                       |
 
-Published content comes from Webflow's Data API (`/items/live`) by default; in [draft mode](#draft-mode-previews) the same calls return staged content. Other options of `createWebflow` (in `webflow/index.ts`): `source: "cdn"` (see [Data API or CDN](#data-api-or-cdn)), `maxIncludeItems`, `maxBuildListItems`, `buildSlugLookups`, `retry` (`maxRetries`, `baseDelayMs`, `maxDelayMs`, `maxRetryAfterMs`), `concurrency` (default 4), `token`, `siteId`, `logger`.
+Published content comes from Webflow's Data API (`/items/live`) by default; in [draft mode](#draft-mode-previews) the same calls return staged content. Other options of `createWebflow` (in `webflow/index.ts`): `source: "cdn"` (see [Data API or CDN](#data-api-or-cdn)), `optionNames` (see [Options](#field-values)), `maxIncludeItems`, `maxBuildListItems`, `buildSlugLookups`, `retry` (`maxRetries`, `baseDelayMs`, `maxDelayMs`, `maxRetryAfterMs`), `concurrency` (default 4), `token`, `siteId`, `logger`.
 
 **Errors.** A missing item is `null`, not an error. Everything else throws a subclass of `WebflowError`, exported from `next-webflow`: `WebflowConfigError` (no token, unknown collection), `WebflowUnauthorizedError` / `WebflowForbiddenError` (token or scopes), `WebflowRateLimitError` (after retries, or when `Retry-After` exceeds `maxRetryAfterMs`; has `retryAfterMs`), `WebflowServerError`, `WebflowNetworkError`. 429 responses are retried honoring `Retry-After`; 5xx and network errors are retried for reads.
 
-**Schema changes.** If an item has fields or Option values your generated schema doesn't know (someone edited the collection), next-webflow fetches the current schema, keeps serving the data, and warns once: rerun `npx next-webflow typegen`. Use `typegen --check` in CI.
+**Schema changes.** If an item has fields or Option values your generated schema doesn't know (someone edited the collection), next-webflow fetches the current schema, keeps serving the data, and warns once: rerun `npx next-webflow typegen`. Renamed options are handled too (see [Options](#field-values)). Use `typegen --check` in CI to know when your types are behind the site.
 
 ## Field values
 
@@ -148,7 +148,9 @@ Items are normalized: `fieldData` keys are camelCase (`main-image` → `mainImag
 | Multi-reference                       | item IDs, or the items with `include`                                                            | `string[]`, or `Item[]`                                                                                           |
 | External file reference               | as returned                                                                                      | `unknown` (typegen warns)                                                                                         |
 
-**Options.** Webflow returns the option's ID; next-webflow adds its name from the schema. Compare by `id` (stable) and display `name` (editors can rename options). `name` is a union of the names in your schema, or `undefined` for an option added after the last typegen that the API schema doesn't resolve either.
+**Options.** Webflow returns the option's ID; next-webflow adds its name. Compare by `id` (stable) and display `name` (editors can rename options). `name` is typed as a union of the names in your generated schema, or `undefined` for an option added after the last typegen that the API schema doesn't resolve either.
+
+**Renamed options show up without rerunning typegen.** Renaming an option in Webflow keeps its ID, so the generated schema can't tell it changed. next-webflow therefore takes Option names from the collection's live schema (`GET /collections/{id}`), cached like content with the site and collection tags: the new name appears once the collection is invalidated, at the latest on the next site publish, and a one-time warning reminds you to rerun typegen so your types match. This costs one cached request to the Data API (also with `source: "cdn"`) per collection whose items have Option values (none if they don't); in draft mode it isn't cached, like the rest of the preview. If the schema can't be read, the generated names are used. Set `optionNames: "generated"` in `createWebflow` to skip the request; renamed options then keep their old name until you rerun typegen and redeploy.
 
 ### Video links
 
@@ -460,6 +462,7 @@ Webflow behavior, measured on 2026-10-21, and how next-webflow handles it:
 - **Image dimensions aren't in the API**, so `WebflowImage` needs `width`/`height` or `fill`. Webflow's CDN doesn't resize images.
 - **Rate limits:** 60 requests per minute on Starter and Basic plans, 120 on CMS, eCommerce and Business (Webflow's docs; our Starter test site reported 150, so next-webflow never hard-codes a limit). Cached reads don't count; builds read one list per collection.
 - **Sorting** only by `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`; sort by custom fields in your code.
+- **Webflow sends no webhook when a collection's structure changes** (fields or options added, renamed or removed). Renamed and added options still show correctly ([Options](#field-values)); a renamed option appears once the collection is invalidated, at the latest on the next site publish. Your types only change when you rerun typegen.
 - **`include` is one level deep.** Above `maxIncludeItems` (1,000) referenced items are fetched by ID.
 - Not supported: writing to the CMS, ecommerce, the Pages and Designer APIs, frameworks other than Next.js.
 

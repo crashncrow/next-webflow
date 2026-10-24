@@ -242,10 +242,15 @@ describe("build-time slug lookups (next build)", () => {
     site();
     const { cms, cache } = setup({ build: true });
     await cms.getItemBySlug("posts", "cms-future-10");
-    const before = cache.requests.length;
+    const listRequests = () => cache.requests.filter((request) => request.url.startsWith(POSTS_LIVE)).length;
+    const schemaRequests = () =>
+      cache.requests.filter((request) => request.url.endsWith(`/collections/${POSTS_ID}`)).length;
+    const before = { list: listRequests(), schema: schemaRequests() };
     cache.revalidateTag(collectionTag(POSTS_ID), itemTag(post("cms-future-10").id)); // the webhook's tags
     await cms.getItemBySlug("posts", "cms-future-10");
-    expect(cache.requests.length).toBe(before + 1);
+    expect(listRequests()).toBe(before.list + 1);
+    // The schema (live Option names) carries the collection tag too, so it's read again.
+    expect(schemaRequests()).toBe(before.schema + 1);
   });
 
   it("warns above maxBuildListItems but keeps using the list", async () => {
@@ -264,14 +269,16 @@ describe("build-time slug lookups (next build)", () => {
     site();
     const { cms, cache } = setup({ build: true, buildSlugLookups: "request" });
     await cms.getItemBySlug("posts", "cms-future-10");
-    expect(cache.requests.map((request) => new URL(request.url).searchParams.get("slug"))).toEqual(["cms-future-10"]);
+    const itemRequests = cache.requests.filter((request) => request.url.startsWith(POSTS_LIVE));
+    expect(itemRequests.map((request) => new URL(request.url).searchParams.get("slug"))).toEqual(["cms-future-10"]);
   });
 
   it("isn't used outside builds", async () => {
     site();
     const { cms, cache } = setup();
     await cms.getItemBySlug("posts", "cms-future-10");
-    expect(cache.requests.map((request) => new URL(request.url).searchParams.get("slug"))).toEqual(["cms-future-10"]);
+    const itemRequests = cache.requests.filter((request) => request.url.startsWith(POSTS_LIVE));
+    expect(itemRequests.map((request) => new URL(request.url).searchParams.get("slug"))).toEqual(["cms-future-10"]);
   });
 });
 

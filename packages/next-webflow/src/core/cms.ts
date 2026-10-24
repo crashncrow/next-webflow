@@ -81,6 +81,15 @@ export interface WebflowCmsConfig<S extends WebflowSchema | undefined = undefine
   maxBuildListItems?: number | undefined;
   /** `list` (default): build-time slug lookups read the cached list. `request`: one `?slug=` request per page. */
   buildSlugLookups?: "list" | "request" | undefined;
+  /**
+   * Where Option names come from. `live` (default): the collection's schema from the API, cached
+   * like content (site + collection tags), so an option renamed in Webflow shows its new name once
+   * the collection is invalidated (at the latest on the next `site_publish`), without rerunning
+   * typegen. Costs one cached request per collection whose items have Option values.
+   * `generated`: only the generated schema; a renamed option keeps its old name until you rerun
+   * typegen and redeploy.
+   */
+  optionNames?: "live" | "generated" | undefined;
 }
 
 export type SortBy = "createdOn" | "lastPublished" | "lastUpdated" | "name" | "slug";
@@ -218,6 +227,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
   const maxIncludeItems = config.maxIncludeItems ?? DEFAULT_MAX_INCLUDE_ITEMS;
   const maxBuildListItems = config.maxBuildListItems ?? DEFAULT_MAX_BUILD_LIST_ITEMS;
   const source = config.source ?? "data";
+  const optionNames = config.optionNames ?? "live";
   const cache = config.cache ?? noCache;
   const logger = config.logger ?? console;
 
@@ -333,16 +343,96 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     return fetchSchemaById(fromGenerated.id);
   }
 
+  /**
+   * The collection's schema from the API, for Option names. With a framework cache it isn't
+   * memoized in memory: the cached response is invalidated with the collection (and by
+   * `site_publish`), and an in-memory copy would outlive that and put old names into the
+   * regenerated page.
+   */
+  const fetchLiveSchema = (collectionId: string, ctx: ReadContext): Promise<CollectionSchema> =>
+    cache === noCache
+      ? fetchSchemaById(collectionId)
+      : client
+          .request<ApiCollection>(`/collections/${encodeURIComponent(collectionId)}`, {
+            // Draft reads are never cached, so previews show the current names too.
+            init: ctx.init(schemaTags(collectionId)),
+          })
+          .then(schemaFromApi);
+
+  /**
+   * The generated schema with Option names from the live schema, so options renamed in Webflow
+   * show their new names. Option IDs never change on rename; options added after typegen are left
+   * to the stale-schema path. If the live schema can't be read, the generated names are used.
+   */
+  async function withLiveOptionNames(
+    slug: string,
+    collection: CollectionSchema,
+    ctx: ReadContext,
+  ): Promise<CollectionSchema> {
+    let live: CollectionSchema;
+    try {
+      live = await fetchLiveSchema(collection.id, ctx);
+    } catch (error) {
+      // Same key and message as a failed stale-schema refresh: one warning for one outage.
+      warnOnce(
+        `refresh:${slug}`,
+        `Could not fetch the live schema for "${slug}" (${error instanceof Error ? error.message : String(error)}). ` +
+          "Serving items with the generated schema.",
+      );
+      return collection;
+    }
+    const liveFields = new Map(Object.values(live.fields).map((field) => [field.slug, field]));
+    const renamed: string[] = [];
+    const fields: Record<string, FieldSchema> = {};
+    for (const [key, field] of Object.entries(collection.fields)) {
+      const liveField = liveFields.get(field.slug);
+      if (!field.options || liveField?.type !== "Option" || !liveField.options) {
+        fields[key] = field;
+        continue;
+      }
+      const liveNames = new Map(liveField.options.map((option) => [option.id, option.name]));
+      const options = field.options.map((option) => {
+        const name = liveNames.get(option.id);
+        if (name === undefined || name === option.name) return option;
+        renamed.push(`${key}: "${option.name}" → "${name}"`);
+        return { id: option.id, name };
+      });
+      fields[key] = { ...field, options };
+    }
+    if (renamed.length === 0) return collection;
+    warnOnce(
+      `renamed:${slug}`,
+      `Options renamed in Webflow for "${slug}" (${renamed.join(", ")}); showing the new names. ` +
+        "Run `npx next-webflow typegen` to update your types.",
+    );
+    return { ...collection, fields };
+  }
+
+  /** Whether any of these items has a value in an Option field (the only case that needs names). */
+  function hasOptionValues(collection: CollectionSchema, raws: WebflowRawItem[]): boolean {
+    const optionSlugs = Object.values(collection.fields)
+      .filter((field) => field.type === "Option")
+      .map((field) => field.slug);
+    return (
+      optionSlugs.length > 0 && raws.some((raw) => optionSlugs.some((fieldSlug) => raw.fieldData[fieldSlug] != null))
+    );
+  }
+
   /** Normalizes items; if the generated schema is stale, retries once with the API schema. */
   async function normalizeAll(
     slug: string,
     collection: CollectionSchema,
     raws: WebflowRawItem[],
+    ctx: ReadContext,
   ): Promise<WebflowItem[]> {
+    const isGenerated = generated?.[slug] === collection;
+    if (isGenerated && optionNames === "live" && hasOptionValues(collection, raws)) {
+      collection = await withLiveOptionNames(slug, collection, ctx);
+    }
     let results = raws.map((raw) => normalizeItem(raw, collection));
     let mismatch = mergeMismatches(results.map((result) => result.mismatch));
 
-    if (mismatch && generated?.[slug] === collection) {
+    if (mismatch && isGenerated) {
       warnOnce(
         `stale:${slug}`,
         `The generated schema for "${slug}" is out of date (${describe(mismatch)}). ` +
@@ -434,7 +524,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
       signal: options.signal,
     });
     if (options.raw) return items;
-    return withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, items), options);
+    return withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, items, ctx), options);
   }
 
   async function getItemBySlug(slug: string, itemSlug: string, options: ReadOptions & { raw?: boolean } = {}) {
@@ -491,7 +581,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
   ) {
     if (!raw) return null;
     if (options.raw) return raw;
-    const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw]), options);
+    const [item] = await withIncludes(slug, collection, ctx, await normalizeAll(slug, collection, [raw], ctx), options);
     return item ?? null;
   }
 
@@ -552,7 +642,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
         raws = await byId();
       }
     }
-    const items = await normalizeAll(slug, schema, raws);
+    const items = await normalizeAll(slug, schema, raws, ctx);
     return new Map(items.map((item) => [item.id, item]));
   }
 

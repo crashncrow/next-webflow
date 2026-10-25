@@ -11,17 +11,33 @@ export const names = (items: ReadonlyArray<{ fieldData: { name: string } } | nul
 
 /** Rich Text as plain text, for excerpts and reading time (not for rendering: use WebflowRichText). */
 export function plainText(html: string): string {
-  return (
-    html
-      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
-      .replace(/<[^>]*>/g, " ")
-      // Drop any `<` or `>` left by malformed markup, so the result can never contain a tag.
-      .replace(/[<>]/g, " ")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  // A scanner, not regex replacements: every `<` starts markup that's skipped, so the result never
+  // contains one, and <script>/<style> contents are skipped up to their closing tag.
+  const lower = html.toLowerCase();
+  let text = "";
+  let i = 0;
+  while (i < html.length) {
+    const open = html.indexOf("<", i);
+    if (open === -1) {
+      text += html.slice(i);
+      break;
+    }
+    text += `${html.slice(i, open)} `;
+    const close = html.indexOf(">", open);
+    if (close === -1) break; // unterminated tag: drop the rest
+    i = close + 1;
+    const raw = /^<(script|style)\b/.exec(lower.slice(open, close))?.[1];
+    if (raw) {
+      const end = lower.indexOf(`</${raw}`, i);
+      const endClose = end === -1 ? -1 : html.indexOf(">", end);
+      i = endClose === -1 ? html.length : endClose + 1;
+    }
+  }
+  return text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function excerpt(html: string, length = 160): string {

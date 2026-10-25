@@ -42,18 +42,19 @@ jobs:
       - run: pnpm build
       - run: pnpm test
 
-      # Staged publishing needs npm 11.15.0+; Node 22 ships npm 10. Pinned on purpose (not updated by Dependabot).
-      - run: npm install --global npm@11.21.0
-
       - name: Stage on npm
         working-directory: packages/next-webflow
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # empty once trusted publishing is configured
+        # Staged publishing needs npm 11.15.0+; Node 22 ships npm 10. `npx` runs the pinned npm directly
+        # (a global install lands outside the PATH pnpm/setup builds). Pinned on purpose, not updated by Dependabot.
         run: |
+          NPM="npx -y npm@11.21.0"
+          $NPM --version
           VERSION="$(node -p "require('./package.json').version")"
           case "$VERSION" in *-*) DIST_TAG=beta ;; *) DIST_TAG=latest ;; esac
           if [ -n "$NODE_AUTH_TOKEN" ]; then
             echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
           fi
-          npm stage publish --provenance --access public --tag "$DIST_TAG"
+          $NPM stage publish --provenance --access public --tag "$DIST_TAG"
           echo "::notice::Staged next-webflow@$VERSION ($DIST_TAG). Approve it with 2FA on npmjs.com → Staged Packages."

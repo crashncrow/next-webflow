@@ -1,0 +1,55 @@
+name: Release
+
+# Publishes packages/next-webflow to npm, with provenance, when a GitHub release is published.
+# The release tag must be `v<version>` (the version in packages/next-webflow/package.json, set by
+# `pnpm changeset version`). Versions with a pre-release part (0.1.0-beta.1) go to the `beta`
+# dist-tag, others to `latest`.
+#
+# Auth: npm trusted publishing (OIDC, no stored token), configured on npmjs.com for this workflow
+# file and the `npm` environment. npm only allows that on an existing package, so the very first
+# publish uses a one-off NPM_TOKEN secret on the `npm` environment: delete the secret (and revoke
+# the token) once trusted publishing is set up.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # OIDC: trusted publishing and provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          cache: true
+          require-lockfile: true
+
+      - name: Check the release tag matches the package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="$(node -p "require('./packages/next-webflow/package.json').version")"
+          [ "$TAG" = "v$VERSION" ] || { echo "::error::Release tag $TAG doesn't match the package version (v$VERSION)"; exit 1; }
+
+      - run: pnpm build
+      - run: pnpm test
+
+      # Trusted publishing needs npm 11.5.1+; Node 22 ships npm 10. Pinned on purpose (not updated by Dependabot).
+      - run: npm install --global npm@11.21.0
+
+      - name: Publish
+        working-directory: packages/next-webflow
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # empty once trusted publishing is configured
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          case "$VERSION" in *-*) DIST_TAG=beta ;; *) DIST_TAG=latest ;; esac
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
+          fi
+          npm publish --provenance --access public --tag "$DIST_TAG"

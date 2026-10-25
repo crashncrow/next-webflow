@@ -49,6 +49,28 @@ describe("request", () => {
     );
   });
 
+  it("joins the base URL and path with one slash, and stays fast on long runs of slashes", async () => {
+    const urls: string[] = [];
+    const { client } = createTestClient({
+      baseUrls: { data: `${DATA_API}///` },
+      fetch: async (input) => {
+        urls.push(String(input));
+        return new Response("{}", { headers: { "content-type": "application/json" } });
+      },
+    });
+    await client.request("//sites");
+    expect(urls).toEqual([`${DATA_API}/sites`]);
+
+    // The old /\/+$/ regex was quadratic here (CodeQL js/polynomial-redos).
+    const slow = createTestClient({
+      baseUrls: { data: `https://example.com/${"/".repeat(100_000)}x` },
+      fetch: async () => new Response("{}"),
+    });
+    const started = Date.now();
+    await slow.client.request("/sites");
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
   it("uses the Content Delivery API host when asked", async () => {
     server.use(http.get(`${CDN_API}/collections/c1/items/live`, () => HttpResponse.json({ ok: true })));
 

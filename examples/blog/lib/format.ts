@@ -11,13 +11,17 @@ export const names = (items: ReadonlyArray<{ fieldData: { name: string } } | nul
 
 /** Rich Text as plain text, for excerpts and reading time (not for rendering: use WebflowRichText). */
 export function plainText(html: string): string {
-  return html
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    html
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+      .replace(/<[^>]*>/g, " ")
+      // Drop any `<` or `>` left by malformed markup, so the result can never contain a tag.
+      .replace(/[<>]/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 export function excerpt(html: string, length = 160): string {

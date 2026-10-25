@@ -253,9 +253,18 @@ export function createWebflowClient(config: WebflowClientConfig = {}, internals:
 }
 
 function buildUrl(baseUrl: string, path: string, query: QueryParams | undefined): string {
-  const url = `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+  const url = `${trimSlashes(baseUrl, "end")}/${trimSlashes(path, "start")}`;
   const search = query ? toSearchParams(query).toString() : "";
   return search ? `${url}?${search}` : url;
+}
+
+/** Strips leading or trailing slashes. A loop, not `/\/+$/`: that regex is quadratic on long runs of `/`. */
+function trimSlashes(value: string, side: "start" | "end"): string {
+  let start = 0;
+  let end = value.length;
+  if (side === "start") while (start < end && value[start] === "/") start++;
+  else while (end > start && value[end - 1] === "/") end--;
+  return value.slice(start, end);
 }
 
 function parseBody<T>(bodyText: string, method: string, url: string): T {

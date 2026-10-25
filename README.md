@@ -9,7 +9,7 @@ Typed content, signed draft previews, and webhook-driven cache revalidation. Let
 
 [Guide](packages/next-webflow/README.md) · [Live demo](https://nextjswebflow.vercel.app/) · [Example app](examples/blog) · [Docs](docs) · [Try the beta](#try-the-beta)
 
-> **Beta:** `0.1.0-beta.1`, published on npm under the `beta` tag. APIs may still change before `0.1.0`.
+> **Beta:** `0.1.0-beta.1` is on npm. APIs may still change before `0.1.0`.
 
 ## Your CMS, a typed client
 
@@ -55,10 +55,8 @@ Every team that puts Webflow content on a Next.js site writes the same glue: a f
 Requirements for your app: **Next.js 15 or 16 with the App Router, React 19, and Node.js 22.12+**.
 
 ```bash
-npm install next-webflow@beta
+npm install next-webflow
 ```
-
-The beta is published under the `beta` tag, so a plain `npm install next-webflow` won't install it until `0.1.0` is out.
 
 Continue with the [guide](packages/next-webflow/README.md#quick-start) from step 2 (credentials, typegen, reading content, webhooks), or start from the [example blog](examples/blog). The [live demo](https://nextjswebflow.vercel.app) runs on Vercel with real Webflow content. Webflow Cloud support is a **preview**: see the [Webflow Cloud guide](docs/webflow-cloud.md).
 

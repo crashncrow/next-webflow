@@ -85,7 +85,7 @@
   },
   "sideEffects": false,
   "bin": {
-    "next-webflow": "./dist/cli.mjs"
+    "next-webflow": "dist/cli.mjs"
   },
   "dependencies": {
     "domhandler": "^6.0.1",

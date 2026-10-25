@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw/http";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   WebflowConfigError,
+  WebflowConflictError,
   WebflowNotFoundError,
   createWebflowCms,
   type WebflowCmsConfig,
@@ -401,6 +402,51 @@ describe("never-published collection (live list answers 404)", () => {
     server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items`, () => notFound()));
     const { cms } = setup({ draft: true });
     await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowNotFoundError);
+  });
+});
+
+describe("never-published site (live reads answer 409)", () => {
+  // The real response for a site that was never published (2026-10-25).
+  const siteNotPublished = () =>
+    HttpResponse.json(webflowError("conflict", "Conflict with server data: The site is not published."), {
+      status: 409,
+    });
+
+  function site({ exists = true } = {}) {
+    server.use(
+      http.get(LIVE, siteNotPublished),
+      http.get(`${DATA_API}/collections/${POSTS_ID}/items/:itemId/live`, siteNotPublished),
+      http.get(`${DATA_API}/collections/${POSTS_ID}`, () =>
+        exists
+          ? HttpResponse.json(postsCollectionResponse)
+          : HttpResponse.json(webflowError("resource_not_found", "Requested resource not found"), { status: 404 }),
+      ),
+    );
+  }
+
+  it("returns [] / null for lists, slug and ID lookups, and logs once at debug level", async () => {
+    site();
+    const debug = vi.fn();
+    const { cms, logger } = setup({ logger: { warn: vi.fn(), debug } });
+
+    await expect(cms.getItems("posts")).resolves.toEqual([]);
+    await expect(cms.getItemBySlug("posts", POST.fieldData.slug)).resolves.toBeNull();
+    await expect(cms.getItem("posts", POST.id)).resolves.toBeNull();
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug.mock.calls[0]?.[0]).toMatch(/site has never been published/);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("rethrows when the collection itself doesn't exist", async () => {
+    site({ exists: false });
+    const { cms } = setup();
+    await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowNotFoundError);
+  });
+
+  it("doesn't apply to draft reads", async () => {
+    server.use(http.get(`${DATA_API}/collections/${POSTS_ID}/items`, siteNotPublished));
+    const { cms } = setup({ draft: true });
+    await expect(cms.getItems("posts")).rejects.toBeInstanceOf(WebflowConflictError);
   });
 });
 

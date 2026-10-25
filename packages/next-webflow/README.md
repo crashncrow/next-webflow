@@ -351,7 +351,7 @@ export const POST = createWebhookHandler({ onEvent: (event, tags) => console.log
 Webflow behavior, and how next-webflow handles it ([details](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#known-webflow-behavior)):
 
 - **Deleted items linger in live lists until the next site publish.** Publish the site after deleting items.
-- **Collections never published** return 404 from Webflow; next-webflow returns an empty list.
+- **Collections never published** return 404 from Webflow, and every live read of a **site never published** returns 409; in both cases next-webflow returns an empty list (or `null` for a single item).
 - **Webflow sends no webhook when a collection's structure changes.** Renamed and added options still show correctly; rerun typegen to update your types.
 - **Rich Text code blocks come back empty** (`<pre></pre>`), even when created in the editor. Use an HTML embed with `<pre><code>` (paid plans) or a separate field.
 - **Images without their own alt text** inherit the asset's alt text on Webflow's site; next-webflow renders them as decorative (`alt=""`) and warns in development. Set alt text on the image in the editor.

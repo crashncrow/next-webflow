@@ -7,7 +7,7 @@ import {
   type WebflowListResponse,
 } from "./client";
 import { ENV, readEnv } from "./env";
-import { WebflowConfigError, WebflowNotFoundError } from "./errors";
+import { WebflowConfigError, WebflowConflictError, WebflowNotFoundError } from "./errors";
 import { normalizeItem, schemaFromApi, type ApiCollection, type SchemaMismatch } from "./normalize";
 import type { QueryParams, QueryValue } from "./query";
 import type {
@@ -260,6 +260,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
 
   /**
    * Webflow answers 404 (not an empty list) on `/items/live` of a collection that was never
+   * published, and 409 ("The site is not published.") on every live read of a site that was never
    * published. If the collection exists, treat it as empty; otherwise rethrow. Not memoized:
    * Next.js doesn't cache the 404, and an in-memory memo would outlive the `site_publish`
    * invalidation and freeze `[]` into the regenerated page. The page itself stays cached with
@@ -275,8 +276,16 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     try {
       return await read();
     } catch (error) {
+      if (error instanceof WebflowConflictError) {
+        await fetchSchemaById(collection.id); // throws if the collection itself doesn't exist
+        debugOnce(
+          "unpublished-site",
+          "The site has never been published; treating its collections as empty until it is.",
+        );
+        return empty;
+      }
       if (!(error instanceof WebflowNotFoundError)) throw error;
-      await fetchSchemaById(collection.id); // throws if the collection itself doesn't exist
+      await fetchSchemaById(collection.id);
       debugOnce(
         `unpublished:${collection.id}`,
         `Collection "${collection.slug}" has never been published; treating it as empty until it is.`,
@@ -597,6 +606,8 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
       });
     } catch (error) {
       if (error instanceof WebflowNotFoundError) return null;
+      // A site that was never published has no live items (409 "The site is not published.").
+      if (!ctx.draft && error instanceof WebflowConflictError) return null;
       throw error;
     }
   }

@@ -168,7 +168,7 @@ export function createWebflowClient(config: WebflowClientConfig = {}, internals:
           return [res, await res.text()] as const;
         });
       } catch (cause) {
-        if (options.signal?.aborted) throw cause;
+        if (options.signal?.aborted || isFrameworkSignal(cause)) throw cause;
         if (canRetry && IDEMPOTENT_METHODS.has(method)) {
           await sleep(backoffDelay(attempt, retry, random), options.signal);
           continue;
@@ -271,4 +271,19 @@ function assertNonNegativeInteger(name: string, value: number): void {
   if (!Number.isInteger(value) || value < 0) {
     throw new RangeError(`${name} must be a non-negative integer`);
   }
+}
+
+/**
+ * Control-flow errors a framework throws from inside `fetch`, which it must catch itself unchanged:
+ * Next.js marks a page dynamic by throwing an error with a string `digest`
+ * (`DYNAMIC_SERVER_USAGE` for a `no-store` fetch during prerendering), and React postpones with a
+ * `react.postpone` object. They aren't network failures: retrying only delays them, and wrapping
+ * them hides them from the framework.
+ */
+function isFrameworkSignal(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  return (
+    typeof (error as { digest?: unknown }).digest === "string" ||
+    (error as { $$typeof?: unknown }).$$typeof === Symbol.for("react.postpone")
+  );
 }

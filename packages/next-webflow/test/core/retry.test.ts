@@ -143,6 +143,27 @@ describe("abort", () => {
     await expect(pending).rejects.toThrow("cancelled");
   });
 
+  it("rethrows framework control-flow errors unchanged, without retrying", async () => {
+    // What Next.js throws from `fetch` when a prerendered page makes a `no-store` request.
+    const dynamicUsage = Object.assign(new Error("Dynamic server usage"), { digest: "DYNAMIC_SERVER_USAGE" });
+    const postpone = { $$typeof: Symbol.for("react.postpone"), message: "postponed" };
+    for (const signal of [dynamicUsage, postpone]) {
+      let calls = 0;
+      const { client, sleeps } = createTestClient({
+        fetch: async () => {
+          calls++;
+          throw signal;
+        },
+      });
+
+      const error = await client.request("/sites").catch((caught: unknown) => caught);
+
+      expect(error).toBe(signal);
+      expect(calls).toBe(1);
+      expect(sleeps).toEqual([]);
+    }
+  });
+
   it("does not wrap aborted fetches as network errors", async () => {
     const controller = new AbortController();
     controller.abort(new Error("cancelled"));

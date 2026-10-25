@@ -26,7 +26,7 @@ The example reads two collections:
 - **`posts`**: Name, Slug, `body` (Rich text, required), `main-image` (Image), `gallery` (Multi-image), `video` (Video link), `website` (Link), `contact-email` (Email), `phone` (Phone), `reading-time` (Number), `publish-date` (Date/Time), `featured` (Switch), `accent-color` (Color), `attachment` (File), `category` (Option), `author` (Reference → authors), `co-authors` (Multi-reference → authors). Every field except Name, Slug and Body is optional.
 - **`authors`**: Name, Slug.
 
-The committed `webflow/schema.ts` comes from our test site, which also has a collection the example doesn't use (`load-test`). Point it at your site by rerunning typegen; nothing else in the code names a site, collection ID or option.
+The committed `webflow/schema.ts` comes from the demo's Webflow site. Point it at your site by rerunning typegen; nothing else in the code names a site, collection ID or option.
 
 ## Run it
 

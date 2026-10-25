@@ -2,7 +2,7 @@
 
 Use the **Webflow CMS as a headless content source in Next.js** (App Router, Next 15 and 16): types generated from your site, cached reads that refresh when you publish, signed draft previews, and components for Rich Text and images.
 
-> **Pre-release:** `0.1.0-beta.1`, not yet published to npm. [Build and install the beta tarball](https://github.com/crashncrow/next-webflow#try-the-beta) to try it. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
+> **Beta:** `0.1.0-beta.1`, published under the `beta` tag (`npm install next-webflow@beta`). APIs may still change before `0.1.0`. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
 
 **Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching](#caching-and-revalidation) · [Webhooks](#webhooks) · [Draft mode](#draft-mode-previews) · [Components](#components) · [Tokens](#tokens-and-scopes) · [Types](#types-typegen) · [Configuration](#configuration) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview)
 
@@ -10,10 +10,10 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 Requirements: Next.js 15 or 16 with the App Router, React 19, Node.js 22.12+.
 
-**1. Install the beta tarball.** The package isn't on npm yet: [build and pack it](https://github.com/crashncrow/next-webflow#try-the-beta), then install the file in your app:
+**1. Install** the beta (published under the `beta` tag):
 
 ```bash
-npm install /absolute/path/to/next-webflow/next-webflow-0.1.0-beta.1.tgz
+npm install next-webflow@beta
 ```
 
 **2. Add your site's credentials** to `.env.local`: a site token with **CMS: Read** (Site settings → Apps & integrations → API access) and the site ID (Site settings → General).

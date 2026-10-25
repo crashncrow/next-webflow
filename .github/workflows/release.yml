@@ -1,14 +1,17 @@
 name: Release
 
-# Publishes packages/next-webflow to npm, with provenance, when a GitHub release is published.
+# Stages packages/next-webflow on npm, with provenance, when a GitHub release is published.
 # The release tag must be `v<version>` (the version in packages/next-webflow/package.json, set by
 # `pnpm changeset version`). Versions with a pre-release part (0.1.0-beta.1) go to the `beta`
 # dist-tag, others to `latest`.
 #
+# Staged publishing: this workflow never makes a version public. `npm stage publish` uploads it,
+# and a maintainer approves it with 2FA on npmjs.com (Staged Packages) or `npm stage approve`.
+#
 # Auth: npm trusted publishing (OIDC, no stored token), configured on npmjs.com for this workflow
-# file and the `npm` environment. npm only allows that on an existing package, so the very first
-# publish uses a one-off NPM_TOKEN secret on the `npm` environment: delete the secret (and revoke
-# the token) once trusted publishing is set up.
+# file and the `npm` environment. That needs an existing package, so the first release uses a
+# one-off stage-only NPM_TOKEN secret on the `npm` environment: delete it (and revoke the token)
+# once trusted publishing is set up.
 
 on:
   release:
@@ -19,7 +22,7 @@ permissions:
   id-token: write # OIDC: trusted publishing and provenance
 
 jobs:
-  publish:
+  stage:
     runs-on: ubuntu-latest
     environment: npm
     steps:
@@ -39,10 +42,10 @@ jobs:
       - run: pnpm build
       - run: pnpm test
 
-      # Trusted publishing needs npm 11.5.1+; Node 22 ships npm 10. Pinned on purpose (not updated by Dependabot).
+      # Staged publishing needs npm 11.15.0+; Node 22 ships npm 10. Pinned on purpose (not updated by Dependabot).
       - run: npm install --global npm@11.21.0
 
-      - name: Publish
+      - name: Stage on npm
         working-directory: packages/next-webflow
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # empty once trusted publishing is configured
@@ -52,4 +55,5 @@ jobs:
           if [ -n "$NODE_AUTH_TOKEN" ]; then
             echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
           fi
-          npm publish --provenance --access public --tag "$DIST_TAG"
+          npm stage publish --provenance --access public --tag "$DIST_TAG"
+          echo "::notice::Staged next-webflow@$VERSION ($DIST_TAG). Approve it with 2FA on npmjs.com → Staged Packages."

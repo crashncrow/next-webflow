@@ -29,6 +29,17 @@ export function listPosts({
   });
 }
 
+/**
+ * Published posts by an author, as main author or co-author. Webflow can't filter on a
+ * Multi-reference field, so this reads every post (references as IDs) and filters here.
+ */
+export async function listPostsByAuthor(authorId: string) {
+  const posts = await getItems("posts", { sortBy: "name", sortOrder: "asc" });
+  return posts
+    .filter(({ fieldData }) => fieldData.author === authorId || fieldData.coAuthors?.includes(authorId))
+    .map((post) => ({ post, role: post.fieldData.author === authorId ? "author" : "co-author" }) as const);
+}
+
 /** One post by slug (the staged version in draft mode). `cache` dedupes it across metadata and page. */
 export const getPost = cache((slug: string) => getItemBySlug("posts", slug, { include }));
 

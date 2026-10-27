@@ -3,12 +3,6 @@ const dateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric
 /** Webflow DateTime fields are ISO strings. */
 export const formatDate = (iso: string | null | undefined) => (iso ? dateFormat.format(new Date(iso)) : undefined);
 
-/** "Ada, Grace and Linus", skipping references that resolved to `null`. */
-export const names = (items: ReadonlyArray<{ fieldData: { name: string } } | null | undefined>) =>
-  new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(
-    items.flatMap((item) => (item ? [item.fieldData.name] : [])),
-  );
-
 /** Rich Text as plain text, for excerpts and reading time (not for rendering: use WebflowRichText). */
 export function plainText(html: string): string {
   // A scanner, not regex replacements: every `<` starts markup that's skipped, so the result never

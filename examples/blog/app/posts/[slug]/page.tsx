@@ -4,10 +4,11 @@ import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { WebflowImage, WebflowRichText, type RichTextElementProps } from "next-webflow/components";
 import { getItems } from "@/webflow";
+import { AuthorLinks } from "@/components/author-links";
 import { PostBadges } from "@/components/post-badges";
 import { PreviewNotice } from "@/components/preview-notice";
 import { PostVideo } from "@/components/post-video";
-import { excerpt, formatDate, hasEmptyCodeBlock, httpsUrl, names, readingMinutes } from "@/lib/format";
+import { excerpt, formatDate, hasEmptyCodeBlock, httpsUrl, readingMinutes } from "@/lib/format";
 import { hasDraft } from "@/lib/demo-previews";
 import { getPost } from "@/lib/posts";
 import banner from "@/public/webflow-next-banner.webp";
@@ -57,7 +58,7 @@ export default async function PostPage({ params }: Props) {
   const fields = post.fieldData;
   const date = fields.publishDate ?? post.lastPublished;
   // `include` resolved the references: a missing author is `null`, missing co-authors are left out.
-  const authors = names([fields.author, ...fields.coAuthors]);
+  const authors = [fields.author, ...fields.coAuthors];
   const gallery = (fields.gallery ?? []).filter((image) => image.url !== fields.mainImage?.url);
   const website = httpsUrl(fields.website);
   const attachment = httpsUrl(fields.attachment?.url);
@@ -78,7 +79,7 @@ export default async function PostPage({ params }: Props) {
           <PostBadges category={fields.category} featured={fields.featured} categoryFirst />
           <h1 className="my-4 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">{fields.name}</h1>
           <p className="meta">
-            {authors && <span className="text-foreground">{authors}</span>}
+            <AuthorLinks authors={authors} />
             {date && <time dateTime={date}>{formatDate(date)}</time>}
             <span>{readingMinutes(fields.body, fields.readingTime)} min read</span>
           </p>

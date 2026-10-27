@@ -114,6 +114,6 @@ Needs `WEBFLOW_PREVIEW_SECRET` (long random string). Add `<DraftModeBanner />` i
 ## Before you finish
 
 - `npx next-webflow typegen --check` passes (or typegen was just run).
-- Type check and build pass (`next build`).
+- The project's lint, type check and build pass (run its own scripts, e.g. `lint`, `typecheck`, `next build`), plus its formatter check if CI runs one.
 - No token values in source, no `runtime` export in Webflow routes, no `dangerouslySetInnerHTML` on Webflow fields.
 - Tell the user which manual steps remain (env vars on the host, registering webhooks).

@@ -15,8 +15,8 @@ export function AuthorLinks({ authors }: { authors: ReadonlyArray<Author | null 
   return (
     <span className="text-foreground">
       {parts.map((part, i) => {
-        if (part.type === "literal") return <Fragment key={i}>{part.value}</Fragment>;
-        const author = unique[index++]!;
+        const author = part.type === "element" ? unique[index++] : undefined;
+        if (!author) return <Fragment key={i}>{part.value}</Fragment>;
         return (
           <Link
             key={author.id}

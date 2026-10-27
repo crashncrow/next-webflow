@@ -7,7 +7,7 @@ Typed content, signed draft previews, and webhook-driven cache revalidation. Let
 [![CI](https://github.com/crashncrow/next-webflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/crashncrow/next-webflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Guide](packages/next-webflow/README.md) · [Live demo](https://nextjswebflow.vercel.app/) · [Example app](examples/blog) · [Docs](docs) · [Try the beta](#try-the-beta)
+[Guide](packages/next-webflow/README.md) · [Live demo](https://nextjswebflow.vercel.app/) · [Example app](examples/blog) · [Docs](docs) · [Try the beta](#try-the-beta) · [Agent skill](#agent-skill)
 
 > **Beta:** `0.1.0-beta.1` is on npm. APIs may still change before `0.1.0`.
 
@@ -59,6 +59,16 @@ npm install next-webflow
 ```
 
 Continue with the [guide](packages/next-webflow/README.md#quick-start) from step 2 (credentials, typegen, reading content, webhooks), or start from the [example blog](examples/blog). The [live demo](https://nextjswebflow.vercel.app) runs on Vercel with real Webflow content. Webflow Cloud support is a **preview**: see the [Webflow Cloud guide](docs/webflow-cloud.md).
+
+## Agent skill
+
+The repository includes an [agent skill](skills/next-webflow/SKILL.md) for AI coding agents (Claude Code, Cursor, Codex and others that read `SKILL.md` files): setup steps, the rules agents most often get wrong (no `runtime` export, no `dangerouslySetInnerHTML` on Rich Text, a separate token for webhooks), recipes and troubleshooting. Install it in your project with:
+
+```bash
+npx skills add crashncrow/next-webflow
+```
+
+Or copy `skills/next-webflow/` into your agent's skills folder (for Claude Code, `.claude/skills/`).
 
 ## Contributing
 

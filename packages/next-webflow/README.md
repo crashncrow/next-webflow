@@ -4,7 +4,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 > **Beta:** `0.1.0-beta.1`. APIs may still change before `0.1.0`. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
 
-**Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching](#caching-and-revalidation) · [Webhooks](#webhooks) · [Draft mode](#draft-mode-previews) · [Components](#components) · [Tokens](#tokens-and-scopes) · [Types](#types-typegen) · [Configuration](#configuration) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview)
+**Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching](#caching-and-revalidation) · [Webhooks](#webhooks) · [Draft mode](#draft-mode-previews) · [Components](#components) · [Tokens](#tokens-and-scopes) · [Types](#types-typegen) · [Configuration](#configuration) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview) · [Agent skill](#agent-skill)
 
 ## Quick start
 
@@ -369,6 +369,10 @@ next-webflow runs on Webflow Cloud with some setup. Read the [Webflow Cloud guid
 - Add a KV + D1 cache configuration: without it there's no data cache and webhooks can't refresh pages.
 - Set `NEXT_PUBLIC_BASE_PATH` to the app's mount path, and don't export `runtime = "edge"` from route handlers.
 - Keep secrets out of every `.env*` file when deploying: they end up inside the deployed code.
+
+## Agent skill
+
+For AI coding agents, the repository has a [`next-webflow` skill](https://github.com/crashncrow/next-webflow/blob/main/skills/next-webflow/SKILL.md) with setup steps, rules, recipes and troubleshooting: `npx skills add crashncrow/next-webflow`.
 
 ## License
 

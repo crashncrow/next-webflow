@@ -48,6 +48,7 @@ WEBFLOW_CONTRACT=1 pnpm test:contract
 - `packages/next-webflow/README.md` is what npm shows: usage only. Link to other files with full GitHub URLs (`https://github.com/crashncrow/next-webflow/blob/main/…`), because relative links break on npmjs.com.
 - Internals and measurements go in `docs/details.md`; Webflow Cloud setup in `docs/webflow-cloud.md`.
 - Webflow behavior that differs from Webflow's docs is explained once, in the README's "Known limitations".
+- `skills/next-webflow/SKILL.md` is the agent skill: a short version of the README plus the rules agents get wrong. When a change affects the public API, CLI flags, setup steps or a known limitation, update the skill in the same pull request.
 
 ## Changesets and formatting
 

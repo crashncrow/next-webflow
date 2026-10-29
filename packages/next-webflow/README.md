@@ -100,15 +100,15 @@ const post = await getItemBySlug("posts", "hello-world"); // or null
 const byId = await getItem("posts", itemId); // or null
 ```
 
-| Option                | Applies to |                                                                                                                        |
-| --------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `filter`              | `getItems` | Keyed by field (camelCase or API slug). Operators: `eq ne gt gte lt lte in nin contains ncontains exists`.             |
-| `sortBy`, `sortOrder` | `getItems` | Only `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug` (Webflow's limit); sort custom fields in your code. |
-| `limit`, `offset`     | `getItems` | Without `limit`, every item.                                                                                           |
-| `include`             | all        | Replace Reference fields with the referenced items. See [References](#references-include).                             |
-| `cmsLocaleId`         | all        | Read a secondary locale (default: the primary one).                                                                    |
-| `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                              |
-| `signal`              | all        | An `AbortSignal`.                                                                                                      |
+| Option                | Applies to |                                                                                                                                   |
+| --------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`              | `getItems` | Keyed by field (camelCase or API slug). Operators: `eq ne gt gte lt lte in nin contains ncontains exists`.                        |
+| `sortBy`, `sortOrder` | `getItems` | `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`. Sorting by your own fields isn't supported yet: sort in your code. |
+| `limit`, `offset`     | `getItems` | Without `limit`, every item.                                                                                                      |
+| `include`             | all        | Replace Reference fields with the referenced items. See [References](#references-include).                                        |
+| `cmsLocaleId`         | all        | Read a secondary locale (default: the primary one).                                                                               |
+| `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                                         |
+| `signal`              | all        | An `AbortSignal`.                                                                                                                 |
 
 - A missing item is `null`. Everything else throws a subclass of `WebflowError` ([list](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#errors-and-retries)); rate limits and server errors are retried first.
 - In [draft mode](#draft-mode-previews) the same calls return staged content.
@@ -357,7 +357,7 @@ Webflow behavior, and how next-webflow handles it ([details](https://github.com/
 - **Images without their own alt text** inherit the asset's alt text on Webflow's site; next-webflow renders them as decorative (`alt=""`) and warns in development. Set alt text on the image in the editor.
 - **Embedded posts (tweets) in Rich Text** have a fixed aspect ratio and get cut off on narrow screens; render them with your own component through `components.figure` (the URL is in `data-page-url`).
 - **Image dimensions aren't in the API**, and Webflow's CDN doesn't resize images.
-- **Sorting** only by `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`.
+- **Sorting by your own fields** isn't supported yet (Webflow's API allows it): `sortBy` takes `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`.
 - **Rate limits:** 60–120 requests per minute depending on the plan. Cached reads don't count; builds read one list per collection.
 - **`include` is one level deep.**
 - Not supported: writing to the CMS, ecommerce, the Pages and Designer APIs, frameworks other than Next.js.

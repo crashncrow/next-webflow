@@ -65,3 +65,29 @@ jobs:
             *) case "$GOT" in "v$WANTED".*) ;; *) echo "::error::Expected Node $WANTED.x, got $GOT"; exit 1 ;; esac ;;
           esac
       - run: pnpm --filter next-webflow test
+
+  # The library's tests with Next.js 15 (peerDependencies: ^15 || ^16; everything else runs on 16).
+  # Builds on 16 first, then swaps the library's dev copy of next to the latest 15. The swap edits
+  # package.json and the lockfile in this throwaway checkout only. No `tsc`: the source passes two
+  # arguments to revalidateTag (Next 16's signature), which Next 15's types reject; the published
+  # types don't depend on it.
+  library-next15:
+    name: library tests (Next.js 15)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          cache: true
+          save-cache: false # the `check` job saves the store
+          require-lockfile: true
+      - run: pnpm build
+      - run: pnpm --filter next-webflow add --save-dev "next@^15"
+      # Fails if the swap didn't happen, so the job can't pass on Next 16.
+      - name: Check the Next.js version
+        working-directory: packages/next-webflow
+        run: |
+          GOT="$(node -p 'require("next/package.json").version')"
+          echo "Next.js $GOT"
+          case "$GOT" in 15.*) ;; *) echo "::error::Expected Next.js 15.x, got $GOT"; exit 1 ;; esac
+      - run: pnpm --filter next-webflow test

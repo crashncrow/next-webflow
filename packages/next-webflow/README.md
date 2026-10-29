@@ -255,7 +255,7 @@ export const { GET, DELETE } = createDraftHandler({
 
 - **On the server:** `createPreviewUrl({ url, collection, itemId })` (it needs the secret). Also takes `expiresIn` (seconds, default 3600) and `secret`.
 - **From a terminal:** `npx next-webflow preview-url`.
-- **For editors:** a page listing drafts with their links. Copy [`proxy.ts`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/proxy.ts) and [`app/drafts/page.tsx`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/drafts/page.tsx) from the example. Both check a password (`DRAFTS_PASSWORD`; without it the page answers 503 to everyone), so a wrong proxy `matcher` doesn't expose it.
+- **For editors:** a page listing drafts with their links. Copy [`proxy.ts`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/proxy.ts) (on Next.js 15, name it `middleware.ts` and the function `middleware`) and [`app/drafts/page.tsx`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/drafts/page.tsx) from the example. Both check a password (`DRAFTS_PASSWORD`; without it the page answers 503 to everyone), so a wrong proxy `matcher` doesn't expose it.
 
 > **Warning: `unsafeStagedCache` publishes your drafts on any page that uses it.** The drafts page uses it to read staged content without draft mode. Only use it on a password-protected page; never on a public page or with static rendering.
 

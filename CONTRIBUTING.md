@@ -21,7 +21,7 @@ pnpm typecheck    # the library and examples/blog
 pnpm test         # Node and edge tests with mocked API responses
 ```
 
-CI runs all of them on every pull request, and the library's tests on Node.js 22.12, 24 and the latest LTS.
+CI runs all of them on every pull request, and the library's tests on Node.js 22.12, 24 and the latest LTS, and with Next.js 15 (everything else runs on Next.js 16).
 
 ### Contract test (optional)
 

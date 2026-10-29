@@ -26,8 +26,10 @@ WEBFLOW_SITE_ID=…
 **3. Generate the typed client.**
 
 ```bash
-npx next-webflow typegen   # writes webflow/schema.ts and webflow/index.ts (--out src/webflow with a src/ directory)
+npx next-webflow typegen
 ```
+
+It writes `webflow/schema.ts` and `webflow/index.ts`. With a `src/` directory, add `--out src/webflow`.
 
 **4. Read content** in a Server Component. The `@/` alias comes with `create-next-app`; otherwise import with a relative path.
 
@@ -72,15 +74,11 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
 }
 ```
 
-**5. Refresh pages when you publish.** Add the webhook route, deploy, then register the webhooks once. Registering needs a separate token with more scopes, here in `WEBFLOW_ADMIN_TOKEN` ([Tokens](#tokens-and-scopes), [details](#webhooks)):
+**5. Refresh pages when you publish.** Add the webhook route, deploy, then [register the webhooks](#webhooks) once with `npx next-webflow webhooks register`. Registering needs a separate token with more scopes ([Tokens](#tokens-and-scopes)).
 
 ```ts
 // app/api/webflow/route.ts
 export { POST } from "next-webflow/webhook";
-```
-
-```bash
-npx next-webflow webhooks register --url https://your-site.com/api/webflow --token-env WEBFLOW_ADMIN_TOKEN
 ```
 
 **6. Optional:** [draft previews](#draft-mode-previews) and [components](#components). The [example blog](https://github.com/crashncrow/next-webflow/tree/main/examples/blog) puts it all together.
@@ -245,7 +243,7 @@ import { WebflowRichText } from "next-webflow/components";
 - Videos and embedded posts keep their aspect ratio, and images fit their container, without Webflow's CSS ([how](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#rich-text-layout)). Images stay `<img>` (Webflow doesn't give their size); override `img` to change that.
 - **Image alignment needs CSS.** Centered, floated and full-width images use Webflow's classes (`w-richtext-align-center|floatleft|floatright|fullwidth`): style them or load your site's webflow.css. [The example's CSS](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/globals.css) shows the rules.
 
-With Tailwind's [typography plugin](https://github.com/tailwindlabs/tailwindcss-typography) (`@plugin "@tailwindcss/typography"` in your CSS), pass its classes and target the alignment classes:
+With Tailwind's [typography plugin](https://github.com/tailwindlabs/tailwindcss-typography) (`@plugin "@tailwindcss/typography"` in your CSS), pass its classes and target the alignment classes (`[&_pre:empty]:hidden` hides [empty code blocks](#known-limitations)):
 
 ```tsx
 <WebflowRichText
@@ -263,15 +261,15 @@ import { WebflowImage } from "next-webflow/components";
 <WebflowImage image={post.fieldData.mainImage} fill sizes="50vw" /> {/* parent: position relative + size */}
 ```
 
-- Webflow doesn't report image dimensions, so the types require `width` + `height`, or `fill`.
-- `alt` comes from the field; pass `alt` to override. An empty alt renders as decorative (`alt=""`) with a development warning.
+- The types require `width` + `height`, or `fill`: the API doesn't give image dimensions ([Known limitations](#known-limitations)).
+- `alt` comes from the field; pass `alt` to override. An empty or inherited alt renders as decorative (`alt=""`) with a development warning.
 - Allow Webflow's asset CDN in `next.config.ts`:
 
   ```ts
   images: { remotePatterns: [{ protocol: "https", hostname: "cdn.prod.website-files.com" }] },
   ```
 
-- Webflow's CDN doesn't resize images; Next.js' optimizer does on Vercel or `next start`. On Webflow Cloud, images are served at their original size: [upload pre-optimized images](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md#images).
+- Next.js' optimizer resizes images on Vercel or `next start`. On Webflow Cloud, images are served at their original size: [upload pre-optimized images](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md#images).
 
 ### `DraftModeBanner`
 
@@ -335,7 +333,18 @@ Then import from your folder: `import { getItems, type Post } from "@/webflow"`.
 | `concurrency`               | `4`            | Maximum parallel requests.                                                              |
 | `token`, `siteId`, `logger` | env, `console` | Instead of `WEBFLOW_CMS_TOKEN`, `WEBFLOW_SITE_ID` and `console`.                        |
 
-**`createWebhookHandler(options)`** (`next-webflow/webhook`): `secret` (default `WEBFLOW_WEBHOOK_SECRET`), `profile` (default `{ expire: 0 }`), `invalidateOnStagedChanges` (also invalidate on draft edits), `extraTags(event)`, `tags(event, defaults)` (replace the mapping), `onEvent(event, tags)` (logging, notifications; throwing returns 500 so Webflow retries), `logger`, `toleranceMs`. `allowUnsigned` exists but is insecure.
+**`createWebhookHandler(options)`** (`next-webflow/webhook`):
+
+| Option                      | Default                  |                                                                         |
+| --------------------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `secret`                    | `WEBFLOW_WEBHOOK_SECRET` | One or several (comma-separated in the variable): any of them verifies. |
+| `profile`                   | `{ expire: 0 }`          | Passed to `revalidateTag`; `"max"` serves stale while revalidating.     |
+| `invalidateOnStagedChanges` | `false`                  | Also invalidate on draft edits.                                         |
+| `extraTags(event)`          | —                        | Tags to add to the default mapping.                                     |
+| `tags(event, defaults)`     | —                        | Replace the tag list (receives the defaults plus `extraTags`).          |
+| `onEvent(event, tags)`      | —                        | Logging, notifications. Throwing returns 500, so Webflow retries.       |
+| `logger`, `toleranceMs`     | `console`, 5 minutes     | Where warnings go; maximum age of a signed request, in milliseconds.    |
+| `allowUnsigned`             | `false`                  | Accept unsigned requests. Insecure: anyone can invalidate your cache.   |
 
 ```ts
 // app/api/webflow/route.ts
@@ -344,11 +353,22 @@ import { createWebhookHandler } from "next-webflow/webhook";
 export const POST = createWebhookHandler({ onEvent: (event, tags) => console.log(event.triggerType, tags) });
 ```
 
-**`createDraftHandler(options)`** (`next-webflow/draft`): `schema`, `resolvePath` (required), `secret` (default `WEBFLOW_PREVIEW_SECRET`), `basePath`, `maxLinkLifetimeSeconds` (default 30 days), `logger`. **`createPreviewUrl(options)`**: `url`, `collection`, `itemId`, `expiresIn` (seconds, default 3600), `secret`.
+**`createDraftHandler(options)`** (`next-webflow/draft`):
+
+| Option                   | Default                                |                                                                  |
+| ------------------------ | -------------------------------------- | ---------------------------------------------------------------- |
+| `resolvePath`            | — (required)                           | `(collection, item) => path` of the item's page.                 |
+| `schema`                 | —                                      | The generated schema.                                            |
+| `secret`                 | `WEBFLOW_PREVIEW_SECRET`               | One or several: any of them verifies, the first signs.           |
+| `basePath`               | `NEXT_PUBLIC_BASE_PATH`, then Next.js' | Prefixed to redirects ([Webflow Cloud](#webflow-cloud-preview)). |
+| `maxLinkLifetimeSeconds` | 30 days                                | Reject links that claim to last longer.                          |
+| `logger`                 | `console`                              | Where warnings go.                                               |
+
+**`createPreviewUrl(options)`** (`next-webflow/draft`): `url`, `collection`, `itemId`, `expiresIn` (seconds, default 3600), `secret`.
 
 ## Known limitations
 
-Webflow behavior, and how next-webflow handles it ([details](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#known-webflow-behavior)):
+**Webflow behavior**, and how next-webflow handles it ([details](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#known-webflow-behavior)):
 
 - **Deleted items linger in live lists until the next site publish.** Publish the site after deleting items.
 - **Collections never published** return 404 from Webflow, and every live read of a **site never published** returns 409; in both cases next-webflow returns an empty list (or `null` for a single item).
@@ -357,10 +377,13 @@ Webflow behavior, and how next-webflow handles it ([details](https://github.com/
 - **Images without their own alt text** inherit the asset's alt text on Webflow's site; next-webflow renders them as decorative (`alt=""`) and warns in development. Set alt text on the image in the editor.
 - **Embedded posts (tweets) in Rich Text** have a fixed aspect ratio and get cut off on narrow screens; render them with your own component through `components.figure` (the URL is in `data-page-url`).
 - **Image dimensions aren't in the API**, and Webflow's CDN doesn't resize images.
-- **Sorting by your own fields** isn't supported yet (Webflow's API allows it): `sortBy` takes `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`.
 - **Rate limits** depend on the plan ([numbers](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#known-webflow-behavior)). Cached reads don't count, and builds read each collection's list once (about one request per 100 items).
-- **`include` is one level deep.**
-- Not supported: writing to the CMS, ecommerce, the Pages and Designer APIs, frameworks other than Next.js.
+
+**Not supported by next-webflow:**
+
+- **Sorting by your own fields** (Webflow's API allows it; not exposed yet): `sortBy` takes `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`. Sort in your code.
+- **References more than one level deep** ([`include`](#references-include)).
+- Writing to the CMS, ecommerce, the Pages and Designer APIs, frameworks other than Next.js.
 
 ## Webflow Cloud (preview)
 

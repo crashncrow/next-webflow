@@ -355,14 +355,14 @@ export const POST = createWebhookHandler({ onEvent: (event, tags) => console.log
 
 **`createDraftHandler(options)`** (`next-webflow/draft`):
 
-| Option                   | Default                                |                                                                  |
-| ------------------------ | -------------------------------------- | ---------------------------------------------------------------- |
-| `resolvePath`            | — (required)                           | `(collection, item) => path` of the item's page.                 |
-| `schema`                 | —                                      | The generated schema.                                            |
-| `secret`                 | `WEBFLOW_PREVIEW_SECRET`               | One or several: any of them verifies, the first signs.           |
-| `basePath`               | `NEXT_PUBLIC_BASE_PATH`, then Next.js' | Prefixed to redirects ([Webflow Cloud](#webflow-cloud-preview)). |
-| `maxLinkLifetimeSeconds` | 30 days                                | Reject links that claim to last longer.                          |
-| `logger`                 | `console`                              | Where warnings go.                                               |
+| Option                   | Default                                                       |                                                                  |
+| ------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `resolvePath`            | — (required)                                                  | `(collection, item) => path` of the item's page.                 |
+| `schema`                 | —                                                             | The generated schema.                                            |
+| `secret`                 | `WEBFLOW_PREVIEW_SECRET`                                      | One or several: any of them verifies, the first signs.           |
+| `basePath`               | `NEXT_PUBLIC_BASE_PATH`, else the `basePath` in `next.config` | Prefixed to redirects ([Webflow Cloud](#webflow-cloud-preview)). |
+| `maxLinkLifetimeSeconds` | 30 days                                                       | Reject links that claim to last longer.                          |
+| `logger`                 | `console`                                                     | Where warnings go.                                               |
 
 **`createPreviewUrl(options)`** (`next-webflow/draft`): `url`, `collection`, `itemId`, `expiresIn` (seconds, default 3600), `secret`.
 

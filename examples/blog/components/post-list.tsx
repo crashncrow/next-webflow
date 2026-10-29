@@ -7,10 +7,10 @@ import { PostBadges } from "@/components/post-badges";
 import { PreviewNotice } from "@/components/preview-notice";
 import { PostIcon } from "@/components/post-icon";
 import { excerpt, formatDate } from "@/lib/format";
-import { categories, listPosts } from "@/lib/posts";
+import { categories, listPosts, type CategoryId } from "@/lib/posts";
 
 /** The home page, `/featured` and `/category/[id]`: the same list with a different filter. */
-export async function PostList({ categoryId, featured = false }: { categoryId?: string; featured?: boolean }) {
+export async function PostList({ categoryId, featured = false }: { categoryId?: CategoryId; featured?: boolean }) {
   const posts = await listPosts({ categoryId, featured });
   const category = categories.find((option) => option.id === categoryId);
 

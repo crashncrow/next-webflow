@@ -198,6 +198,21 @@ export type ReferenceKeys<S extends WebflowSchema, K extends keyof S> = Extract<
   string
 >;
 
+/** IDs of an Option field's options (`string` when the schema doesn't list them). */
+export type OptionIds<F extends FieldSchema> = F["options"] extends readonly (infer O)[]
+  ? O extends WebflowOption
+    ? O["id"]
+    : never
+  : string;
+
+/**
+ * IDs of the options of Option field `F` in collection `K`, e.g. to type a route param before
+ * filtering with it: `filter: { category: { eq: id } }` only accepts these IDs.
+ */
+export type OptionIdOf<S extends WebflowSchema, K extends keyof S, F extends keyof S[K]["fields"]> = OptionIds<
+  S[K]["fields"][F]
+>;
+
 /** Slug of the schema collection whose ID is `Id` (`never` if it isn't in the schema). */
 type SlugById<S extends WebflowSchema, Id> = {
   [K in keyof S]: S[K]["id"] extends Id ? (Id extends S[K]["id"] ? K : never) : never;

@@ -1,3 +1,4 @@
+import type { OptionIdOf } from "next-webflow";
 import { cache } from "react";
 import { getItemBySlug, getItems } from "@/webflow";
 import { schema } from "@/webflow/schema";
@@ -8,6 +9,9 @@ const include = ["author", "coAuthors"] as const;
 /** Category options from the generated schema; rerun typegen after adding one in Webflow. */
 export const categories = schema.posts.fields.category.options;
 
+/** A Category option ID: Option filters only accept the IDs in the generated schema. */
+export type CategoryId = OptionIdOf<typeof schema, "posts", "category">;
+
 /**
  * Published posts, filtered on Webflow's side. Cached under the posts collection tag: the webhook
  * refreshes these pages when a post is published.
@@ -15,7 +19,7 @@ export const categories = schema.posts.fields.category.options;
 export function listPosts({
   categoryId,
   featured,
-}: { categoryId?: string | undefined; featured?: boolean | undefined } = {}) {
+}: { categoryId?: CategoryId | undefined; featured?: boolean | undefined } = {}) {
   return getItems("posts", {
     include,
     sortBy: "name",

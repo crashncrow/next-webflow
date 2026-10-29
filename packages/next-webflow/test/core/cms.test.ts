@@ -5,6 +5,7 @@ import {
   WebflowConflictError,
   WebflowNotFoundError,
   createWebflowCms,
+  type OptionIdOf,
   type WebflowCmsConfig,
   type WebflowItem,
   type WebflowRawItem,
@@ -94,6 +95,44 @@ describe("getItems", () => {
     expect(search?.get("sortBy")).toBe("lastPublished");
     expect(search?.get("sortOrder")).toBe("desc");
     expect(search?.get("cmsLocaleId")).toBe("locale-2");
+  });
+
+  it("types filters from the schema: field keys (camelCase or slug) and Option IDs", () => {
+    const { cms } = setup();
+    // Type checks only (`tsc` runs over the tests); never called, so no requests.
+    const typeChecks = async () => {
+      await cms.getItems("posts", {
+        filter: { "reading-time": { gte: 5 }, category: { eq: OPTIONS.guides.id }, publishDate: { exists: true } },
+      });
+      // With `include`, `raw` and the plain operators of other field types too.
+      await cms.getItems("posts", { include: ["author"], filter: { category: { nin: [OPTIONS.news.id] } } });
+      await cms.getItems("posts", { raw: true, filter: { name: { contains: "x" } } });
+
+      // @ts-expect-error a field the collection doesn't have
+      await cms.getItems("posts", { filter: { featurd: { eq: true } } });
+      // @ts-expect-error Option filters take option IDs, not names (Webflow returns nothing for a name)
+      await cms.getItems("posts", { filter: { category: { eq: "News" } } });
+      // @ts-expect-error in an `in` list too
+      await cms.getItems("posts", { filter: { category: { in: [OPTIONS.news.id, "News"] } } });
+      // @ts-expect-error Webflow doesn't accept `contains` on Option fields
+      await cms.getItems("posts", { filter: { category: { contains: "a" } } });
+      // @ts-expect-error filters belong to the collection: `authors` has no `category`
+      await cms.getItems("authors", { filter: { category: { eq: OPTIONS.news.id } } });
+
+      // A plain `string` (e.g. a route param) has to be narrowed to the option IDs first.
+      const fromUrl: string = OPTIONS.news.id;
+      // @ts-expect-error not narrowed
+      await cms.getItems("posts", { filter: { category: { eq: fromUrl } } });
+      const option = schema.posts.fields.category.options.find(({ id }) => id === fromUrl);
+      if (option) await cms.getItems("posts", { filter: { category: { eq: option.id } } });
+
+      // Without a schema, any key and value still go through.
+      await createWebflowCms({ siteId: SITE_ID }).getItems("posts", { filter: { anything: { eq: "News" } } });
+    };
+    expect(typeChecks).toBeTypeOf("function");
+    expectTypeOf<OptionIdOf<typeof schema, "posts", "category">>().toEqualTypeOf<
+      typeof OPTIONS.news.id | typeof OPTIONS.guides.id
+    >();
   });
 
   it("forwards limit to pagination", async () => {

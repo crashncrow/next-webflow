@@ -69,7 +69,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
 
 - `getItems(collection, { filter, sortBy, sortOrder, limit, offset, include, cmsLocaleId, raw })`. `sortBy` only accepts `createdOn`, `lastPublished`, `lastUpdated`, `name`, `slug`; next-webflow doesn't expose sorting by custom fields yet, so sort those in code. Without `limit` it returns every item.
 - `fieldData` keys are camelCase (`main-image` → `mainImage`); empty fields are absent, not `null`.
-- Options are `{ id, name }`: compare by `id`, display `name`.
+- Options are `{ id, name }`: compare and filter by `id`, display `name`. Filters are typed from the schema: field names must exist, and Option filters only accept the schema's option IDs (Webflow returns nothing for a name). Narrow a route param with `schema.<collection>.fields.<field>.options.find((o) => o.id === id)` before filtering.
 
 **References:** `getItems("posts", { include: ["author"] })` → `author: AuthorsItem | null`. One level deep. `raw: true` can't be combined with `include`.
 

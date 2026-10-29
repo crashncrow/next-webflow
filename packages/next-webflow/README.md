@@ -98,15 +98,15 @@ const post = await getItemBySlug("posts", "hello-world"); // or null
 const byId = await getItem("posts", itemId); // or null
 ```
 
-| Option                | Applies to |                                                                                                                                   |
-| --------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `filter`              | `getItems` | Keyed by field (camelCase or API slug). Operators: `eq ne gt gte lt lte in nin contains ncontains exists`.                        |
-| `sortBy`, `sortOrder` | `getItems` | `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`. Sorting by your own fields isn't supported yet: sort in your code. |
-| `limit`, `offset`     | `getItems` | Without `limit`, every item.                                                                                                      |
-| `include`             | all        | Replace Reference fields with the referenced items. See [References](#references-include).                                        |
-| `cmsLocaleId`         | all        | Read a secondary locale (default: the primary one).                                                                               |
-| `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                                         |
-| `signal`              | all        | An `AbortSignal`.                                                                                                                 |
+| Option                | Applies to |                                                                                                                                                                                                                               |
+| --------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`              | `getItems` | Keyed by the collection's fields (camelCase or API slug), checked against your schema. Operators: `eq ne gt gte lt lte in nin contains ncontains exists`; Option fields take `eq ne in nin` with [option IDs](#field-values). |
+| `sortBy`, `sortOrder` | `getItems` | `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`. Sorting by your own fields isn't supported yet: sort in your code.                                                                                             |
+| `limit`, `offset`     | `getItems` | Without `limit`, every item.                                                                                                                                                                                                  |
+| `include`             | all        | Replace Reference fields with the referenced items. See [References](#references-include).                                                                                                                                    |
+| `cmsLocaleId`         | all        | Read a secondary locale (default: the primary one).                                                                                                                                                                           |
+| `raw: true`           | all        | The API's item untouched: slug keys, Option IDs, `null` for empty fields.                                                                                                                                                     |
+| `signal`              | all        | An `AbortSignal`.                                                                                                                                                                                                             |
 
 - A missing item is `null`. Everything else throws a subclass of `WebflowError` ([list](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#errors-and-retries)); rate limits and server errors are retried first.
 - In [draft mode](#draft-previews) the same calls return staged content.
@@ -131,7 +131,7 @@ Items are normalized: `fieldData` keys are camelCase (`main-image` → `mainImag
 | Multi-reference                       | The item IDs (`string[]`), or with [`include`](#references-include) the items (`Item[]`)   |
 | External file reference               | `unknown`, as returned (typegen warns)                                                     |
 
-**Options.** Compare by `id` (stable) and display `name`. Editors can rename options: the new name shows on your site without rerunning typegen, at the latest after the next site publish ([how](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#option-names)). Set `optionNames: "generated"` to use only the names from typegen.
+**Options.** Compare and filter by `id` (stable), display `name`. Filters only accept the option IDs in your schema, since Webflow returns nothing for a name: narrow a route param first, e.g. `schema.posts.fields.category.options.find((o) => o.id === id)`, or type it with `OptionIdOf<typeof schema, "posts", "category">`. Editors can rename options: the new name shows on your site without rerunning typegen, at the latest after the next site publish ([how](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#option-names)). Set `optionNames: "generated"` to use only the names from typegen.
 
 **Video links.** `url`, plus `metadata` from Embedly (`thumbnailUrl`, `aspectRatio`…; every key is optional and varies by provider). `metadata.html` is third-party iframe HTML: next-webflow never renders it, and you shouldn't without trusting Embedly and the provider. Prefer your own player from `url`.
 

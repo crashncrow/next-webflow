@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Category({ params }: Props) {
   const { id } = await params;
-  if (!categories.some((category) => category.id === id)) notFound();
-  // Option filters compare by ID: `filter: { category: { eq: id } }`.
-  return <PostList categoryId={id} />;
+  // Option filters only accept the schema's option IDs: find the URL's ID there first.
+  const category = categories.find((option) => option.id === id);
+  if (!category) notFound();
+  return <PostList categoryId={category.id} />;
 }

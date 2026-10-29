@@ -15,6 +15,7 @@ import type {
   FieldSchema,
   ItemOf,
   ItemWithIncludes,
+  OptionIds,
   ReferenceKeys,
   UnknownFields,
   WebflowItem,
@@ -109,6 +110,42 @@ export type FilterOperators = {
   exists?: boolean;
 };
 
+/** Operators Webflow accepts on Option fields, which it compares by option ID (not name). */
+interface OptionFilterOperators<Id extends string> {
+  eq?: Id;
+  ne?: Id;
+  in?: Id | readonly Id[];
+  nin?: Id | readonly Id[];
+}
+
+/** A field of collection `C` by camelCase key or API slug (`never` if neither matches). */
+type FieldByKey<C extends CollectionSchema, Key> = Key extends keyof C["fields"]
+  ? C["fields"][Key]
+  : { [F in keyof C["fields"]]: C["fields"][F]["slug"] extends Key ? C["fields"][F] : never }[keyof C["fields"]];
+
+type FilterKey<C extends CollectionSchema> =
+  Extract<keyof C["fields"], string> | { [F in keyof C["fields"]]: C["fields"][F]["slug"] }[keyof C["fields"]];
+
+type FilterOperatorsFor<F> = F extends FieldSchema
+  ? F["type"] extends "Option"
+    ? OptionFilterOperators<OptionIds<F>>
+    : FilterOperators
+  : never;
+
+/**
+ * `getItems` filters for collection `K` of a generated schema: keyed by its fields (camelCase or
+ * API slug), so a typo or a field renamed in Webflow fails type checking once typegen reruns.
+ * Option fields take the schema's option IDs.
+ */
+export type FilterOf<S extends WebflowSchema, K extends keyof S> = {
+  [Key in FilterKey<S[K]>]?: FilterOperatorsFor<FieldByKey<S[K], Key>> | undefined;
+};
+
+/** `getItems` options with `filter` typed from the schema. */
+export type TypedGetItemsOptions<S extends WebflowSchema, K extends keyof S> = Omit<GetItemsOptions, "filter"> & {
+  filter?: FilterOf<S, K> | undefined;
+};
+
 export interface ReadOptions {
   /** Locale to read; defaults to the primary locale. */
   cmsLocaleId?: string | undefined;
@@ -140,12 +177,18 @@ type CollectionSlug<S extends WebflowSchema> = Extract<keyof S, string>;
 
 /** Functions typed from a generated schema: collection slugs and item fields are inferred. */
 export interface TypedWebflowCms<S extends WebflowSchema> {
-  getItems<K extends CollectionSlug<S>>(collection: K, options: GetItemsOptions & Raw): Promise<WebflowRawItem[]>;
+  getItems<K extends CollectionSlug<S>>(
+    collection: K,
+    options: TypedGetItemsOptions<S, K> & Raw,
+  ): Promise<WebflowRawItem[]>;
   getItems<K extends CollectionSlug<S>, const I extends readonly ReferenceKeys<S, K>[]>(
     collection: K,
-    options: GetItemsOptions & WithInclude<I>,
+    options: TypedGetItemsOptions<S, K> & WithInclude<I>,
   ): Promise<ItemWithIncludes<S, K, I[number]>[]>;
-  getItems<K extends CollectionSlug<S>>(collection: K, options?: GetItemsOptions & NoInclude): Promise<ItemOf<S, K>[]>;
+  getItems<K extends CollectionSlug<S>>(
+    collection: K,
+    options?: TypedGetItemsOptions<S, K> & NoInclude,
+  ): Promise<ItemOf<S, K>[]>;
   getItemBySlug<K extends CollectionSlug<S>>(
     collection: K,
     slug: string,

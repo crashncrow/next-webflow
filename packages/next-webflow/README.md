@@ -270,6 +270,8 @@ import { DraftModeBanner } from "next-webflow/components";
 
 Renders only in draft mode: a fixed bar with an "Exit preview" link back to the current page. Props: `route` (your draft route), `children` (the message), `exitLabel`, `className` (replaces the default inline styles), `exitClassName` (the exit link) and `basePath`.
 
+For your own banner, use its exit link, a Client Component: `import { ExitPreviewLink } from "next-webflow/components/client"`, then `<ExitPreviewLink href="/api/webflow/draft">Exit preview</ExitPreviewLink>` (`href` is your draft route, with the base path on Webflow Cloud; `className` optional). It links to `?disable=1&path=<current page>` with a plain `<a>`, because `next/link` would prefetch the exit URL and leave preview by itself.
+
 ## Rendering
 
 Server Components from `next-webflow/components`. It's the only entry point with dependencies (`html-react-parser`, MIT); nothing is added to the browser bundle.

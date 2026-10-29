@@ -31,7 +31,6 @@ describe("public runtime exports", () => {
     expect(names(await import("../src/webhook"))).toEqual([
       "DEFAULT_WEBHOOK_EVENTS",
       "POST",
-      "UNSIGNED_WEBHOOK_MESSAGE",
       "createWebhookHandler",
       "parseWebhookEvent",
       "tagsForEvent",
@@ -41,13 +40,10 @@ describe("public runtime exports", () => {
 
   it("next-webflow/draft", async () => {
     expect(names(await import("../src/draft"))).toEqual([
-      "DEFAULT_MAX_PREVIEW_LIFETIME_SECONDS",
-      "DEFAULT_PREVIEW_EXPIRES_IN_SECONDS",
       "createDraftHandler",
       "createPreviewUrl",
       "nextBasePath",
       "requireBasicAuth",
-      "safeRelativePath",
     ]);
   });
 

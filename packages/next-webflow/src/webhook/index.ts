@@ -26,7 +26,6 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}): (requ
 /** Default endpoint: `export { POST } from "next-webflow/webhook";` */
 export const POST = createWebhookHandler();
 
-export { UNSIGNED_WEBHOOK_MESSAGE } from "../core/webhook-handler";
 export type { RevalidateProfile, WebhookHandlerOptions, WebhookLogger } from "../core/webhook-handler";
 export {
   DEFAULT_WEBHOOK_EVENTS,

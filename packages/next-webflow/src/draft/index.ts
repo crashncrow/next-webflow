@@ -31,10 +31,4 @@ export function createDraftHandler<const S extends WebflowSchema | undefined = u
 export { nextBasePath } from "../next/base-path";
 export type { DraftHandlerOptions, DraftRouteHandlers } from "../core/draft-handler";
 export { requireBasicAuth, type BasicAuthOptions } from "../core/basic-auth";
-export {
-  createPreviewUrl,
-  safeRelativePath,
-  DEFAULT_PREVIEW_EXPIRES_IN_SECONDS,
-  DEFAULT_MAX_PREVIEW_LIFETIME_SECONDS,
-  type CreatePreviewUrlOptions,
-} from "../core/preview";
+export { createPreviewUrl, type CreatePreviewUrlOptions } from "../core/preview";

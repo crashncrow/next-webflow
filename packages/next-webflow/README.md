@@ -4,7 +4,7 @@ Use the **Webflow CMS as a headless content source in Next.js** (App Router, Nex
 
 > **Beta:** APIs may still change before `0.1.0`. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
 
-**Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching](#caching-and-revalidation) · [Webhooks](#webhooks) · [Draft mode](#draft-mode-previews) · [Components](#components) · [Tokens](#tokens-and-scopes) · [Types](#types-typegen) · [Configuration](#configuration) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview) · [Agent skill](#agent-skill)
+**Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Keeping pages fresh](#keeping-pages-fresh) · [Draft previews](#draft-previews) · [Rendering](#rendering) · [Setup reference](#setup-reference) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview) · [Agent skill](#agent-skill)
 
 ## Quick start
 
@@ -81,7 +81,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
 export { POST } from "next-webflow/webhook";
 ```
 
-**6. Optional:** [draft previews](#draft-mode-previews) and [components](#components). The [example blog](https://github.com/crashncrow/next-webflow/tree/main/examples/blog) puts it all together.
+**6. Optional:** [draft previews](#draft-previews) and [components](#rendering). The [example blog](https://github.com/crashncrow/next-webflow/tree/main/examples/blog) puts it all together.
 
 ## Reading content
 
@@ -109,33 +109,33 @@ const byId = await getItem("posts", itemId); // or null
 | `signal`              | all        | An `AbortSignal`.                                                                                                                 |
 
 - A missing item is `null`. Everything else throws a subclass of `WebflowError` ([list](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#errors-and-retries)); rate limits and server errors are retried first.
-- In [draft mode](#draft-mode-previews) the same calls return staged content.
+- In [draft mode](#draft-previews) the same calls return staged content.
 - If someone changes a collection after you ran typegen, next-webflow keeps serving the data and warns once. Run `typegen --check` in CI to know when your types are behind the site.
 
-## Field values
+### Field values
 
 Items are normalized: `fieldData` keys are camelCase (`main-image` → `mainImage`), empty fields are absent, and optional fields are typed optional.
 
-| Webflow type                          | Value                                                      | TypeScript                                                        |
-| ------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| Plain text, Link, Email, Phone, Color | string                                                     | `string`                                                          |
-| Rich text                             | HTML string, unsanitized: render it with `WebflowRichText` | `string`                                                          |
-| Number                                | number                                                     | `number`                                                          |
-| Switch                                | boolean                                                    | `boolean`                                                         |
-| Date/Time                             | ISO 8601 string                                            | `string`                                                          |
-| Option                                | `{ id, name }`                                             | `{ id: "…"; name: "News" } \| …`, or `name: undefined` if unknown |
-| Image, File                           | `{ fileId, url, alt }`                                     | `WebflowImageValue`, `WebflowFileValue` (`alt` may be `null`)     |
-| Multi-image                           | array of images                                            | `WebflowImageValue[]`                                             |
-| Video link                            | `{ url, metadata? }`                                       | `WebflowVideoValue`                                               |
-| Reference                             | item ID, or the item with `include`                        | `string`, or `Item \| null`                                       |
-| Multi-reference                       | item IDs, or the items with `include`                      | `string[]`, or `Item[]`                                           |
-| External file reference               | as returned                                                | `unknown` (typegen warns)                                         |
+| Webflow type                          | Value                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Plain text, Link, Email, Phone, Color | `string`                                                                                   |
+| Rich text                             | `string`: HTML, **unsanitized**. Render it with [`WebflowRichText`](#webflowrichtext).     |
+| Number                                | `number`                                                                                   |
+| Switch                                | `boolean`                                                                                  |
+| Date/Time                             | `string` (ISO 8601)                                                                        |
+| Option                                | `{ id, name }`, typed as the exact pairs from your schema; `name: undefined` if unknown    |
+| Image, File                           | `{ fileId, url, alt }` (`WebflowImageValue`, `WebflowFileValue`); `alt` may be `null`      |
+| Multi-image                           | `WebflowImageValue[]`                                                                      |
+| Video link                            | `{ url, metadata? }` (`WebflowVideoValue`)                                                 |
+| Reference                             | The item ID (`string`), or with [`include`](#references-include) the item (`Item \| null`) |
+| Multi-reference                       | The item IDs (`string[]`), or with [`include`](#references-include) the items (`Item[]`)   |
+| External file reference               | `unknown`, as returned (typegen warns)                                                     |
 
 **Options.** Compare by `id` (stable) and display `name`. Editors can rename options: the new name shows on your site without rerunning typegen, at the latest after the next site publish ([how](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#option-names)). Set `optionNames: "generated"` to use only the names from typegen.
 
 **Video links.** `url`, plus `metadata` from Embedly (`thumbnailUrl`, `aspectRatio`…; every key is optional and varies by provider). `metadata.html` is third-party iframe HTML: next-webflow never renders it, and you shouldn't without trusting Embedly and the provider. Prefer your own player from `url`.
 
-## References (`include`)
+### References (`include`)
 
 ```ts
 const posts = await getItems("posts", { include: ["author", "coAuthors"] });
@@ -147,7 +147,9 @@ posts[0].fieldData.coAuthors; // AuthorsItem[]
 - A missing or unpublished item is `null` (Reference) or left out (Multi-reference). `raw: true` keeps the IDs and can't be combined with `include`.
 - Small collections (up to `maxIncludeItems`, 1,000) are read once and cached; larger ones only fetch the items the page uses ([cost](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#references-include)).
 
-## Caching and revalidation
+## Keeping pages fresh
+
+### Caching and tags
 
 Every read is cached by Next.js with tags, so pages stay static until a tag is invalidated:
 
@@ -157,23 +159,12 @@ Every read is cached by Next.js with tags, so pages stay static until a tag is i
 | `webflow:collection:<collectionId>` | lists, slug lookups, `include` of a whole collection | any CMS event in that collection |
 | `webflow:item:<itemId>`             | `getItem`, `include` by ID                           | CMS events for that item         |
 
-- After a webhook, the next request fetches fresh content (`revalidateTag(tag, { expire: 0 })`). Pass `profile: "max"` to `createWebhookHandler` to serve stale content while revalidating instead.
+- After a webhook, the next request fetches fresh content (`revalidateTag(tag, { expire: 0 })`). Set the webhook handler's [`profile`](#webhook-handler-options) to `"max"` to serve stale content while revalidating instead.
 - Renaming a slug refreshes the old URL too (it then returns `null` → `notFound()`), because slug lookups carry the collection tag. The trade-off: any change in a collection refreshes all its cached slug lookups on their next visit.
 - During `next build`, `getItemBySlug` reads the cached list instead of one request per page: about one request per 100 items ([numbers](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#builds-generatestaticparams)). For very large collections, prerender a subset and let `dynamicParams` render the rest.
 - Draft mode bypasses the cache. To read uncached on purpose, use `createWebflowCms({ schema })` from `next-webflow` instead of `createWebflow`.
 
-### Data API or CDN
-
-|                            | `source: "data"` (default)                              | `source: "cdn"`                                                                             |
-| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Reads from                 | Data API, `/items/live`                                 | Content Delivery API (`api-cdn.webflow.com`)                                                |
-| Freshness after publishing | Immediate, with webhooks                                | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish                 |
-| Rate limit                 | Every cache miss counts (the limit depends on the plan) | CDN cache hits don't count                                                                  |
-| Use it when                | You registered webhooks (recommended)                   | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
-
-With `cdn` and webhooks together, a webhook can refetch before the CDN has the new content and cache the old version again; prefer `data` with webhooks. Draft mode always uses the Data API.
-
-## Webhooks
+### Webhooks
 
 ```ts
 // app/api/webflow/route.ts (don't export `runtime`)
@@ -196,9 +187,41 @@ npx next-webflow webhooks unregister --url https://your-site.com/api/webflow
 
 - Requests are **verified**: HMAC signature of the raw body, messages older than 5 minutes rejected. Unsigned requests get 401, because webhooks created in Webflow's dashboard aren't signed: register them with the command.
 - When unsure whether an event is a draft, the handler invalidates: a wrong guess costs a refetch, never stale content. Invalidation is idempotent, so Webflow's retries are harmless.
-- To log events or change what's invalidated, use `createWebhookHandler(options)` ([Configuration](#configuration)).
 
-## Draft mode (previews)
+#### Webhook handler options
+
+To log events or change what's invalidated, use `createWebhookHandler(options)`:
+
+```ts
+// app/api/webflow/route.ts
+import { createWebhookHandler } from "next-webflow/webhook";
+
+export const POST = createWebhookHandler({ onEvent: (event, tags) => console.log(event.triggerType, tags) });
+```
+
+| Option                      | Default                  |                                                                         |
+| --------------------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `secret`                    | `WEBFLOW_WEBHOOK_SECRET` | One or several (comma-separated in the variable): any of them verifies. |
+| `profile`                   | `{ expire: 0 }`          | Passed to `revalidateTag`; `"max"` serves stale while revalidating.     |
+| `invalidateOnStagedChanges` | `false`                  | Also invalidate on draft edits.                                         |
+| `extraTags(event)`          | —                        | Tags to add to the default mapping.                                     |
+| `tags(event, defaults)`     | —                        | Replace the tag list (receives the defaults plus `extraTags`).          |
+| `onEvent(event, tags)`      | —                        | Logging, notifications. Throwing returns 500, so Webflow retries.       |
+| `logger`, `toleranceMs`     | `console`, 5 minutes     | Where warnings go; maximum age of a signed request, in milliseconds.    |
+| `allowUnsigned`             | `false`                  | Accept unsigned requests. Insecure: anyone can invalidate your cache.   |
+
+### Data API or CDN
+
+|                            | `source: "data"` (default)                              | `source: "cdn"`                                                                             |
+| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Reads from                 | Data API, `/items/live`                                 | Content Delivery API (`api-cdn.webflow.com`)                                                |
+| Freshness after publishing | Immediate, with webhooks                                | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish                 |
+| Rate limit                 | Every cache miss counts (the limit depends on the plan) | CDN cache hits don't count                                                                  |
+| Use it when                | You registered webhooks (recommended)                   | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
+
+With `cdn` and webhooks together, a webhook can refetch before the CDN has the new content and cache the old version again; prefer `data` with webhooks. Draft mode always uses the Data API. Set `source` in [`createWebflow`](#createwebflow-options).
+
+## Draft previews
 
 Previews use **signed links that expire**; the secret never appears in a URL. A link names a collection and an item ID (so it survives slug changes); the route reads the staged item, turns on Next.js draft mode and redirects to the item's page. While draft mode is on, every read returns staged content, uncached.
 
@@ -213,15 +236,41 @@ export const { GET, DELETE } = createDraftHandler({
 });
 ```
 
-- Set `WEBFLOW_PREVIEW_SECRET` to a long random string (several, comma-separated, to rotate: any verifies, the first signs).
+- Set `WEBFLOW_PREVIEW_SECRET` to a long random string.
 - Links last 1 hour by default; links claiming more than 30 days are rejected.
-- Leave preview with `GET /api/webflow/draft?disable=1&path=/posts/hello-world` (redirects to that same-site path) or `DELETE`. `DraftModeBanner` adds the exit link for you.
+- Leave preview with `GET /api/webflow/draft?disable=1&path=/posts/hello-world` (redirects to that same-site path) or `DELETE`. [`DraftModeBanner`](#draftmodebanner) adds the exit link for you.
 
-**Making links.** `createPreviewUrl({ url, collection, itemId })` runs on the server (it needs the secret); `npx next-webflow preview-url` does the same from a terminal. Editors need a page listing drafts with their links: copy [`proxy.ts`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/proxy.ts) and [`app/drafts/page.tsx`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/drafts/page.tsx) from the example. Both check a password (`DRAFTS_PASSWORD`; without it the page answers 503 to everyone), so a wrong proxy `matcher` doesn't expose it.
+`createDraftHandler` options:
+
+| Option                   | Default                                                       |                                                                   |
+| ------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `resolvePath`            | — (required)                                                  | `(collection, item) => path` of the item's page.                  |
+| `schema`                 | —                                                             | The generated schema.                                             |
+| `secret`                 | `WEBFLOW_PREVIEW_SECRET`                                      | One or several, to rotate: any of them verifies, the first signs. |
+| `basePath`               | `NEXT_PUBLIC_BASE_PATH`, else the `basePath` in `next.config` | Prefixed to redirects ([Webflow Cloud](#webflow-cloud-preview)).  |
+| `maxLinkLifetimeSeconds` | 30 days                                                       | Reject links that claim to last longer.                           |
+| `logger`                 | `console`                                                     | Where warnings go.                                                |
+
+### Making preview links
+
+- **On the server:** `createPreviewUrl({ url, collection, itemId })` (it needs the secret). Also takes `expiresIn` (seconds, default 3600) and `secret`.
+- **From a terminal:** `npx next-webflow preview-url`.
+- **For editors:** a page listing drafts with their links. Copy [`proxy.ts`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/proxy.ts) and [`app/drafts/page.tsx`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/drafts/page.tsx) from the example. Both check a password (`DRAFTS_PASSWORD`; without it the page answers 503 to everyone), so a wrong proxy `matcher` doesn't expose it.
 
 > **Warning: `unsafeStagedCache` publishes your drafts on any page that uses it.** The drafts page uses it to read staged content without draft mode. Only use it on a password-protected page; never on a public page or with static rendering.
 
-## Components
+### `DraftModeBanner`
+
+```tsx
+// app/layout.tsx, inside <body>
+import { DraftModeBanner } from "next-webflow/components";
+
+<DraftModeBanner />; // route="/api/webflow/draft" by default
+```
+
+Renders only in draft mode: a fixed bar with an "Exit preview" link back to the current page. Props: `route` (your draft route), `children` (the message), `exitLabel`, `className` (replaces the default inline styles), `exitClassName` (the exit link) and `basePath`.
+
+## Rendering
 
 Server Components from `next-webflow/components`. It's the only entry point with dependencies (`html-react-parser`, MIT); nothing is added to the browser bundle.
 
@@ -271,18 +320,9 @@ import { WebflowImage } from "next-webflow/components";
 
 - Next.js' optimizer resizes images on Vercel or `next start`. On Webflow Cloud, images are served at their original size: [upload pre-optimized images](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md#images).
 
-### `DraftModeBanner`
+## Setup reference
 
-```tsx
-// app/layout.tsx, inside <body>
-import { DraftModeBanner } from "next-webflow/components";
-
-<DraftModeBanner />; // route="/api/webflow/draft" by default
-```
-
-Renders only in draft mode: a fixed bar with an "Exit preview" link back to the current page. Props: `route` (your draft route), `children` (the message), `exitLabel`, `className` (replaces the default inline styles), `exitClassName` (the exit link) and `basePath`.
-
-## Tokens and scopes
+### Tokens and scopes
 
 next-webflow reads **`WEBFLOW_CMS_TOKEN`**, a site token (Site settings → Apps & integrations → API access). It never reads `WEBFLOW_API_TOKEN`, the Webflow CLI's variable.
 
@@ -293,7 +333,7 @@ next-webflow reads **`WEBFLOW_CMS_TOKEN`**, a site token (Site settings → Apps
 
 Keep the runtime token read-only. Every CLI command also accepts `--token <value>`, but `--token-env` keeps it out of your shell history.
 
-## Types (`typegen`)
+### Types (`typegen`)
 
 ```bash
 npx next-webflow typegen          # reads WEBFLOW_CMS_TOKEN + WEBFLOW_SITE_ID (env or .env.local; --env <path> for another file)
@@ -303,7 +343,7 @@ npx next-webflow typegen --check  # CI: exit 1 if webflow/schema.ts no longer ma
 It writes two files in `webflow/` (`--out` to change it):
 
 - **`schema.ts`** is regenerated on every run; don't edit it. It describes your collections and has one type per collection: `posts` → `PostsItem`, `blog-posts` → `BlogPostsItem`, `2024-events` → `Collection2024EventsItem`.
-- **`index.ts`** is created once and then belongs to you (`--force` recreates it). Put client options and friendlier type names here:
+- **`index.ts`** is created once and then belongs to you (`--force` recreates it). Put [client options](#createwebflow-options) and friendlier type names here:
 
 ```ts
 // webflow/index.ts
@@ -317,54 +357,19 @@ export type Post = PostsItem;
 
 Then import from your folder: `import { getItems, type Post } from "@/webflow"`. `--check` ignores formatting, so Prettier is fine. Without a generated schema, `createWebflow()` returns untyped functions that accept a generic: `getItems<MyFields>("posts")`.
 
-## Configuration
-
-**`createWebflow(options)`** (in `webflow/index.ts`):
+### `createWebflow` options
 
 | Option                      | Default        |                                                                                         |
 | --------------------------- | -------------- | --------------------------------------------------------------------------------------- |
 | `schema`                    | —              | The generated schema.                                                                   |
 | `source`                    | `"data"`       | `"cdn"` reads published items from Webflow's CDN ([Data API or CDN](#data-api-or-cdn)). |
-| `optionNames`               | `"live"`       | `"generated"`: Option names only from typegen ([Options](#field-values)).               |
+| `optionNames`               | `"live"`       | `"generated"`: Option names only from typegen ([Field values](#field-values)).          |
 | `maxIncludeItems`           | `1000`         | Above it, `include` fetches referenced items by ID.                                     |
 | `maxBuildListItems`         | `5000`         | Warn above it during builds.                                                            |
 | `buildSlugLookups`          | `"list"`       | `"request"`: one `?slug=` request per page during builds.                               |
 | `retry`                     | 3 retries      | `{ maxRetries, baseDelayMs, maxDelayMs, maxRetryAfterMs }`, or `false`.                 |
 | `concurrency`               | `4`            | Maximum parallel requests.                                                              |
 | `token`, `siteId`, `logger` | env, `console` | Instead of `WEBFLOW_CMS_TOKEN`, `WEBFLOW_SITE_ID` and `console`.                        |
-
-**`createWebhookHandler(options)`** (`next-webflow/webhook`):
-
-| Option                      | Default                  |                                                                         |
-| --------------------------- | ------------------------ | ----------------------------------------------------------------------- |
-| `secret`                    | `WEBFLOW_WEBHOOK_SECRET` | One or several (comma-separated in the variable): any of them verifies. |
-| `profile`                   | `{ expire: 0 }`          | Passed to `revalidateTag`; `"max"` serves stale while revalidating.     |
-| `invalidateOnStagedChanges` | `false`                  | Also invalidate on draft edits.                                         |
-| `extraTags(event)`          | —                        | Tags to add to the default mapping.                                     |
-| `tags(event, defaults)`     | —                        | Replace the tag list (receives the defaults plus `extraTags`).          |
-| `onEvent(event, tags)`      | —                        | Logging, notifications. Throwing returns 500, so Webflow retries.       |
-| `logger`, `toleranceMs`     | `console`, 5 minutes     | Where warnings go; maximum age of a signed request, in milliseconds.    |
-| `allowUnsigned`             | `false`                  | Accept unsigned requests. Insecure: anyone can invalidate your cache.   |
-
-```ts
-// app/api/webflow/route.ts
-import { createWebhookHandler } from "next-webflow/webhook";
-
-export const POST = createWebhookHandler({ onEvent: (event, tags) => console.log(event.triggerType, tags) });
-```
-
-**`createDraftHandler(options)`** (`next-webflow/draft`):
-
-| Option                   | Default                                                       |                                                                  |
-| ------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `resolvePath`            | — (required)                                                  | `(collection, item) => path` of the item's page.                 |
-| `schema`                 | —                                                             | The generated schema.                                            |
-| `secret`                 | `WEBFLOW_PREVIEW_SECRET`                                      | One or several: any of them verifies, the first signs.           |
-| `basePath`               | `NEXT_PUBLIC_BASE_PATH`, else the `basePath` in `next.config` | Prefixed to redirects ([Webflow Cloud](#webflow-cloud-preview)). |
-| `maxLinkLifetimeSeconds` | 30 days                                                       | Reject links that claim to last longer.                          |
-| `logger`                 | `console`                                                     | Where warnings go.                                               |
-
-**`createPreviewUrl(options)`** (`next-webflow/draft`): `url`, `collection`, `itemId`, `expiresIn` (seconds, default 3600), `secret`.
 
 ## Known limitations
 

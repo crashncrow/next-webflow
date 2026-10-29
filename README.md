@@ -9,7 +9,7 @@ Typed content, signed draft previews, and webhook-driven cache revalidation. Let
 
 [Guide](packages/next-webflow/README.md) · [Live demo](https://nextjswebflow.vercel.app/) · [Example app](examples/blog) · [Docs](docs) · [Try the beta](#try-the-beta) · [Agent skill](#agent-skill)
 
-> **Beta:** `0.1.0-beta.1` is on npm. APIs may still change before `0.1.0`.
+> **Beta:** next-webflow is on npm as a pre-release. APIs may still change before `0.1.0`.
 
 ## Your CMS, a typed client
 

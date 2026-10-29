@@ -2,4 +2,4 @@
 "next-webflow": patch
 ---
 
-README: sorting by custom fields is a next-webflow limitation, not Webflow's (the Data API supports it); `sortBy` still takes only the built-in fields.
+README fixes: sorting by custom fields is a next-webflow limitation, not Webflow's (the Data API supports it); the Quick start explains the separate token for registering webhooks; rate limits no longer quote fixed numbers per plan; every `DraftModeBanner` prop is listed; examples use the same `/posts/` route throughout.

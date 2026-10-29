@@ -2,7 +2,7 @@
 
 Use the **Webflow CMS as a headless content source in Next.js** (App Router, Next 15 and 16): types generated from your site, cached reads that refresh when you publish, signed draft previews, and components for Rich Text and images.
 
-> **Beta:** `0.1.0-beta.1`. APIs may still change before `0.1.0`. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
+> **Beta:** APIs may still change before `0.1.0`. Webflow Cloud support is a [preview](https://github.com/crashncrow/next-webflow/blob/main/docs/webflow-cloud.md).
 
 **Contents:** [Quick start](#quick-start) · [Reading content](#reading-content) · [Field values](#field-values) · [References](#references-include) · [Caching](#caching-and-revalidation) · [Webhooks](#webhooks) · [Draft mode](#draft-mode-previews) · [Components](#components) · [Tokens](#tokens-and-scopes) · [Types](#types-typegen) · [Configuration](#configuration) · [Known limitations](#known-limitations) · [Webflow Cloud](#webflow-cloud-preview) · [Agent skill](#agent-skill)
 
@@ -72,7 +72,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
 }
 ```
 
-**5. Refresh pages when you publish.** Add the webhook route, deploy, then register the webhooks once ([details](#webhooks)):
+**5. Refresh pages when you publish.** Add the webhook route, deploy, then register the webhooks once. Registering needs a separate token with more scopes, here in `WEBFLOW_ADMIN_TOKEN` ([Tokens](#tokens-and-scopes), [details](#webhooks)):
 
 ```ts
 // app/api/webflow/route.ts
@@ -166,12 +166,12 @@ Every read is cached by Next.js with tags, so pages stay static until a tag is i
 
 ### Data API or CDN
 
-|                            | `source: "data"` (default)                               | `source: "cdn"`                                                                             |
-| -------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Reads from                 | Data API, `/items/live`                                  | Content Delivery API (`api-cdn.webflow.com`)                                                |
-| Freshness after publishing | Immediate, with webhooks                                 | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish                 |
-| Rate limit                 | Every cache miss counts (60–120 requests/minute by plan) | CDN cache hits don't count                                                                  |
-| Use it when                | You registered webhooks (recommended)                    | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
+|                            | `source: "data"` (default)                              | `source: "cdn"`                                                                             |
+| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Reads from                 | Data API, `/items/live`                                 | Content Delivery API (`api-cdn.webflow.com`)                                                |
+| Freshness after publishing | Immediate, with webhooks                                | Up to 5 minutes (2 on Enterprise): Webflow doesn't purge the CDN on publish                 |
+| Rate limit                 | Every cache miss counts (the limit depends on the plan) | CDN cache hits don't count                                                                  |
+| Use it when                | You registered webhooks (recommended)                   | No webhooks, very large builds, or rate limits are tight and a few minutes of delay is fine |
 
 With `cdn` and webhooks together, a webhook can refetch before the CDN has the new content and cache the old version again; prefer `data` with webhooks. Draft mode always uses the Data API.
 
@@ -211,13 +211,13 @@ import { schema } from "@/webflow/schema";
 
 export const { GET, DELETE } = createDraftHandler({
   schema,
-  resolvePath: (collection, item) => `/blog/${item.fieldData.slug}`, // required
+  resolvePath: (collection, item) => `/posts/${item.fieldData.slug}`, // required
 });
 ```
 
 - Set `WEBFLOW_PREVIEW_SECRET` to a long random string (several, comma-separated, to rotate: any verifies, the first signs).
 - Links last 1 hour by default; links claiming more than 30 days are rejected.
-- Leave preview with `GET /api/webflow/draft?disable=1&path=/blog/x` (redirects to that same-site path) or `DELETE`. `DraftModeBanner` adds the exit link for you.
+- Leave preview with `GET /api/webflow/draft?disable=1&path=/posts/hello-world` (redirects to that same-site path) or `DELETE`. `DraftModeBanner` adds the exit link for you.
 
 **Making links.** `createPreviewUrl({ url, collection, itemId })` runs on the server (it needs the secret); `npx next-webflow preview-url` does the same from a terminal. Editors need a page listing drafts with their links: copy [`proxy.ts`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/proxy.ts) and [`app/drafts/page.tsx`](https://github.com/crashncrow/next-webflow/blob/main/examples/blog/app/drafts/page.tsx) from the example. Both check a password (`DRAFTS_PASSWORD`; without it the page answers 503 to everyone), so a wrong proxy `matcher` doesn't expose it.
 
@@ -282,7 +282,7 @@ import { DraftModeBanner } from "next-webflow/components";
 <DraftModeBanner />; // route="/api/webflow/draft" by default
 ```
 
-Renders only in draft mode: a fixed bar with an "Exit preview" link back to the current page. `className` replaces the default inline styles.
+Renders only in draft mode: a fixed bar with an "Exit preview" link back to the current page. Props: `route` (your draft route), `children` (the message), `exitLabel`, `className` (replaces the default inline styles), `exitClassName` (the exit link) and `basePath`.
 
 ## Tokens and scopes
 
@@ -358,7 +358,7 @@ Webflow behavior, and how next-webflow handles it ([details](https://github.com/
 - **Embedded posts (tweets) in Rich Text** have a fixed aspect ratio and get cut off on narrow screens; render them with your own component through `components.figure` (the URL is in `data-page-url`).
 - **Image dimensions aren't in the API**, and Webflow's CDN doesn't resize images.
 - **Sorting by your own fields** isn't supported yet (Webflow's API allows it): `sortBy` takes `createdOn`, `lastPublished`, `lastUpdated`, `name` or `slug`.
-- **Rate limits:** 60–120 requests per minute depending on the plan. Cached reads don't count; builds read one list per collection.
+- **Rate limits** depend on the plan ([numbers](https://github.com/crashncrow/next-webflow/blob/main/docs/details.md#known-webflow-behavior)). Cached reads don't count, and builds read each collection's list once (about one request per 100 items).
 - **`include` is one level deep.**
 - Not supported: writing to the CMS, ecommerce, the Pages and Designer APIs, frameworks other than Next.js.
 

@@ -10,7 +10,7 @@ You'll get an answer as soon as possible. Once a fix is ready, we'll agree on wh
 
 ## Supported versions
 
-next-webflow is in pre-release (`0.1.0-beta.1`). Fixes go into the latest version only.
+next-webflow is in pre-release (`0.1.0` betas). Fixes go into the latest version only.
 
 ## Scope
 

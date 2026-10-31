@@ -109,6 +109,7 @@ Needs `WEBFLOW_PREVIEW_SECRET` (long random string). Add `<DraftModeBanner />` i
 | `webhooks register` fails with 401/403     | Missing `--token-env WEBFLOW_ADMIN_TOKEN`, or that token lacks Sites: Read and write. Don't add write scopes to the runtime token. |
 | Deleted item still listed                  | Webflow keeps it in live lists until the next site publish: publish the site.                                                      |
 | Route handler returns 500 on Webflow Cloud | A `runtime` export: remove it.                                                                                                     |
+| Preview link answers 500 or 404            | 500 "isn't configured": set the variable it names on the host. 404 "Collection not found": slug not in the site; new link.         |
 | Rich Text code block renders empty         | Webflow returns `<pre></pre>`: use an HTML embed or a separate field.                                                              |
 | Warning to rerun typegen                   | A collection changed after typegen; data still works. Rerun typegen.                                                               |
 

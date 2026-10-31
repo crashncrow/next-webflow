@@ -7,7 +7,12 @@ import {
   type WebflowListResponse,
 } from "./client";
 import { ENV, readEnv } from "./env";
-import { WebflowConfigError, WebflowConflictError, WebflowNotFoundError } from "./errors";
+import {
+  WebflowCollectionNotFoundError,
+  WebflowConfigError,
+  WebflowConflictError,
+  WebflowNotFoundError,
+} from "./errors";
 import { normalizeItem, schemaFromApi, type ApiCollection, type SchemaMismatch } from "./normalize";
 import type { QueryParams, QueryValue } from "./query";
 import type {
@@ -377,7 +382,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
         { init: cache.init(schemaTags()) },
       );
       const match = collections.find((collection) => collection.slug === slug);
-      if (!match) throw new WebflowConfigError(`Collection "${slug}" not found in site ${siteId}.`);
+      if (!match) throw new WebflowCollectionNotFoundError(slug, siteId);
       return fetchSchemaById(match.id);
     });
 

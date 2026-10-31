@@ -8,6 +8,17 @@ export class WebflowConfigError extends WebflowError {
   override name = "WebflowConfigError";
 }
 
+/** The site has no collection with this slug. A `WebflowConfigError`, so existing `catch`es still match. */
+export class WebflowCollectionNotFoundError extends WebflowConfigError {
+  override name = "WebflowCollectionNotFoundError";
+  readonly collection: string;
+
+  constructor(collection: string, siteId: string) {
+    super(`Collection "${collection}" not found in site ${siteId}.`);
+    this.collection = collection;
+  }
+}
+
 /** The request never got an HTTP response (DNS, connection reset, aborted...). */
 export class WebflowNetworkError extends WebflowError {
   override name = "WebflowNetworkError";

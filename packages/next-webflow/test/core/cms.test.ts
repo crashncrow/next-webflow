@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw/http";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
+  WebflowCollectionNotFoundError,
   WebflowConfigError,
   WebflowConflictError,
   WebflowNotFoundError,
@@ -277,6 +278,16 @@ describe("schema fallback", () => {
     );
     const { cms } = setup<undefined>({ schema: undefined });
     await expect(cms.getItems("posts")).resolves.toEqual([]);
+  });
+
+  it("throws WebflowCollectionNotFoundError for a slug the site doesn't have", async () => {
+    server.use(http.get(`${DATA_API}/sites/${SITE_ID}/collections`, () => HttpResponse.json(sitesCollectionsResponse)));
+    const { cms } = setup<undefined>({ schema: undefined, siteId: SITE_ID });
+
+    const error = await cms.getItems("nope").catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(WebflowCollectionNotFoundError);
+    expect(error).toBeInstanceOf(WebflowConfigError);
+    expect(error).toMatchObject({ collection: "nope" });
   });
 
   it("explains how to fix a missing schema and site ID", async () => {

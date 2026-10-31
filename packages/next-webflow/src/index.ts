@@ -48,6 +48,7 @@ export { SITE_TAG, collectionTag, itemTag } from "./core/tags";
 export {
   WebflowApiError,
   WebflowBadRequestError,
+  WebflowCollectionNotFoundError,
   WebflowConfigError,
   WebflowConflictError,
   WebflowError,

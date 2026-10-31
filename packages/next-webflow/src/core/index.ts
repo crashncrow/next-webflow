@@ -100,6 +100,7 @@ export {
 export {
   WebflowApiError,
   WebflowBadRequestError,
+  WebflowCollectionNotFoundError,
   WebflowConfigError,
   WebflowConflictError,
   WebflowError,

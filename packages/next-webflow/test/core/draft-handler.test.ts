@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw/http";
 import { describe, expect, it, vi } from "vitest";
 import { createPreviewUrl, type WebflowItem } from "../../src/core";
 import { createDraftRequestHandler, type DraftHandlerOptions } from "../../src/core/draft-handler";
-import { POSTS_ID, draftRawPost, schema } from "../fixtures/schema";
+import { POSTS_ID, SITE_ID, draftRawPost, schema, sitesCollectionsResponse } from "../fixtures/schema";
 import { webflowError } from "../helpers";
 import { DATA_API, TEST_TOKEN, server } from "../msw";
 
@@ -121,10 +121,37 @@ describe("draft route: entering preview", () => {
   it("answers 404 for an unknown collection", async () => {
     // Expected: no generated schema for "nope", so the CMS looks it up in the API first.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { handler } = setup();
+    server.use(http.get(`${DATA_API}/sites/${SITE_ID}/collections`, () => HttpResponse.json(sitesCollectionsResponse)));
+    const { handler, logger } = setup({ siteId: SITE_ID });
     const response = await handler.GET(await previewRequest({ collection: "nope" }));
     expect(response.status).toBe(404);
+    expect(logger.warn).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/No generated schema for collection "nope"/));
+    warn.mockRestore();
+  });
+
+  it("answers 500 with the setup error, not 404, when the token is missing", async () => {
+    vi.stubEnv("WEBFLOW_CMS_TOKEN", "");
+    const { handler, controls, logger } = setup({ token: undefined });
+    const response = await handler.GET(await previewRequest());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      error: expect.stringMatching(/isn't configured.*WEBFLOW_CMS_TOKEN/),
+    });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/WEBFLOW_CMS_TOKEN/));
+    expect(controls.enable).not.toHaveBeenCalled();
+  });
+
+  it("doesn't report a wrong site ID as an unknown collection", async () => {
+    // Expected: no generated schema for "nope", so the CMS looks it up in the API first.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    server.use(
+      http.get(`${DATA_API}/sites/:siteId/collections`, () =>
+        HttpResponse.json(webflowError("resource_not_found", "Not found"), { status: 404 }),
+      ),
+    );
+    const { handler } = setup({ siteId: "wrong-site" });
+    await expect(handler.GET(await previewRequest({ collection: "nope" }))).rejects.toThrow(/Not found/);
     warn.mockRestore();
   });
 

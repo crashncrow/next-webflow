@@ -10,6 +10,7 @@ describe("public runtime exports", () => {
       "SITE_TAG",
       "WebflowApiError",
       "WebflowBadRequestError",
+      "WebflowCollectionNotFoundError",
       "WebflowConfigError",
       "WebflowConflictError",
       "WebflowError",

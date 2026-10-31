@@ -50,9 +50,10 @@ Every error is a subclass of `WebflowError`, exported from `next-webflow`:
 
 | Error                                                | When                                                                               |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `WebflowConfigError`                                 | No token, unknown collection                                                       |
+| `WebflowConfigError`                                 | No token, no site ID                                                               |
+| `WebflowCollectionNotFoundError`                     | The site has no collection with that slug (a `WebflowConfigError`)                 |
 | `WebflowUnauthorizedError` / `WebflowForbiddenError` | Token or scopes                                                                    |
-| `WebflowNotFoundError`                               | A collection that doesn't exist (missing items return `null` instead)              |
+| `WebflowNotFoundError`                               | A collection ID that doesn't exist (missing items return `null` instead)           |
 | `WebflowRateLimitError`                              | After retries, or when `Retry-After` exceeds `maxRetryAfterMs`; has `retryAfterMs` |
 | `WebflowServerError` / `WebflowNetworkError`         | Webflow failed, or the request didn't get through, after retries                   |
 

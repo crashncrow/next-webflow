@@ -1,7 +1,7 @@
 // Draft mode route logic, Next-free. `src/draft/index.ts` wires Next's `draftMode()`.
 import { createWebflowCms, unsafeStagedCache, type WebflowCms, type WebflowCmsConfig } from "./cms";
 import { ENV } from "./env";
-import { WebflowConfigError, WebflowNotFoundError } from "./errors";
+import { WebflowCollectionNotFoundError, WebflowConfigError } from "./errors";
 import { resolvePreviewSecrets, safeRelativePath, verifyPreviewParams } from "./preview";
 import type { WebflowItem, WebflowSchema } from "./schema";
 
@@ -118,8 +118,14 @@ export function createDraftRequestHandler<S extends WebflowSchema | undefined = 
         verification.itemId,
       )) as WebflowItem | null;
     } catch (error) {
-      if (error instanceof WebflowNotFoundError || error instanceof WebflowConfigError) {
+      if (error instanceof WebflowCollectionNotFoundError) {
         return json(404, { ok: false, error: `Collection "${verification.collection}" not found.` });
+      }
+      // Missing token, fetch or site ID. Only a valid signed link gets this far, and the message
+      // names variables, never their values.
+      if (error instanceof WebflowConfigError) {
+        logger.warn(`[next-webflow] Draft route: ${error.message}`);
+        return json(500, { ok: false, error: `Draft mode isn't configured: ${error.message}` });
       }
       throw error;
     }

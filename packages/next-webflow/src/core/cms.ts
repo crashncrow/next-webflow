@@ -29,7 +29,11 @@ import type {
 } from "./schema";
 import { itemTags, listTags, schemaTags, slugLookupTags } from "./tags";
 
-/** Connects the CMS functions to a framework's cache. `src/next` provides the Next.js one. */
+/**
+ * Connects the CMS functions to a framework's cache. `src/next` provides the Next.js one. Any
+ * adapter other than the default (no cache) is treated as a real cache: the live schema for Option
+ * names isn't memoized in memory, so an adapter that doesn't cache fetches it on every read.
+ */
 export interface CacheAdapter {
   /** `fetch` options for a cached read tagged with `tags`. */
   init(tags: string[]): FetchInit;
@@ -295,6 +299,14 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     logger.debug?.(`[next-webflow] ${message}`);
   };
 
+  /** Shared by live Option names and the stale-schema refresh: one warning for one outage. */
+  const warnRefreshFailed = (slug: string, error: unknown) =>
+    warnOnce(
+      `refresh:${slug}`,
+      `Could not fetch the live schema for "${slug}" (${error instanceof Error ? error.message : String(error)}). ` +
+        "Serving items with the generated schema.",
+    );
+
   function watchResponseSize(info: ResponseInfo): void {
     if (info.init?.cache !== "force-cache" || info.bytes <= NEXT_CACHE_MAX_BYTES) return;
     const path = new URL(info.url).pathname;
@@ -430,12 +442,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
     try {
       live = await fetchLiveSchema(collection.id, ctx);
     } catch (error) {
-      // Same key and message as a failed stale-schema refresh: one warning for one outage.
-      warnOnce(
-        `refresh:${slug}`,
-        `Could not fetch the live schema for "${slug}" (${error instanceof Error ? error.message : String(error)}). ` +
-          "Serving items with the generated schema.",
-      );
+      warnRefreshFailed(slug, error);
       return collection;
     }
     const liveFields = new Map(Object.values(live.fields).map((field) => [field.slug, field]));
@@ -501,11 +508,7 @@ export function createWebflowCms<S extends WebflowSchema | undefined = undefined
         results = raws.map((raw) => normalizeItem(raw, fresh));
         mismatch = mergeMismatches(results.map((result) => result.mismatch));
       } catch (error) {
-        warnOnce(
-          `refresh:${slug}`,
-          `Could not fetch the live schema for "${slug}" (${error instanceof Error ? error.message : String(error)}). ` +
-            "Serving items with the generated schema.",
-        );
+        warnRefreshFailed(slug, error);
       }
     }
 

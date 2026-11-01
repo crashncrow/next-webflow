@@ -75,7 +75,7 @@
     "@types/react-dom": "^19.3.0",
     "esbuild": "^0.28.2",
     "msw": "^3.0.3",
-    "next": "^16.4.2",
+    "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsdown": "^0.23.1",
@@ -90,7 +90,7 @@
   "dependencies": {
     "domhandler": "^6.0.1",
     "html-dom-parser": "^8.0.2",
-    "html-react-parser": "^6.1.8"
+    "html-react-parser": "^6.1.9"
   },
   "publishConfig": {
     "access": "public"

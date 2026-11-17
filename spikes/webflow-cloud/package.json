@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.12",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "next-webflow": "file:vendor/next-webflow.tgz",
     "react": "19.3.1",
     "react-dom": "19.3.1"
